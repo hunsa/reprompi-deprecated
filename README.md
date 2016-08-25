@@ -1,2 +1,0 @@
-# reprompi
-ReproMPI Benchmark
