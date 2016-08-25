@@ -1,0 +1,324 @@
+#  -*- mode: org; -*-
+
+#+TITLE:       ReproMPI Benchmark
+#+AUTHOR:      
+#+EMAIL:       
+
+#+OPTIONS: ^:nil toc:nil <:nil
+
+#+LaTeX_CLASS_OPTIONS: [a4paper]
+#+LaTeX_CLASS_OPTIONS: [11pt]
+
+#+LATEX_HEADER: \usepackage{bibentry}
+#+LATEX_HEADER: \nobibliography*
+#+LATEX_HEADER: \usepackage{listings}
+
+
+* Introduction
+
+The ReproMPI Benchmark is a tool designed to accurately measure the
+run-time of MPI blocking collective operations.  It provides multiple
+process synchronization methods and a flexible mechanism for
+predicting the number of measurements that are sufficient to obtain
+statistically sound results.
+
+
+* Installation
+
+** Prerequisites
+  - an MPI library 
+  - CMake (version >= 2.6)  
+  - GSL libraries 
+
+** Basic installation
+
+#+BEGIN_EXAMPLE
+  cd $BENCHMARK_PATH
+  ./cmake .
+  make
+
+#+END_EXAMPLE
+
+For specific configuration options check the *Benchmark Configuration* section.
+
+* Running the ReproMPI Benchmark
+
+The ReproMPI code is designed to serve two specific purposes:
+
+** Benchmarking of MPI collective calls
+The most common usage scenario of the benchmark is to specify an MPI
+collective function to be benchmarked, a (list of) message sizes and
+the *number of measurement repetitions* for each test, as in the
+following example.
+
+#+BEGIN_EXAMPLE
+mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast,MPI_Allgather 
+             --msizes-list=8,1024,2048  -r 10
+#+END_EXAMPLE
+
+** Estimating the number of measurement iterations
+In this scenario, the user can generate an estimation of the number of
+measurements required for a stable result with respect to one or
+multiple prediction methods.
+
+More details about the various methods that are supported and their
+usage can be found in:
+- S. Hunold, A. Carpen-Amarie, F.D. Lübbe and J.L. Träff, "Automatic
+   Verification of Self-Consistent MPI Performance Guidelines",
+   EuroPar (2016)
+
+This is an example of how to perform such an estimation:
+
+#+BEGIN_EXAMPLE
+mpirun -np 4 ./bin/mpibenchmarkPredNreps --calls-list=MPI_Bcast,MPI_Allgather 
+              --msizes-list=8,1024,2048 --rep-prediction min=1,max=200,step=5
+#+END_EXAMPLE
+
+
+** Command-line Options
+
+*** Common Options
+
+  - =-h= print help
+  - =-v= print run-times measured for each process
+  - =--msizes-list=<values>= list of comma-separated message sizes in
+    Bytes, e.g., =--msizes-list=10,1024=
+  - =--msize-interval min=<min>,max=<max>,step=<step>= list of power
+    of 2 message sizes as an interval between 2^min and 2^max,
+    with step distance between values, e.g., 
+    =--msize-interval min=1,max=4,step=1=
+  - =--calls-list=<args>= list of comma-separated MPI calls to be
+    benchmarked, e.g., =--calls-list=MPI_Bcast,MPI_Allgather=
+  - =--root-proc=<process_id>= root node for collective operations     
+  - =--operation=<mpi_op>= MPI operation applied by collective
+    operations (where applicable), e.g., =--operation=MPI_BOR=.
+    
+    Supported operations: MPI_BOR, MPI_BAND, MPI_LOR, MPI_LAND,
+    MPI_MIN, MPI_MAX, MPI_SUM, MPI_PROD 
+  - =--datatype=<mpi_type>= MPI datatype used by collective
+    operations, e.g., =--datatype=MPI_CHAR=.
+
+    Supported datatypes: MPI_CHAR, MPI_INT, MPI_FLOAT, MPI_DOUBLE
+  - =--shuffle-jobs= shuffle experiments before running the benchmark
+  - =--params=k1:v1,k2:v2= list of comma-separated =key:value= pairs
+    to be printed in the benchmark output.
+  - =-f | --input-file=<path>= input file containing the list of
+    benchmarking jobs (tuples of MPI function, message size, number of
+    repetitions). It replaces all the other common options.
+  
+  
+*** Options Related to the Window-based Synchronization
+
+  - =--window-size=<win>= window size in microseconds for Window-based synchronization
+
+Specific options for synchronization methods based on a linear model of the clock drift
+  - =--fitpoints=<nfit>= number of fitpoints (default: 20) 
+  - =--exchanges=<nexc>= number of exchanges (default: 10)
+
+*** Specific Options for the ReproMPI Benchmark
+
+  - =-r | --repetitions=<nrep>= set number of experiment repetitions
+  - =--summary=<args>= list of comma-separated data summarizing
+    methods (mean, median, min, max), e.g., =--summary=mean,max=
+
+*** Specific Options for Estimating the Number of Repetitions
+  - =--rep-prediction min=<min>,max=<max>,step=<step>= set the total
+    number of repetitions to be estimated between =<min>= and =<max>=,
+    so that at each iteration i, the number of measurements (=nrep=)
+    is either =nrep(0) = <min>=, or =nrep(i) = nrep(i-1) + <step> *
+    2^(i-1)=, e.g., =--rep-prediction min=1,max=4,step=1=
+  - =--pred-method=m1,m2= comma-separated list of prediction
+    methods, i.e., rse, cov_mean, cov_median (default: rse)
+  - =--var-thres=thres1,thres2= comma-separated list of thresholds
+    corresponding to the specified prediction methods (default: 0.01)
+  - =--var-win=win1,win2= comma-separated list of (non-zero) windows
+    corresponding to the specified prediction methods; =rse= does not
+    rely on a measurement window, however a dummy window value is
+    required in this list when multiple methods are used (default: 10)
+
+
+** Supported Collective Operations:
+*** MPI Collectives
+
+  - MPI_Allgather
+  - MPI_Allreduce
+  - MPI_Alltoall
+  - MPI_Barrier
+  - MPI_Bcast
+  - MPI_Exscan
+  - MPI_Gather
+  - MPI_Reduce
+  - MPI_Reduce_scatter
+  - MPI_Reduce_scatter_block
+  - MPI_Scan
+  - MPI_Scatter
+
+*** Mockup Functions of Various MPI Collectives
+  - GL_Allgather_as_Allreduce
+  - GL_Allgather_as_Alltoall
+  - GL_Allgather_as_GatherBcast
+  - GL_Allreduce_as_ReduceBcast
+  - GL_Allreduce_as_ReducescatterAllgather
+  - GL_Allreduce_as_ReducescatterblockAllgather
+  - GL_Bcast_as_ScatterAllgather
+  - GL_Gather_as_Allgather
+  - GL_Gather_as_Reduce
+  - GL_Reduce_as_Allreduce
+  - GL_Reduce_as_ReducescatterGather
+  - GL_Reduce_as_ReducescatterblockGather
+  - GL_Reduce_scatter_as_Allreduce
+  - GL_Reduce_scatter_as_ReduceScatterv
+  - GL_Reduce_scatter_block_as_ReduceScatter
+  - GL_Scan_as_ExscanReducelocal
+  - GL_Scatter_as_Bcast
+
+    
+* Benchmark Configuration
+
+
+** Process Synchronization Methods
+
+*** MPI_Barrier
+This is the default synchronization method enabled for the benchmark.
+
+*** Dissemination Barrier
+To benchmark collective operations acorss multiple MPI libraries using
+the same barrier implementation, the benchmark provides a
+dissemination barrier that can replace the default MPI_Barrier to
+synchronize processes.
+
+To enable the dissemination barrier, the following flag has to be set
+before compiling the benchmark (e.g., using the =ccmake= command).
+
+#+BEGIN_EXAMPLE
+ENABLE_BENCHMARK_BARRIER
+#+END_EXAMPLE
+
+Both barrier-based synchronization methods can alternatively use a
+double barrier before each measurement.
+#+BEGIN_EXAMPLE
+ENABLE_DOUBLE_BARRIER
+#+END_EXAMPLE
+
+*** Window-based Synchronization
+
+The ReproMPI benchmark implements a window-based process
+synchronization mechanism, which estimates the clock offset/drift of
+each process relative to a reference process and then uses the
+obtained global clocks to synchronize processes before each
+measurement and to compute run-times.
+
+It relies on one of the following clock
+synchronization methods:
+
+  - *HCA synchronization*: this is the clock synchronization algorithm
+    we propose in []. It computes a linear model of the clock drift of
+    each process.  The HCA method can be configured by setting the
+    following flags before compilation.
+#+BEGIN_EXAMPLE
+ENABLE_WINDOWSYNC_HCA 
+ENABLE_LOGP_SYNC
+#+END_EXAMPLE
+
+The =ENABLE_LOGP_SYNC= flag determines which variant of the HCA
+algorithm is used, i.e., either HCA1 (which computes the clock models
+in O(p) steps) or HCA2 (which requires only O(log p) rounds).
+
+  - *SKaMPI synchronization*: it implements the SKaMPI clock
+    synchronization algorithm. To enable it, set the following flag
+    before compilation.
+#+BEGIN_EXAMPLE
+ENABLE_WINDOWSYNC_SK
+#+END_EXAMPLE
+
+
+  - *NetGauge synchronization*: it implements the NetGauge clock
+    synchronization algorithm. To enable it, set the following flag
+    before compilation.
+#+BEGIN_EXAMPLE
+ENABLE_WINDOWSYNC_NG
+#+END_EXAMPLE
+
+
+  - *Jones and Koenig synchronization*: it implements the clock
+    synchronization algorithm introduced by Jones and Koenig~[]. To
+    enable it, set the following flag before compilation.
+#+BEGIN_EXAMPLE
+ENABLE_WINDOWSYNC_JK
+#+END_EXAMPLE
+
+
+** Timing procedure
+  
+  The MPI operation run-time is computed in a different manner
+  depending on the selected clock synchronization method. If global
+  clocks are available, the run-times are computed as the difference
+  between the largest exit time and the first start time among all
+  processes.
+
+  If a barrier-based synchronization is used, the run-time of an MPI
+  call is computed as the largest local run-time across all processes.
+
+  However, the timing proceduce that relies on global clocks can be
+  used in combination with a barrier-based synchronization when the
+  following flag is enabled:
+#+BEGIN_EXAMPLE
+ENABLE_GLOBAL_TIMES
+#+END_EXAMPLE
+
+  More information regarding the timing procedure can be found in [].
+
+** Clock resolution
+
+  The =MPI_Wtime= cll is used by default to obtain the current time.
+To obtain accurate measurements of short time intervals, the benchmark
+can rely on the high resolution =RDTSC/RDTSCP= instructions (if they are
+available on the test machines) by setting on of the following flags:
+#+BEGIN_EXAMPLE
+ENABLE_RDTSC
+ENABLE_RDTSCP
+#+END_EXAMPLE
+
+Additionally, setting the clock frequency of the CPU is required to
+obtain accurate measurements:
+#+BEGIN_EXAMPLE
+FREQUENCY_MHZ                    2300
+#+END_EXAMPLE
+
+The clock frequency can also be automatically estimated (as done by
+the NetGauge tool) by enabling the following variable:
+#+BEGIN_EXAMPLE
+CALIBRATE_RDTSC
+#+END_EXAMPLE
+
+However, this method reduces the results accuracy and we advise to
+manually set the highest CPU frequency instead. More details about
+the usage of =RDTSC=-based timers can be found in our research
+report[].
+
+
+
+* List of Compilation Flags
+
+This is the full list of compilation flags that can be used to control
+all the previously detailed configuration parameters.
+
+#+BEGIN_EXAMPLE
+ CALIBRATE_RDTSC                  OFF   
+ COMPILE_BENCH_TESTS              OFF          
+ COMPILE_PRED_BENCHMARK           ON                
+ COMPILE_SANITY_CHECK_TESTS       OFF               
+ ENABLE_BENCHMARK_BARRIER         OFF             
+ ENABLE_DOUBLE_BARRIER            OFF             
+ ENABLE_GLOBAL_TIMES              OFF             
+ ENABLE_LOGP_SYNC                 OFF             
+ ENABLE_RDTSC                     OFF             
+ ENABLE_RDTSCP                    OFF           
+ ENABLE_WINDOWSYNC_HCA            OFF            
+ ENABLE_WINDOWSYNC_JK             OFF        
+ ENABLE_WINDOWSYNC_NG             OFF       
+ ENABLE_WINDOWSYNC_SK             OFF      
+ FREQUENCY_MHZ                    2300    
+#+END_EXAMPLE
+
+

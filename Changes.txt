@@ -1,0 +1,57 @@
+
+
+Version 0.9.5
+  - added command-line option to specify an output file and added support 
+  for printing all results to and output file and only a summary printed to stdout
+
+Version 0.9.4
+ - added command-line options to specify the MPI datatype, operation and the root node of the collective communication
+ - added command-line option to enable job shuffling
+ - fixed bug related to unrecognized options
+ - fixed dictionary print format
+
+Version 0.9.3
+ - "summary" command-line option to directly obtain averages of the measured run-times
+ - "params" command-line option to set key-value pairs in a globally-available dictionary
+ - support for window-based synchronization and global clocks for NREP prediction
+ - added Readme file
+
+Version 0.9.2
+ - list supported MPI operations to be measured:
+    MPI_ALLGATHER,
+    MPI_ALLREDUCE,
+    MPI_ALLTOALL,
+    MPI_BARRIER,
+    MPI_BCAST,
+    MPI_EXSCAN,
+    MPI_GATHER,
+    MPI_REDUCE,
+    MPI_REDUCE_SCATTER,
+    MPI_REDUCE_SCATTER_BLOCK,
+    MPI_SCAN,
+    MPI_SCATTER,
+    GL_ALLGATHER_AS_ALLREDUCE,
+    GL_ALLGATHER_AS_ALLTOALL,
+    GL_ALLGATHER_AS_GATHERBCAST,
+    GL_ALLREDUCE_AS_REDUCEBCAST,
+    GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER,
+    GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER,
+    GL_BCAST_AS_SCATTERALLGATHER,
+    GL_GATHER_AS_ALLGATHER,
+    GL_GATHER_AS_REDUCE,
+    GL_REDUCE_AS_ALLREDUCE,
+    GL_REDUCE_AS_REDUCESCATTERGATHER,
+    GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER,
+    GL_REDUCESCATTER_AS_ALLREDUCE,
+    GL_REDUCESCATTER_AS_REDUCESCATTERV,
+    GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER,
+    GL_SCAN_AS_EXSCANREDUCELOCAL,
+    GL_SCATTER_AS_BCAST
+ - added tests for mockup MPI functions
+ - add compile flag to disable buffer setup for mockup functions
+ 
+
+Version 0.9.1
+
+- fixed mockup MPI functions
+- removed outlier filtering from cov_median

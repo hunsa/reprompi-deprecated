@@ -1,0 +1,14 @@
+*.Rhistory
+*.aux
+*.bbl
+*.out
+*.log
+*.DS_Store
+*~
+*.blg
+*CMakeFiles*
+*Makefile
+*cmake_install.cmake
+CMakeCache.txt
+CPackConfig.cmake
+CPackSourceConfig.cmake

@@ -1,0 +1,326 @@
+/*  ReproMPI Benchmark
+ *
+ *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+
+<license>
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 2 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+</license>
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "mpi.h"
+#include "reprompi_bench/option_parser/parse_common_options.h"
+#include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
+#include "collectives.h"
+
+const collective_ops_t collective_calls[] = {
+        [MPI_ALLGATHER] = {
+                &execute_Allgather,
+                &initialize_data_Allgather,
+                &cleanup_data_Allgather
+        },
+        [MPI_ALLREDUCE] = {
+                &execute_Allreduce,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_ALLTOALL] = {
+                &execute_Alltoall,
+                &initialize_data_Alltoall,
+                &cleanup_data_Alltoall
+        },
+        [MPI_BARRIER] = {
+                &execute_Barrier,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_BCAST] =  {
+                &execute_Bcast,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_EXSCAN] = {
+                &execute_Exscan,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_GATHER] = {
+                &execute_Gather,
+                &initialize_data_Gather,
+                &cleanup_data_Gather
+        },
+        [MPI_REDUCE] = {
+                &execute_Reduce,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_REDUCE_SCATTER] = {
+                &execute_Reduce_scatter,
+                &initialize_data_Reduce_scatter,
+                &cleanup_data_Reduce_scatter
+        },
+        [MPI_REDUCE_SCATTER_BLOCK] = {
+                &execute_Reduce_scatter_block,
+                &initialize_data_Reduce_scatter_block,
+                &cleanup_data_Reduce_scatter_block
+        },
+        [MPI_SCAN] = {
+                &execute_Scan,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [MPI_SCATTER] = {
+                &execute_Scatter,
+                &initialize_data_Scatter,
+                &cleanup_data_Scatter
+        },
+        [GL_ALLGATHER_AS_ALLREDUCE] = {
+                &execute_GL_Allgather_as_Allreduce,
+                &initialize_data_GL_Allgather_as_Allreduce,
+                &cleanup_data_GL_Allgather_as_Allreduce
+        },
+        [GL_ALLGATHER_AS_ALLTOALL] = {
+                &execute_GL_Allgather_as_Alltoall,
+                &initialize_data_GL_Allgather_as_Alltoall,
+                &cleanup_data_GL_Allgather_as_Alltoall
+        },
+        [GL_ALLGATHER_AS_GATHERBCAST] = {
+                &execute_GL_Allgather_as_GatherBcast,
+                &initialize_data_GL_Allgather_as_GatherBcast,
+                &cleanup_data_GL_Allgather_as_GatherBcast
+        },
+        [GL_ALLREDUCE_AS_REDUCEBCAST] = {
+                &execute_GL_Allreduce_as_ReduceBcast,
+                &initialize_data_GL_Allreduce_as_ReduceBcast,
+                &cleanup_data_GL_Allreduce_as_ReduceBcast
+        },
+        [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER] = {
+                &execute_GL_Allreduce_as_ReducescatterAllgather,
+                &initialize_data_GL_Allreduce_as_ReducescatterAllgather,
+                &cleanup_data_GL_Allreduce_as_ReducescatterAllgather
+        },
+        [GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER] = {
+                &execute_GL_Allreduce_as_ReducescatterblockAllgather,
+                &initialize_data_GL_Allreduce_as_ReducescatterblockAllgather,
+                &cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather
+        },
+        [GL_BCAST_AS_SCATTERALLGATHER] = {
+                &execute_GL_Bcast_as_ScatterAllgather,
+                &initialize_data_GL_Bcast_as_ScatterAllgather,
+                &cleanup_data_GL_Bcast_as_ScatterAllgather
+        },
+        [GL_GATHER_AS_ALLGATHER] = {
+                &execute_GL_Gather_as_Allgather,
+                &initialize_data_GL_Gather_as_Allgather,
+                &cleanup_data_GL_Gather_as_Allgather
+        },
+        [GL_GATHER_AS_REDUCE] = {
+                &execute_GL_Gather_as_Reduce,
+                &initialize_data_GL_Gather_as_Reduce,
+                &cleanup_data_GL_Gather_as_Reduce
+        },
+        [GL_REDUCE_AS_ALLREDUCE] = {
+                &execute_GL_Reduce_as_Allreduce,
+                &initialize_data_GL_Reduce_as_Allreduce,
+                &cleanup_data_GL_Reduce_as_Allreduce
+        },
+        [GL_REDUCE_AS_REDUCESCATTERGATHER] = {
+                &execute_GL_Reduce_as_ReducescatterGather,
+                &initialize_data_GL_Reduce_as_ReducescatterGather,
+                &cleanup_data_GL_Reduce_as_ReducescatterGather
+        },
+        [GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER] = {
+                &execute_GL_Reduce_as_ReducescatterblockGather,
+                &initialize_data_GL_Reduce_as_ReducescatterblockGather,
+                &cleanup_data_GL_Reduce_as_ReducescatterblockGather
+        },
+        [GL_REDUCESCATTER_AS_ALLREDUCE] = {
+                &execute_GL_Reduce_scatter_as_Allreduce,
+                &initialize_data_GL_Reduce_scatter_as_Allreduce,
+                &cleanup_data_GL_Reduce_scatter_as_Allreduce
+        },
+        [GL_REDUCESCATTER_AS_REDUCESCATTERV] = {
+                &execute_GL_Reduce_scatter_as_ReduceScatterv,
+                &initialize_data_GL_Reduce_scatter_as_ReduceScatterv,
+                &cleanup_data_GL_Reduce_scatter_as_ReduceScatterv
+        },
+        [GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER] = {
+                &execute_GL_Reduce_scatter_block_as_ReduceScatter,
+                &initialize_data_GL_Reduce_scatter_block_as_ReduceScatter,
+                &cleanup_data_GL_Reduce_scatter_block_as_ReduceScatter
+        },
+        [GL_SCAN_AS_EXSCANREDUCELOCAL] = {
+                &execute_GL_Scan_as_ExscanReducelocal,
+                &initialize_data_GL_Scan_as_ExscanReducelocal,
+                &cleanup_data_GL_Scan_as_ExscanReducelocal
+        },
+        [GL_SCATTER_AS_BCAST] = {
+                &execute_GL_Scatter_as_Bcast,
+                &initialize_data_GL_Scatter_as_Bcast,
+                &cleanup_data_GL_Scatter_as_Bcast
+        },
+        [BBARRIER] = {
+                &execute_BBarrier,
+                &initialize_data_default,
+                &cleanup_data_default
+        },
+        [EMPTY] = {
+                &execute_Empty,
+                &initialize_data_default,
+                &cleanup_data_default
+        }
+};
+
+
+static char* const mpi_calls_opts[] = {
+        [MPI_ALLGATHER] = "MPI_Allgather",
+        [MPI_ALLREDUCE] = "MPI_Allreduce",
+        [MPI_ALLTOALL] = "MPI_Alltoall",
+        [MPI_BARRIER] = "MPI_Barrier",
+        [MPI_BCAST] =  "MPI_Bcast",
+        [MPI_EXSCAN] = "MPI_Exscan",
+        [MPI_GATHER] = "MPI_Gather",
+        [MPI_REDUCE] = "MPI_Reduce",
+        [MPI_REDUCE_SCATTER] = "MPI_Reduce_scatter",
+        [MPI_REDUCE_SCATTER_BLOCK] = "MPI_Reduce_scatter_block",
+        [MPI_SCAN] = "MPI_Scan",
+        [MPI_SCATTER] = "MPI_Scatter",
+        [GL_ALLGATHER_AS_ALLREDUCE] = "GL_Allgather_as_Allreduce",
+        [GL_ALLGATHER_AS_ALLTOALL] = "GL_Allgather_as_Alltoall",
+        [GL_ALLGATHER_AS_GATHERBCAST] = "GL_Allgather_as_GatherBcast",
+        [GL_ALLREDUCE_AS_REDUCEBCAST] = "GL_Allreduce_as_ReduceBcast",
+        [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER] = "GL_Allreduce_as_ReducescatterAllgather",
+        [GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER] = "GL_Allreduce_as_ReducescatterblockAllgather",
+        [GL_BCAST_AS_SCATTERALLGATHER] = "GL_Bcast_as_ScatterAllgather",
+        [GL_GATHER_AS_ALLGATHER] = "GL_Gather_as_Allgather",
+        [GL_GATHER_AS_REDUCE] = "GL_Gather_as_Reduce",
+        [GL_REDUCE_AS_ALLREDUCE] = "GL_Reduce_as_Allreduce",
+        [GL_REDUCE_AS_REDUCESCATTERGATHER] = "GL_Reduce_as_ReducescatterGather",
+        [GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER] = "GL_Reduce_as_ReducescatterblockGather",
+        [GL_REDUCESCATTER_AS_ALLREDUCE] = "GL_Reduce_scatter_as_Allreduce",
+        [GL_REDUCESCATTER_AS_REDUCESCATTERV] = "GL_Reduce_scatter_as_ReduceScatterv",
+        [GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER] = "GL_Reduce_scatter_block_as_ReduceScatter",
+        [GL_SCAN_AS_EXSCANREDUCELOCAL] = "GL_Scan_as_ExscanReducelocal",
+        [GL_SCATTER_AS_BCAST] = "GL_Scatter_as_Bcast",
+        [BBARRIER] = "BBarrier",
+        [EMPTY] = "Empty",
+        NULL
+};
+
+char* const* get_mpi_calls_list(void) {
+
+    return &(mpi_calls_opts[0]);
+}
+
+int get_call_index(char* name) {
+    int index = -1;
+    int i;
+
+    for (i=0; i< N_MPI_CALLS; i++) {
+        if (strcmp(name, mpi_calls_opts[i]) == 0) {
+            index = i;
+            break;
+        }
+    }
+
+    return index;
+}
+
+
+
+char* get_call_from_index(int index) {
+    if (index < 0 || index >= N_MPI_CALLS) {
+        return "";
+    }
+    return strdup(mpi_calls_opts[index]);
+}
+
+
+
+inline void execute_BBarrier(collective_params_t* params) {
+    dissemination_barrier();
+}
+
+
+inline void execute_Empty(collective_params_t* params) {
+}
+
+
+
+void initialize_data_default(const basic_collective_params_t info, const long msize,
+        collective_params_t* params) {
+    initialize_common_data(info, params);
+
+    params->msize = msize;
+
+    params->scount = msize;
+    params->rcount = msize;
+
+    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
+    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    memset(params->sbuf, 0, params->scount * params->datatypesize);
+    memset(params->rbuf, 0, params->rcount * params->datatypesize);
+
+}
+
+
+void cleanup_data_default(collective_params_t* params) {
+    free(params->sbuf);
+    free(params->rbuf);
+    params->sbuf = NULL;
+    params->rbuf = NULL;
+}
+
+
+void initialize_common_data(const basic_collective_params_t info,
+        collective_params_t* params) {
+    params->datatype = info.datatype;
+    MPI_Type_size(params->datatype, &params->datatypesize);
+    params->op = info.op;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &params->rank);
+    params->nprocs = info.nprocs;
+
+    params->root = info.root;
+
+    params->sbuf = NULL;
+    params->rbuf = NULL;
+    params->tmp_buf = NULL;
+    params->counts_array = NULL;
+    params->displ_array = NULL;
+}
+
+
+void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info) {
+    // initialize common collective calls information
+    coll_basic_info->datatype = opts.datatype;
+    coll_basic_info->nprocs = procs;
+    coll_basic_info->op = opts.operation;
+    coll_basic_info->root = 0;
+
+    if (opts.root_proc >= 0 && opts.root_proc < procs) {
+        coll_basic_info->root = opts.root_proc;
+    }
+
+}
+
+
+
+
+
