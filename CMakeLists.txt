@@ -1,29 +1,28 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
+   
 project(reprompi)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin")
 
 
-find_package(MPI REQUIRED)
-find_package(GSL REQUIRED)
-INCLUDE_DIRECTORIES(${GSL_INCLUDE_DIR} "src")
-set(COMMON_LIBRARIES ${GSL_LIBRARIES} ${MPI_LIBRARIES})
+set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake" 
+    CACHE STRING "Configure project to use a specific platform file")
+include(${INCLUDE_PLATFORM_CONFIG_FILE})
 
+find_package(GSL REQUIRED)
 if (GSL_INCLUDE_DIR)
 message (STATUS "GSL INCLUDES: ${GSL_INCLUDE_DIR}")
 else(GSL_INCLUDE_DIR)
 message (STATUS "GSL includes not found. Compiling without GSL support.")
 endif(GSL_INCLUDE_DIR)
 
-SET(CMAKE_C_COMPILER mpicc)
-SET(CMAKE_CXX_COMPILER mpicxx)
-set(CMAKE_C_FLAGS "-O3 -Wall ") # -pedantic")
 
-
+INCLUDE_DIRECTORIES(${GSL_INCLUDE_DIR} "src")
+set(COMMON_LIBRARIES ${GSL_LIBRARIES} ${MPI_LIBRARIES})
 
 option(ENABLE_WINDOWSYNC_SK "SKaMPI window-based synchronization [default: MPI_Barrier() synchronization]" off)
 option(ENABLE_WINDOWSYNC_JK "Window-based synchronization with linear model of the clock skew [default: MPI_Barrier() synchronization]" off)
@@ -205,7 +204,8 @@ if (COMPILE_BENCH_TESTS)
     ADD_SUBDIRECTORY(${SRC_DIR}/test)
 endif()
 
-#ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
+
+ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 
 
 

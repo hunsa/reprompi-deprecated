@@ -7,7 +7,7 @@ ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
 )
 
-add_library(reproMPIbench SHARED 
+add_library(reproMPIbench 
 ${BENCH_LIB_FILES}
 ${SYNC_SRC_FILES}
 ${COMMON_OUTPUT_MAN_SRC_FILES}
