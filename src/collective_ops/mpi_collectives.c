@@ -117,7 +117,7 @@ inline void execute_Gather(collective_params_t* params) {
 void initialize_data_Gather(const basic_collective_params_t info, const long msize, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the Bcast buffer
+    params->msize = msize; // size of the buffer sent by each process
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
@@ -151,7 +151,7 @@ inline void execute_Allgather(collective_params_t* params) {
 void initialize_data_Allgather(const basic_collective_params_t info, const long msize, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the Bcast buffer
+    params->msize = msize; // size of the buffer sent by each process
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
@@ -264,7 +264,7 @@ void initialize_data_Alltoall(const basic_collective_params_t info, const long m
 
     params->msize = msize;
 
-    params->scount = msize;
+    params->scount = msize * params->nprocs;
     params->rcount = msize * params->nprocs;
 
     params->sbuf = (char*) malloc(params->scount * params->datatypesize);
