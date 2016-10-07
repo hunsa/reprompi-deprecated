@@ -43,13 +43,15 @@ enum {
     GL_ALLGATHER_AS_ALLTOALL,
     GL_ALLGATHER_AS_GATHERBCAST,
     GL_ALLREDUCE_AS_REDUCEBCAST,
-    GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER,
+//    GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER,
+    GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV,
     GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER,
     GL_BCAST_AS_SCATTERALLGATHER,
     GL_GATHER_AS_ALLGATHER,
     GL_GATHER_AS_REDUCE,
     GL_REDUCE_AS_ALLREDUCE,
-    GL_REDUCE_AS_REDUCESCATTERGATHER,
+//    GL_REDUCE_AS_REDUCESCATTERGATHER,
+    GL_REDUCE_AS_REDUCESCATTERGATHERV,
     GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER,
     GL_REDUCESCATTER_AS_ALLREDUCE,
     GL_REDUCESCATTER_AS_REDUCESCATTERV,
@@ -126,13 +128,15 @@ void execute_GL_Allgather_as_Allreduce(collective_params_t* params);
 void execute_GL_Allgather_as_Alltoall(collective_params_t* params);
 void execute_GL_Allgather_as_GatherBcast(collective_params_t* params);
 void execute_GL_Allreduce_as_ReduceBcast(collective_params_t* params);
-void execute_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params);
+//void execute_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params);
+void execute_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params);
 void execute_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params);
 void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params);
 void execute_GL_Gather_as_Allgather(collective_params_t* params);
 void execute_GL_Gather_as_Reduce(collective_params_t* params);
 void execute_GL_Reduce_as_Allreduce(collective_params_t* params);
-void execute_GL_Reduce_as_ReducescatterGather(collective_params_t* params);
+//void execute_GL_Reduce_as_ReducescatterGather(collective_params_t* params);
+void execute_GL_Reduce_as_ReducescatterGatherv(collective_params_t* params);
 void execute_GL_Reduce_as_ReducescatterblockGather(collective_params_t* params);
 void execute_GL_Reduce_scatter_as_Allreduce(collective_params_t* params);
 void execute_GL_Reduce_scatter_as_ReduceScatterv(collective_params_t* params);
@@ -160,13 +164,15 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
 void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t info, const long msize, collective_params_t* params);
-void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collective_params_t info, const long msize, collective_params_t* params);
+//void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collective_params_t info, const long msize, collective_params_t* params);
+void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Reduce_as_Allreduce(const basic_collective_params_t info, const long msize, collective_params_t* params);
-void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_params_t info, const long msize, collective_params_t* params);
+//void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_params_t info, const long msize, collective_params_t* params);
+void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_params_t info, const long msize, collective_params_t* params);
@@ -190,13 +196,15 @@ void cleanup_data_GL_Allgather_as_Allreduce(collective_params_t* params);
 void cleanup_data_GL_Allgather_as_Alltoall(collective_params_t* params);
 void cleanup_data_GL_Allgather_as_GatherBcast(collective_params_t* params);
 void cleanup_data_GL_Allreduce_as_ReduceBcast(collective_params_t* params);
-void cleanup_data_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params);
+//void cleanup_data_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params);
+void cleanup_data_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params);
 void cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params);
 void cleanup_data_GL_Bcast_as_ScatterAllgather(collective_params_t* params);
 void cleanup_data_GL_Gather_as_Allgather(collective_params_t* params);
 void cleanup_data_GL_Gather_as_Reduce(collective_params_t* params);
 void cleanup_data_GL_Reduce_as_Allreduce(collective_params_t* params);
-void cleanup_data_GL_Reduce_as_ReducescatterGather(collective_params_t* params);
+//void cleanup_data_GL_Reduce_as_ReducescatterGather(collective_params_t* params);
+void cleanup_data_GL_Reduce_as_ReducescatterGatherv(collective_params_t* params);
 void cleanup_data_GL_Reduce_as_ReducescatterblockGather(collective_params_t* params);
 void cleanup_data_GL_Reduce_scatter_as_Allreduce(collective_params_t* params);
 void cleanup_data_GL_Reduce_scatter_as_ReduceScatterv(collective_params_t* params);

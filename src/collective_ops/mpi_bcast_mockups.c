@@ -49,10 +49,10 @@ inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long msize, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize/params->nprocs + (params->msize%params->nprocs != 0);
+    params->msize = msize/params->nprocs + (msize % params->nprocs != 0);
 
     params->scount = msize;
-    params->rcount = msize + params->nprocs; // at most one extra byte per process
+    params->rcount = msize + params->nprocs; // at most one extra element per process
 
     params->sbuf = (char*) malloc((params->scount + params->nprocs) * params->datatypesize);
     params->rbuf = (char*) malloc(params->rcount * params->datatypesize);

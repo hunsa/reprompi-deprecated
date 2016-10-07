@@ -274,6 +274,7 @@ int main(int argc, char* argv[]) {
     test_collective(basic_coll_info, msize, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
 
     test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
+    test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
 
     if (msize % nprocs == 0) {  // only works if the number of processes is a divisor of msize
         //test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER);
@@ -289,6 +290,8 @@ int main(int argc, char* argv[]) {
     test_collective(basic_coll_info, msize, MPI_GATHER, GL_GATHER_AS_REDUCE);
 
     test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
+
+    test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
 
     if (msize % nprocs == 0) {  // only works if the number of processes is a divisor of msize
         //test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHER);

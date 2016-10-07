@@ -162,3 +162,79 @@ void cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_
 /***************************************/
 
 
+/***************************************/
+// MPI_Allreduce with Reduce_scatter and Allgatherv
+inline void execute_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params) {
+
+    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array,
+            params->datatype, params->op, MPI_COMM_WORLD);
+
+    MPI_Allgatherv(params->tmp_buf, params->msize, params->datatype,
+            params->rbuf, params->counts_array, params->displ_array, params->datatype,
+            MPI_COMM_WORLD);
+
+}
+
+
+void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info,
+        const long msize, collective_params_t* params) {
+    int i;
+
+    initialize_common_data(info, params);
+
+    // set block size per process according to rank
+    if (params->rank < msize % params->nprocs) {
+        params->msize = msize / params->nprocs + 1;
+    }
+    else {
+        params->msize = msize / params->nprocs;
+    }
+
+    // total count for the initial message and the final result
+    params->scount = msize;
+    params->rcount = msize;
+
+    // each process receives a different number of elements according to its rank
+    params->counts_array = (int*) malloc(params->nprocs * sizeof(int));
+    params->displ_array = (int*) malloc(params->nprocs * sizeof(int));
+
+    for (i=0; i< params->nprocs; i++) {
+        if (i < msize % params->nprocs) {
+            params->counts_array[i] = msize / params->nprocs + 1;
+        }
+        else {
+            params->counts_array[i] = msize / params->nprocs;
+        }
+
+
+        if (i==0) {
+            params->displ_array[0] = 0;
+        }
+        else {
+            params->displ_array[i] = params->displ_array[i-1] + params->counts_array[i-1];
+        }
+    }
+
+
+    // source and destination buffers have the same size - the total amount of reduced data
+    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
+    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+
+    // initialize with the message size communicated to the current process
+    params->tmp_buf = (char*) malloc(params->msize * params->datatypesize);
+
+}
+
+
+void cleanup_data_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params) {
+    free(params->sbuf);
+    free(params->rbuf);
+    free(params->tmp_buf);
+    free(params->counts_array);
+    params->sbuf = NULL;
+    params->rbuf = NULL;
+    params->tmp_buf = NULL;
+    params->counts_array = NULL;
+
+}
+/***************************************/
