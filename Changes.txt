@@ -1,4 +1,11 @@
+Version 1.0.1
+  - fixed Alltoall bug
+  - added cmake configuration for Cray machines
+  - replaced GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER/GL_REDUCE_AS_REDUCESCATTERGATHER 
+    with GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV/GL_REDUCE_AS_REDUCESCATTERGATHERV
 
+Version 1.0.0
+  - first release
 
 Version 0.9.5
   - added command-line option to specify an output file and added support 
