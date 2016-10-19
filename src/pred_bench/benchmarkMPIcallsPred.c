@@ -53,7 +53,7 @@ void print_measurement_results_prediction(job_t job, reprompib_common_options_t 
 
     int j;
     int my_rank, np;
-    double runtime_sec;
+    double mean_runtime_sec, median_runtime_sec;
     FILE* f;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -68,14 +68,18 @@ void print_measurement_results_prediction(job_t job, reprompib_common_options_t 
         for (j=0; j < conds.n_methods; j++) {
 
             if (job.n_rep == 0) {   // no correct results
-                runtime_sec = 0;
+                // runtime_sec = 0;
+                mean_runtime_sec = 0;
+                median_runtime_sec = 0;
             }
             else {      // print the last measured runtime
-                runtime_sec = maxRuntimes_sec[job.n_rep - 1];
+                //runtime_sec = maxRuntimes_sec[job.n_rep - 1];
+                mean_runtime_sec = gsl_stats_mean(maxRuntimes_sec, 1, job.n_rep);
+                median_runtime_sec = gsl_stats_quantile_from_sorted_data (maxRuntimes_sec, 1, job.n_rep, 0.5);
             }
 
-            fprintf(f, "%s %ld %ld %.10f %s %.10f\n", get_call_from_index(job.call_index), job.n_rep,
-                    job.msize, runtime_sec, get_prediction_methods_list()[pred_params.info[j].method],
+            fprintf(f, "%s %ld %ld %.10f %.10f %s %.10f\n", get_call_from_index(job.call_index), job.n_rep,
+                    job.msize, mean_runtime_sec, median_runtime_sec, get_prediction_methods_list()[pred_params.info[j].method],
                     conds.conditions[j]);
         }
 
@@ -113,6 +117,7 @@ void print_initial_settings_prediction(pred_options_t opts, print_sync_info_t pr
         nrep_pred_params_t pred_params) {
     FILE* f;
     int my_rank;
+    const char header[] = "test nrep msize mean_runtime_sec median_runtime_sec pred_method pred_value";
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
@@ -124,11 +129,11 @@ void print_initial_settings_prediction(pred_options_t opts, print_sync_info_t pr
         if (opts.options.output_file != NULL) {
             f = fopen(opts.options.output_file, "a");
             print_initial_settings_prediction_to_file(f, opts, print_sync_info, pred_params);
-            fprintf(f, "test nrep msize last_runtime_sec pred_method pred_value\n");
+            fprintf(f, "%s\n", header);
             fclose(f);
         }
         else {
-            fprintf(stdout, "test nrep msize last_runtime_sec pred_method pred_value\n");
+            fprintf(stdout, "%s\n", header);
         }
     }
 }

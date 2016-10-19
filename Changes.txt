@@ -1,4 +1,5 @@
 Version 1.0.1
+  - changed output format for NREP prediction to print median and mean run-times
   - fixed Alltoall bug
   - added cmake configuration for Cray machines
   - replaced GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER/GL_REDUCE_AS_REDUCESCATTERGATHER 
