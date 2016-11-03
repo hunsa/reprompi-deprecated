@@ -22,7 +22,7 @@ endif(GSL_INCLUDE_DIR)
 
 
 INCLUDE_DIRECTORIES(${GSL_INCLUDE_DIR} "src")
-set(COMMON_LIBRARIES ${GSL_LIBRARIES} ${MPI_LIBRARIES})
+set(COMMON_LIBRARIES ${GSL_LIBRARIES} )
 
 option(ENABLE_WINDOWSYNC_SK "SKaMPI window-based synchronization [default: MPI_Barrier() synchronization]" off)
 option(ENABLE_WINDOWSYNC_JK "Window-based synchronization with linear model of the clock skew [default: MPI_Barrier() synchronization]" off)
@@ -187,7 +187,7 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
 # collective functions
 ${COLL_OPS_SRC_FILES}
 )
-TARGET_LINK_LIBRARIES(mpibenchmark ${GSL_LIBRARIES} )
+TARGET_LINK_LIBRARIES(mpibenchmark ${COMMON_LIBRARIES} )
 SET_TARGET_PROPERTIES(mpibenchmark PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
 
 
