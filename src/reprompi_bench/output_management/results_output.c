@@ -37,6 +37,7 @@
 #include "results_output.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
+static const int OUTPUT_NITERATIONS_CHUNK = 3000; // approx. 1 MB per process
 
 void print_results_header(reprompib_options_t opts) {
     int my_rank;
@@ -168,6 +169,8 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
     double* global_start_sec = NULL;
     double* global_end_sec = NULL;
     int my_rank, np;
+    int chunk_id, nchunks;
+    int current_rep_id, chunk_nrep = 0;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -177,86 +180,101 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                 get_global_time);
     } else {
 
-#ifdef ENABLE_WINDOWSYNC
-        int* errorcodes = NULL;
+        // we gather data from processes in chunks of OUTPUT_NITERATIONS_CHUNK elements
+        // the total number of chunks depends on the number of repetitions of the current exp job.n_rep
+        nchunks = job.n_rep/OUTPUT_NITERATIONS_CHUNK + (job.n_rep % OUTPUT_NITERATIONS_CHUNK != 0);
 
-        if (my_rank == OUTPUT_ROOT_PROC)
-        {
-            errorcodes = (int*)malloc(job.n_rep * np * sizeof(int));
-            for (i = 0; i < job.n_rep * np; i++) {
-                errorcodes[i] = 0;
+        for (chunk_id = 0; chunk_id < nchunks; chunk_id++) {
+            //the last chunk may be smaller than OUTPUT_NITERATIONS_CHUNK
+            if ((chunk_id == nchunks - 1) &&
+                    (job.n_rep % OUTPUT_NITERATIONS_CHUNK != 0)) {
+                chunk_nrep = job.n_rep % OUTPUT_NITERATIONS_CHUNK;
             }
-        }
-
-#ifndef ENABLE_BARRIERSYNC	// gather measurement results
-        {
-            int* local_errorcodes = get_errorcodes();
-
-            MPI_Gather(local_errorcodes, job.n_rep, MPI_INT,
-                    errorcodes, job.n_rep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-        }
-#endif
-
-#endif
-
-        if (my_rank == OUTPUT_ROOT_PROC) {
-            local_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
-            local_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
-            global_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
-            global_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
-        }
-
-        // gather measurement results
-        MPI_Gather(tstart_sec, job.n_rep, MPI_DOUBLE, local_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-
-        MPI_Gather(tend_sec, job.n_rep, MPI_DOUBLE, local_end_sec, job.n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-
-        for (i = 0; i < job.n_rep; i++) {
-            tstart_sec[i] = get_global_time(tstart_sec[i]);
-            tend_sec[i] = get_global_time(tend_sec[i]);
-        }
-        MPI_Gather(tstart_sec, job.n_rep, MPI_DOUBLE, global_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-
-        MPI_Gather(tend_sec, job.n_rep, MPI_DOUBLE, global_end_sec, job.n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-
-        if (my_rank == OUTPUT_ROOT_PROC) {
-
-            for (proc_id = 0; proc_id < np; proc_id++) {
-                for (i = 0; i < job.n_rep; i++) {
+            else {
+                chunk_nrep = OUTPUT_NITERATIONS_CHUNK;
+            }
 
 #ifdef ENABLE_WINDOWSYNC
-                    fprintf(f, "%d %s %d %ld %d %.10f %.10f %.10f %.10f\n", proc_id,
-                            get_call_from_index(job.call_index), i, job.msize,
-                            errorcodes[proc_id * job.n_rep + i],
-                            local_start_sec[proc_id * job.n_rep + i],
-                            local_end_sec[proc_id * job.n_rep + i],
-                            global_start_sec[proc_id * job.n_rep + i],
-                            global_end_sec[proc_id * job.n_rep + i]);
+            int* errorcodes = NULL;
 
-#else
-                    fprintf(f, "%d %s %d %ld %.10f %.10f\n", proc_id,
-                            get_call_from_index(job.call_index), i, job.msize,
-                            local_start_sec[proc_id * job.n_rep + i],
-                            local_end_sec[proc_id * job.n_rep + i]);
-#endif
+            if (my_rank == OUTPUT_ROOT_PROC)
+            {
+                errorcodes = (int*)malloc(chunk_nrep * np * sizeof(int));
+                for (i = 0; i < chunk_nrep * np; i++) {
+                    errorcodes[i] = 0;
                 }
             }
 
-            free(local_start_sec);
-            free(local_end_sec);
-            free(global_start_sec);
-            free(global_end_sec);
-#ifdef ENABLE_WINDOWSYNC
-            free(errorcodes);
+#ifndef ENABLE_BARRIERSYNC	// gather measurement results
+            {
+                int* local_errorcodes = get_errorcodes();
+
+                MPI_Gather(local_errorcodes, chunk_nrep, MPI_INT,
+                        errorcodes, chunk_nrep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            }
 #endif
+
+#endif
+
+            if (my_rank == OUTPUT_ROOT_PROC) {
+                local_start_sec = (double*) malloc(
+                        chunk_nrep * np * sizeof(double));
+                local_end_sec = (double*) malloc(
+                        chunk_nrep * np * sizeof(double));
+                global_start_sec = (double*) malloc(
+                        chunk_nrep * np * sizeof(double));
+                global_end_sec = (double*) malloc(
+                        chunk_nrep * np * sizeof(double));
+            }
+
+            // gather measurement results
+            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec,
+                    chunk_nrep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+
+            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, local_end_sec, chunk_nrep,
+                    MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+
+            for (i = 0; i < chunk_nrep; i++) {
+                tstart_sec[i] = get_global_time(tstart_sec[i]);
+                tend_sec[i] = get_global_time(tend_sec[i]);
+            }
+            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, global_start_sec,
+                    chunk_nrep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+
+            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, global_end_sec, chunk_nrep,
+                    MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+
+            if (my_rank == OUTPUT_ROOT_PROC) {
+
+                for (proc_id = 0; proc_id < np; proc_id++) {
+                    for (i = 0; i < chunk_nrep; i++) {
+                        current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+#ifdef ENABLE_WINDOWSYNC
+                        fprintf(f, "%d %s %d %ld %d %.10f %.10f %.10f %.10f\n", proc_id,
+                                get_call_from_index(job.call_index), current_rep_id, job.msize,
+                                errorcodes[proc_id * chunk_nrep + i],
+                                local_start_sec[proc_id * chunk_nrep + i],
+                                local_end_sec[proc_id * chunk_nrep + i],
+                                global_start_sec[proc_id * chunk_nrep + i],
+                                global_end_sec[proc_id * chunk_nrep + i]);
+
+#else
+                        fprintf(f, "%d %s %d %ld %.10f %.10f\n", proc_id,
+                                get_call_from_index(job.call_index), current_rep_id, job.msize,
+                                local_start_sec[proc_id * chunk_nrep + i],
+                                local_end_sec[proc_id * chunk_nrep + i]);
+#endif
+                    }
+                }
+
+                free(local_start_sec);
+                free(local_end_sec);
+                free(global_start_sec);
+                free(global_end_sec);
+#ifdef ENABLE_WINDOWSYNC
+                free(errorcodes);
+#endif
+            }
 
         }
 
