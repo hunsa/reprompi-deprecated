@@ -50,6 +50,34 @@ option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
 
 option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
 
+
+############ PGtune support ########
+
+set(PGTUNE_LIBRARY_NAME "libpgtune_lib" CACHE STRING  "Change the name of the PGtune library [default: libpgtune_lib]")
+set(PGTUNE_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGtune library")
+option(ENABLE_PGTUNE "Use PGtune" on)
+
+SET(LIBRARY_SUFFIX "so")
+IF(APPLE)
+ SET(LIBRARY_SUFFIX "dylib")
+ENDIF(APPLE)
+
+if (ENABLE_PGTUNE)
+    find_library (PGTUNE_LIBRARY ${PGTUNE_LIBRARY_NAME}.${LIBRARY_SUFFIX}
+              PATHS ${PGTUNE_LIBRARY_DEFAULT_PATH}
+              PATHS ENV LD_LIBRARY_PATH DYLD_LIBRARY_PATH
+              PATH_SUFFIXES lib)
+    if (PGTUNE_LIBRARY)
+        message(STATUS "PGtune library path: ${PGTUNE_LIBRARY}" )
+        set(COMMON_LIBRARIES ${PGTUNE_LIBRARY} ${COMMON_LIBRARIES} )
+        
+    else(PGTUNE_LIBRARY)
+        message(STATUS "PGtune library path: not found" )
+        message(STATUS "Compiling without PGtune support" )
+    endif()
+endif()
+########################################
+
 SET(MY_COMPILE_FLAGS "")
 
 if(RDTSC_CALIBRATION)
@@ -205,7 +233,7 @@ if (COMPILE_BENCH_TESTS)
 endif()
 
 
-ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
+#ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 
 
 
