@@ -220,7 +220,7 @@ int main(int argc, char* argv[]) {
     double* batch_runtimes;
     long updated_batch_nreps;
     reprompib_sync_functions_t sync_f;
-    reprompib_dictionary_t* params_dict;
+    reprompib_dictionary_t params_dict;
 
     /* start up MPI
      *
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
-    ret = reprompib_parse_options(&opts, argc, argv, params_dict);
+    ret = reprompib_parse_options(&opts, argc, argv, &params_dict);
     reprompib_validate_common_options_or_abort(ret, &(opts.options), reprompib_print_prediction_help);
 
     init_collective_basic_info(opts.options, procs, &coll_basic_info);
