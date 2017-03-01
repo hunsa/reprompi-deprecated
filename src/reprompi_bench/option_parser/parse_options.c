@@ -103,13 +103,13 @@ static reprompib_error_t parse_summary_list(char* subopts, reprompib_options_t* 
     return ok;
 }
 
-reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc, char **argv) {
+reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict) {
     int c;
     reprompib_error_t ret = SUCCESS;
     int printhelp = 0;
 
     init_parameters(opts_p);
-    ret |= reprompib_parse_common_options(&opts_p->common_opt, argc, argv);
+    ret |= reprompib_parse_common_options(&opts_p->common_opt, argc, argv, dict);
     opterr = 0;
 
     while (1) {

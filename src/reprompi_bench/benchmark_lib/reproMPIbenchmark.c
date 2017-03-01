@@ -43,7 +43,10 @@ static const int N_USER_VARS = 4;
 
 static int first_print_call = 1;
 
-void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info) {
+static reprompib_dictionary_t params_dict;
+
+
+void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
     FILE* f = stdout;
 
@@ -51,12 +54,12 @@ void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sy
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        print_common_settings_to_file(f, opts.common_opt, print_sync_info);
+        print_common_settings_to_file(f, opts.common_opt, print_sync_info, dict);
         fprintf(f, "#@nrep=%ld\n", opts.n_rep);
 
         if (opts.common_opt.output_file != NULL) {
             f = fopen(opts.common_opt.output_file, "a");
-            print_common_settings_to_file(f, opts.common_opt, print_sync_info);
+            print_common_settings_to_file(f, opts.common_opt, print_sync_info, dict);
             fprintf(f, "#@nrep=%ld\n", opts.n_rep);
             fflush(f);
             fclose(f);
@@ -68,7 +71,8 @@ void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sy
 
 void reprompib_print_bench_output(reprompib_job_t job, double* tstart_sec, double* tend_sec,
         reprompib_sync_functions_t sync_f,
-        reprompib_options_t opts, char* op, char* timername, char* timertype) {
+        reprompib_options_t opts,
+        char* op, char* timername, char* timertype) {
     FILE* f = stdout;
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -80,7 +84,7 @@ void reprompib_print_bench_output(reprompib_job_t job, double* tstart_sec, doubl
     }
 
     if (first_print_call) {
-        print_initial_settings(opts, sync_f.print_sync_info);
+        print_initial_settings(opts, sync_f.print_sync_info, &params_dict);
         print_results_header(opts, job);
         first_print_call = 0;
     }
@@ -122,12 +126,12 @@ void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_funct
     init_timer();
 
     //initialize dictionary
-    reprompib_init_dictionary();
+    reprompib_init_dictionary(&params_dict);
 
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
-    ret = reprompib_parse_options(opts_p, argc, argv);
+    ret = reprompib_parse_options(opts_p, argc, argv, &params_dict);
     ret = ret & (~ERROR_MPI_CALL_LIST_EMPTY) & (~ERROR_MSIZE_LIST_EMPTY);   // ignore these options
     reprompib_validate_common_options_or_abort(ret, &(opts_p->common_opt), reprompib_print_benchmark_help);
 
@@ -210,6 +214,6 @@ void reprompib_add_ivar_to_job(char* name, int v, reprompib_job_t* job_p) {
 
 void reprompib_cleanup_benchmark(reprompib_options_t opts) {
     reprompib_free_parameters(&opts);
-    reprompib_cleanup_dictionary();
+    reprompib_cleanup_dictionary(&params_dict);
 }
 

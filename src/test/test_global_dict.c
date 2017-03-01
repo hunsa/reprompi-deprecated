@@ -35,49 +35,62 @@ int main(int argc, char* argv[]) {
     int result;
     char* s;
     char buf[100];
+    reprompib_dictionary_t params_dict;
 
-    reprompib_init_dictionary();
+    reprompib_init_dictionary(&params_dict);
     for (i=0; i<n ;i++) {
         sprintf(buf, "%d", i);
-        reprompib_add_element_to_dict(buf, buf);
+        reprompib_add_element_to_dict(&params_dict, buf, buf);
     }
 
-    reprompib_print_dictionary(stdout);
+    reprompib_print_dictionary(&params_dict, stdout);
 
     printf("Trying to add same key twice...");
     i=2;
     sprintf(buf, "%d", i);
-    result = reprompib_add_element_to_dict(buf, "new value");
-    printf("add (%d, \"new value\") -> %s \n", i, get_error_message(result));
+    result = reprompib_add_element_to_dict(&params_dict, buf, "new value");
+    if (result != 0) {
+        strcpy(buf, "error");
+    }
+    else {
+        strcpy(buf,"success");
+    }
+    printf("add (%d, \"new value\") -> %s \n", i, buf);
 
     printf("Retrieve value...\n");
     i=5;
     sprintf(buf, "%d", i);
-    s = reprompib_get_value_from_dict(buf);
+    s = reprompib_get_value_from_dict(&params_dict, buf);
     printf("get_value(%d) -> %s \n", i, s);
     free(s);
 
     i=10;
     sprintf(buf, "%d", i);
-    s = reprompib_get_value_from_dict(buf);
+    s = reprompib_get_value_from_dict(&params_dict, buf);
     printf("get_value(%d) -> %s \n", i, s);
     free(s);
 
     printf("Remove element...");
     i=2;
     sprintf(buf, "%d", i);
-    result = reprompib_remove_element_from_dict(buf);
-    printf("remove (%d) -> %d \n", i, result);
+    result = reprompib_remove_element_from_dict(&params_dict, buf);
+    if (result != 0) {
+        strcpy(buf, "error");
+    }
+    else {
+        strcpy(buf,"success");
+    }
+    printf("remove (%d) -> %s \n", i, buf);
 
     printf("\n");
-    reprompib_print_dictionary(stdout);
+    reprompib_print_dictionary(&params_dict, stdout);
 
     printf("Remove everything...\n");
     for (i=0; i<n ;i++) {
         sprintf(buf, "%d", i);
-        result = reprompib_remove_element_from_dict(buf);
+        result = reprompib_remove_element_from_dict(&params_dict, buf);
         if (result != 0) {
-            strcpy(buf, get_error_message(result));
+            strcpy(buf, "error");
         }
         else {
             strcpy(buf,"success");
@@ -88,12 +101,12 @@ int main(int argc, char* argv[]) {
     printf("Add elements again...\n");
     for (i=0; i<2* n ;i++) {
         sprintf(buf, "%d", i);
-        reprompib_add_element_to_dict(buf, buf);
+        reprompib_add_element_to_dict(&params_dict, buf, buf);
     }
 
-    reprompib_print_dictionary(stdout);
+    reprompib_print_dictionary(&params_dict, stdout);
 
-    reprompib_cleanup_dictionary();
+    reprompib_cleanup_dictionary(&params_dict);
 
     return 0;
 }

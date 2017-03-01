@@ -37,6 +37,6 @@ typedef struct pred_opt {
 
 void reprompib_free_parameters(pred_options_t* opts_p);
 
-reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char **argv);
+reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict);
 
 #endif /* PRED_PARSE_OPTIONS_H_ */

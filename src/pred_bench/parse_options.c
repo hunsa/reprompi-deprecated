@@ -229,14 +229,14 @@ reprompib_error_t parse_prediction_windows(char* subopts, pred_options_t* opts_p
 
 
 
-reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char **argv) {
+reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict) {
     int c, i;
     reprompib_error_t ret = SUCCESS;
     int printhelp = 0;
 
     init_parameters(opts_p);
 
-    ret |= reprompib_parse_common_options(&opts_p->options, argc, argv);
+    ret |= reprompib_parse_common_options(&opts_p->options, argc, argv, dict);
     opterr = 0;
 
     while (1) {

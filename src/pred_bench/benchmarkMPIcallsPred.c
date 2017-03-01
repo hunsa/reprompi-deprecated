@@ -114,14 +114,14 @@ void print_initial_settings_prediction_to_file(FILE* f, pred_options_t opts, pri
 }
 
 void print_initial_settings_prediction(pred_options_t opts, print_sync_info_t print_sync_info,
-        nrep_pred_params_t pred_params) {
+        nrep_pred_params_t pred_params, const reprompib_dictionary_t* dict) {
     FILE* f;
     int my_rank;
     const char header[] = "test nrep msize mean_runtime_sec median_runtime_sec pred_method pred_value";
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    print_common_settings(opts.options, print_sync_info);
+    print_common_settings(opts.options, print_sync_info, dict);
 
     print_initial_settings_prediction_to_file(stdout, opts, print_sync_info, pred_params);
 
@@ -220,6 +220,7 @@ int main(int argc, char* argv[]) {
     double* batch_runtimes;
     long updated_batch_nreps;
     reprompib_sync_functions_t sync_f;
+    reprompib_dictionary_t* params_dict;
 
     /* start up MPI
      *
@@ -233,7 +234,7 @@ int main(int argc, char* argv[]) {
     start_time = time(NULL);
 
     // initialize global dictionary
-    reprompib_init_dictionary();
+    reprompib_init_dictionary(&params_dict);
 
     // initialize synchronization functions according to the configured synchronization method
     initialize_sync_implementation(&sync_f);
@@ -241,7 +242,7 @@ int main(int argc, char* argv[]) {
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
-    ret = reprompib_parse_options(&opts, argc, argv);
+    ret = reprompib_parse_options(&opts, argc, argv, params_dict);
     reprompib_validate_common_options_or_abort(ret, &(opts.options), reprompib_print_prediction_help);
 
     init_collective_basic_info(opts.options, procs, &coll_basic_info);
@@ -268,7 +269,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (jindex == 0) {
-            print_initial_settings_prediction(opts, sync_f.print_sync_info, jlist.prediction_params);
+            print_initial_settings_prediction(opts, sync_f.print_sync_info, jlist.prediction_params, &params_dict);
         }
 
         tstart_sec = (double*) malloc(jlist.prediction_params.n_rep_max * sizeof(double));
@@ -377,7 +378,7 @@ int main(int argc, char* argv[]) {
     cleanup_pred_job_list(jlist);
     reprompib_free_parameters(&opts);
 
-    reprompib_cleanup_dictionary();
+    reprompib_cleanup_dictionary(&params_dict);
 
     /* shut down MPI */
     MPI_Finalize();

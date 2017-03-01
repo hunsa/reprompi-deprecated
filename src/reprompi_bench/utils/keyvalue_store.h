@@ -29,11 +29,11 @@
 typedef struct reprompib_params_keyval {
     char* key;
     char* value;
-} reprompib_params_keyval_t;
+} reprompib_dict_keyval_t;
 
 
 typedef struct reprompib_dictionary {
-    reprompib_params_keyval_t* data;
+    reprompib_dict_keyval_t* data;
     int n_elems;
     int size;
 } reprompib_dictionary_t;
@@ -45,13 +45,13 @@ typedef enum {
 
 
 
-void reprompib_init_dictionary(void);
-void reprompib_cleanup_dictionary(void);
-reprompib_dict_error_t reprompib_add_element_to_dict(char* key, const char* val);
-char* reprompib_get_value_from_dict(char* key);
-reprompib_dict_error_t reprompib_remove_element_from_dict(char* key);
+void reprompib_init_dictionary(reprompib_dictionary_t* dict);
+void reprompib_cleanup_dictionary(reprompib_dictionary_t* dict);
+reprompib_dict_error_t reprompib_add_element_to_dict(reprompib_dictionary_t* dict, char* key, const char* val);
+char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, char* key);
+reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t* dict, char* key);
 
-void reprompib_print_dictionary(FILE* f);
+void reprompib_print_dictionary(const reprompib_dictionary_t* dict, FILE* f);
 
 
 #endif /* REPROMPIB_KEYVALUE_STORE_H_ */

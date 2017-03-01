@@ -229,7 +229,7 @@ static reprompib_error_t parse_call_list(char* subopts, reprompib_common_options
     return ok;
 }
 
-static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_options_t* opts_p) {
+static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_options_t* opts_p, reprompib_dictionary_t* dict) {
     reprompib_error_t ok = SUCCESS;
     char* params_tok;
     char *save_str, *s, *keyvalue_list;
@@ -253,7 +253,7 @@ static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_option
             val = strtok_r(NULL, ":", &kv_str);
 
             if (key!=NULL && val!= NULL) {
-                ok |= reprompib_add_element_to_dict(key, val);
+                ok |= reprompib_add_element_to_dict(dict, key, val);
             }
             else {
                 ok |= ERROR_KEY_VAL_PARAM;
@@ -336,7 +336,7 @@ static reprompib_error_t parse_datatype(char* arg, reprompib_common_options_t* o
     return ok;
 }
 
-reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv) {
+reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv, reprompib_dictionary_t* dict) {
     int c;
     reprompib_error_t ret = SUCCESS;
     int printhelp = 0;
@@ -383,7 +383,7 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
             ret |= parse_msize_interval(optarg, opts_p);
             break;
         case 'z': /* list of key-value parameters */
-            ret |= parse_keyvalue_list(optarg, opts_p);
+            ret |= parse_keyvalue_list(optarg, opts_p, dict);
             break;
         case '5': /* set root node for collective function */
             opts_p->root_proc = atoi(optarg);

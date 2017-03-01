@@ -42,13 +42,13 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info) {
+void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    print_common_settings(opts.common_opt, print_sync_info);
+    print_common_settings(opts.common_opt, print_sync_info, dict);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE* f;
@@ -118,6 +118,8 @@ int main(int argc, char* argv[]) {
     time_t start_time, end_time;
     reprompib_sync_functions_t sync_f;
 
+    reprompib_dictionary_t params_dict;
+
     /* start up MPI
      *
      * */
@@ -130,7 +132,7 @@ int main(int argc, char* argv[]) {
     start_time = time(NULL);
 
     //initialize dictionary
-    reprompib_init_dictionary();
+    reprompib_init_dictionary(&params_dict);
 
     // initialize synchronization functions according to the configured synchronization method
     initialize_sync_implementation(&sync_f);
@@ -138,7 +140,7 @@ int main(int argc, char* argv[]) {
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
-    ret = reprompib_parse_options(&opts, argc, argv);
+    ret = reprompib_parse_options(&opts, argc, argv, &params_dict);
     reprompib_validate_common_options_or_abort(ret, &(opts.common_opt), reprompib_print_benchmark_help);
 
     init_collective_basic_info(opts.common_opt, procs, &coll_basic_info);
@@ -161,7 +163,7 @@ int main(int argc, char* argv[]) {
         tend_sec = (double*) malloc(job.n_rep * sizeof(double));
 
         if (jindex == 0) {
-            print_initial_settings(opts, sync_f.print_sync_info);
+            print_initial_settings(opts, sync_f.print_sync_info, &params_dict);
             print_results_header(opts);
         }
 
@@ -189,6 +191,7 @@ int main(int argc, char* argv[]) {
             printf("\n");
 
         }
+
          */
         //print summarized data
         reprompib_print_bench_output(job, tstart_sec, tend_sec, sync_f.get_errorcodes,
@@ -209,7 +212,7 @@ int main(int argc, char* argv[]) {
     cleanup_job_list(jlist);
     reprompib_free_parameters(&opts);
 
-    reprompib_cleanup_dictionary();
+    reprompib_cleanup_dictionary(&params_dict);
 
     /* shut down MPI */
     MPI_Finalize();

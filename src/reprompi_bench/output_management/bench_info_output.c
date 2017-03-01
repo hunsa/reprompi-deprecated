@@ -68,14 +68,15 @@ void print_command_line_args(int argc, char* argv[]) {
 }
 
 
-void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info) {
+void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info,
+                                   const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        reprompib_print_dictionary(f);
+        reprompib_print_dictionary(dict, f);
 
         fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
         fprintf(f, "#@nprocs=%d\n", np);
@@ -100,7 +101,8 @@ void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, pri
     }
 }
 
-void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info) {
+void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info,
+                                             const reprompib_dictionary_t* dict) {
     int my_rank, len;
     char type_name[MPI_MAX_OBJECT_NAME];
 
@@ -122,21 +124,22 @@ void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t
         fprintf(f, "#@datatype=%s\n", type_name);
         fprintf(f, "#@root_proc=%d\n", opts.root_proc);
 
-        print_common_settings_to_file(f, opts, print_sync_info);
+        print_common_settings_to_file(f, opts, print_sync_info, dict);
     }
 }
 
 
-void print_common_settings(reprompib_common_options_t opts, print_sync_info_t print_sync_info) {
+void print_common_settings(reprompib_common_options_t opts, print_sync_info_t print_sync_info,
+                           const reprompib_dictionary_t* dict) {
     FILE* f = stdout;
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    print_benchmark_common_settings_to_file(stdout, opts, print_sync_info);
+    print_benchmark_common_settings_to_file(stdout, opts, print_sync_info, dict);
     if (my_rank == OUTPUT_ROOT_PROC) {
         if (opts.output_file != NULL) {
             f = fopen(opts.output_file, "a");
-            print_benchmark_common_settings_to_file(f, opts, print_sync_info);
+            print_benchmark_common_settings_to_file(f, opts, print_sync_info, dict);
             fflush(f);
             fclose(f);
         }
