@@ -54,35 +54,43 @@ void reprompib_cleanup_dictionary(reprompib_dictionary_t* dict) {
 }
 
 
-reprompib_dict_error_t reprompib_add_element_to_dict(reprompib_dictionary_t* dict, char* key, const char* val) {
+reprompib_dict_error_t reprompib_add_element_to_dict(reprompib_dictionary_t* dict, const char* key, const char* val) {
     reprompib_dict_error_t ok = DICT_SUCCESS;
-    char* old_val;
+    int i;
 
-    old_val = reprompib_get_value_from_dict(dict, key);
-    if (old_val != NULL) {
-        free(old_val);
-        ok = DICT_ERROR_KEY_VAL_PARAM;
+    if (key!=NULL && val!= NULL) {
+       for (i=0; i<dict->n_elems; i++) {
+           if (strcmp(key, dict->data[i].key) == 0) {   // key already exists - replace value with the new one
+               free(dict->data[i].value);
+               dict->data[i].value = strdup(val);
+               break;
+           }
+       }
+
+       if (i == dict->n_elems) { // add new key
+           dict->data[dict->n_elems].key = strdup(key);
+           dict->data[dict->n_elems].value = strdup(val);
+           dict->n_elems++;
+       }
     }
     else {
-        if (key!=NULL && val!= NULL) {
-            dict->data[dict->n_elems].key = strdup(key);
-            dict->data[dict->n_elems].value = strdup(val);
-            dict->n_elems++;
+        if (key == NULL) {
+            ok = DICT_ERROR_NULL_KEY;
         }
         else {
-            ok = DICT_ERROR_KEY_VAL_PARAM;
+            ok = DICT_ERROR_NULL_VALUE;
         }
+    }
 
-        if (dict->n_elems == dict->size) {
-            dict->size += LEN_KEYVALUE_LIST_BATCH;
-            dict->data = (reprompib_dict_keyval_t*) realloc(dict->data, dict->size * sizeof(reprompib_dict_keyval_t));
-        }
+    if (dict->n_elems == dict->size) {
+        dict->size += LEN_KEYVALUE_LIST_BATCH;
+        dict->data = (reprompib_dict_keyval_t*) realloc(dict->data, dict->size * sizeof(reprompib_dict_keyval_t));
     }
     return ok;
 }
 
 
-char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, char* key) {
+char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, const char* key) {
     char* val = NULL;
     int i = 0;
 
@@ -101,15 +109,15 @@ char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, char* ke
 }
 
 
-reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t* dict, char* key) {
+reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t* dict, const char* key) {
   reprompib_dict_error_t ok = DICT_SUCCESS;
     int i = 0, j;
 
     if (key == NULL) {
-        ok = DICT_ERROR_KEY_VAL_PARAM;
+        ok = DICT_ERROR_NULL_KEY;
     }
     else {
-        ok = DICT_ERROR_KEY_VAL_PARAM;
+        ok = DICT_KEY_ERROR;
         for (i=0; i<dict->n_elems; i++) {
             if (strcmp(key, dict->data[i].key) == 0) {
                 free(dict->data[i].key);
@@ -128,6 +136,42 @@ reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t
     }
 
     return ok;
+}
+
+
+
+reprompib_dict_error_t reprompib_get_keys_from_dict(const reprompib_dictionary_t* dict, char ***keys, int *length) {
+  int i;
+  *length = dict->n_elems;
+  *keys   = (char**)calloc(dict->n_elems, sizeof(char*));
+  for(i=0; i<dict->n_elems; i++) {
+    (*keys)[i] = strdup(dict->data[i].key);
+  }
+
+  return DICT_SUCCESS;
+}
+
+
+int reprompib_dict_is_empty(const reprompib_dictionary_t* dict) {
+  return (dict->n_elems == 0);
+}
+
+int reprompib_dict_get_length(const reprompib_dictionary_t* dict) {
+  return dict->n_elems;
+}
+
+
+int reprompib_dict_has_key(const reprompib_dictionary_t* dict, const char *key) {
+  int i;
+  int found_key = 0;
+
+  for(i=0; i<dict->n_elems; i++) {
+    if (strcmp(dict->data[i].key, key) == 0) {
+      found_key = 1;
+      break;
+    }
+  }
+  return found_key;
 }
 
 

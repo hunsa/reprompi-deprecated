@@ -253,7 +253,13 @@ static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_option
             val = strtok_r(NULL, ":", &kv_str);
 
             if (key!=NULL && val!= NULL) {
-                ok |= reprompib_add_element_to_dict(dict, key, val);
+                if (!reprompib_dict_has_key(dict, key)) {
+                    ok |= reprompib_add_element_to_dict(dict, key, val);
+                }
+                else {
+                  ok |= ERROR_KEY_VAL_PARAM;
+                  break;
+                }
             }
             else {
                 ok |= ERROR_KEY_VAL_PARAM;

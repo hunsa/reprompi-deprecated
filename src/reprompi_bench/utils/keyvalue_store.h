@@ -24,8 +24,6 @@
 #ifndef REPROMPIB_KEYVALUE_STORE_H_
 #define REPROMPIB_KEYVALUE_STORE_H_
 
-//#include "reprompi_bench/misc.h"
-
 typedef struct reprompib_params_keyval {
     char* key;
     char* value;
@@ -40,16 +38,22 @@ typedef struct reprompib_dictionary {
 
 typedef enum {
     DICT_SUCCESS = 0,
-    DICT_ERROR_KEY_VAL_PARAM
+    DICT_KEY_ERROR,
+    DICT_ERROR_NULL_KEY,
+    DICT_ERROR_NULL_VALUE
 } reprompib_dict_error_t;
 
 
 
 void reprompib_init_dictionary(reprompib_dictionary_t* dict);
 void reprompib_cleanup_dictionary(reprompib_dictionary_t* dict);
-reprompib_dict_error_t reprompib_add_element_to_dict(reprompib_dictionary_t* dict, char* key, const char* val);
-char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, char* key);
-reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t* dict, char* key);
+reprompib_dict_error_t reprompib_add_element_to_dict(reprompib_dictionary_t* dict, const char* key, const char* val);
+char* reprompib_get_value_from_dict(const reprompib_dictionary_t* dict, const char* key);
+reprompib_dict_error_t reprompib_remove_element_from_dict(reprompib_dictionary_t* dict, const char* key);
+reprompib_dict_error_t reprompib_get_keys_from_dict(const reprompib_dictionary_t* dict, char ***keys, int *length);
+int reprompib_dict_is_empty(const reprompib_dictionary_t* dict);
+int reprompib_dict_get_length(const reprompib_dictionary_t* dict);
+int reprompib_dict_has_key(const reprompib_dictionary_t* dict, const char *key);
 
 void reprompib_print_dictionary(const reprompib_dictionary_t* dict, FILE* f);
 
