@@ -29,7 +29,6 @@
 #include <getopt.h>
 #include <string.h>
 #include "mpi.h"
-#include "reprompi_bench/misc.h"
 #include "parse_test_options.h"
 
 static const struct option default_long_options[] = {
@@ -37,6 +36,14 @@ static const struct option default_long_options[] = {
         { "help", no_argument, 0, 0 },
         { 0, 0, 0, 0 }
 };
+
+
+static char * const error_messages[] =
+        { "",
+          "Number of repetitions null or not specified"
+        };
+static const int N_ERRORS = sizeof(error_messages) / sizeof(error_messages[0]);
+
 
 void print_help(char* testname) {
     int my_rank;
@@ -86,16 +93,16 @@ void print_help(char* testname) {
 }
 
 
-void init_parameters(reprompib_options_t* opts_p, char* name) {
+void init_parameters(reprompib_st_opts_t* opts_p, char* name) {
     opts_p->n_rep = 0;
     opts_p->steps = 0;
     strcpy(opts_p->testname,name);
 }
 
 
-reprompib_error_t parse_test_options(reprompib_options_t* opts_p, int argc, char **argv) {
+reprompib_st_error_t parse_test_options(reprompib_st_opts_t* opts_p, int argc, char **argv) {
     int c;
-    reprompib_error_t ret = SUCCESS;
+    reprompib_st_error_t ret = SUCCESS;
     int printhelp = 0;
 
     init_parameters(opts_p, argv[0]);
@@ -148,28 +155,26 @@ reprompib_error_t parse_test_options(reprompib_options_t* opts_p, int argc, char
 
 
 
-void validate_test_options_or_abort(reprompib_error_t errorcodes, reprompib_options_t* opts_p) {
-    long e = errorcodes;
+void validate_test_options_or_abort(reprompib_st_error_t errorcode, reprompib_st_opts_t* opts_p) {
     int my_rank;
     int root_proc = 0;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     if (my_rank == root_proc) {
-        long error_id = 1;
-
-        if (errorcodes > 0) {
+        if (errorcode > 0) {
             print_help(opts_p->testname);
-        }
-        while (errorcodes > 0) {
-            if (errorcodes % 2)
-                printf(">>>>>>>>>>>>>>>> Error: %s\n", get_error_message(error_id));
-            errorcodes = errorcodes >> 1;
-            error_id = error_id << 1;
+
+            if (errorcode < N_ERRORS) {
+              printf(">>>>>>>>>>>>>>>> Error: %s\n", error_messages[errorcode]);
+            }
+            else {
+              printf(">>>>>>>>>>>>>>>> Error: Synchronization method parameters not specified\n");
+            }
         }
 
     }
 
-    if (e != SUCCESS) {
+    if (errorcode != SUCCESS) {
         /* shut down MPI */
         MPI_Finalize();
         exit(0);

@@ -28,15 +28,14 @@
 #include <math.h>
 #include "mpi.h"
 
-#include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
 
 int main(int argc, char* argv[]) {
     int my_rank, nprocs, p;
-    reprompib_options_t opts;
+    reprompib_st_opts_t opts;
     int master_rank;
-    reprompib_error_t ret;
+    reprompib_st_error_t ret;
 
     double *all_rdtsc_times = NULL;
     double *all_wtime_times = NULL;

@@ -28,7 +28,6 @@
 #include <math.h>
 #include "mpi.h"
 
-#include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
@@ -127,7 +126,7 @@ void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
     *rtt = mean;
 }
 
-void print_initial_settings(int argc, char* argv[], reprompib_options_t opts,
+void print_initial_settings(int argc, char* argv[], reprompib_st_opts_t opts,
         print_sync_info_t print_sync_info) {
     int my_rank, np;
     FILE * f;
@@ -157,11 +156,11 @@ void print_initial_settings(int argc, char* argv[], reprompib_options_t opts,
 int main(int argc, char* argv[]) {
     int my_rank, nprocs, p;
     int i;
-    reprompib_options_t opts;
+    reprompib_st_opts_t opts;
     int master_rank;
     MPI_Status stat;
     double* rtts_s;
-    reprompib_error_t ret;
+    reprompib_st_error_t ret;
     FILE* f;
 
 

@@ -28,14 +28,13 @@
 #include <math.h>
 #include "mpi.h"
 
-#include "misc.h"
 #include "sync/time_measurement.h"
 #include "parse_test_options.h"
 
 int main(int argc, char* argv[]) {
     int my_rank, nprocs, p;
     int i;
-    reprompib_options_t opts;
+    reprompib_st_opts_t opts;
     int master_rank;
     MPI_Status stat;
 

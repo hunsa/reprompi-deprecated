@@ -26,14 +26,20 @@
 #define PARSE_TEST_OPTIONS_H_
 
 
+typedef enum {
+    SUCCESS = 0,
+    ERROR_NREP_NULL
+} reprompib_st_error_t;
+
+
 typedef struct opt {
     long n_rep; /* --repetitions */
     int steps;  /* --steps */
     char testname[256];
-} reprompib_options_t;
+} reprompib_st_opts_t;
 
-reprompib_error_t parse_test_options(reprompib_options_t* opts_p, int argc, char **argv);
+reprompib_st_error_t parse_test_options(reprompib_st_opts_t* opts_p, int argc, char **argv);
 
-void validate_test_options_or_abort(reprompib_error_t errorcodes, reprompib_options_t* opts_p);
+void validate_test_options_or_abort(reprompib_st_error_t errorcode, reprompib_st_opts_t* opts_p);
 
 #endif /* PARSE_TEST_OPTIONS_H_ */

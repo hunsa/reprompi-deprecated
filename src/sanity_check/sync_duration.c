@@ -29,7 +29,6 @@
 #include <getopt.h>
 #include "mpi.h"
 
-#include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
@@ -63,8 +62,8 @@ int main(int argc, char* argv[]) {
     int my_rank, nprocs, p;
     int master_rank;
     double runtime_s;
-    reprompib_options_t opts;
-    reprompib_error_t ret;
+    reprompib_st_opts_t opts;
+    reprompib_st_error_t ret;
     FILE* f;
 
     double *all_runtimes = NULL;
