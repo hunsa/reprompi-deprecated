@@ -25,7 +25,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "reprompi_bench/misc.h"
 #include "keyvalue_store.h"
 
 static const int LEN_KEYVALUE_LIST_BATCH = 4;
@@ -55,14 +54,14 @@ void reprompib_cleanup_dictionary(void) {
 }
 
 
-reprompib_error_t reprompib_add_element_to_dict(char* key, const char* val) {
-    reprompib_error_t ok = SUCCESS;
+reprompib_dict_error_t reprompib_add_element_to_dict(char* key, const char* val) {
+    reprompib_dict_error_t ok = DICT_SUCCESS;
     char* old_val;
 
     old_val = reprompib_get_value_from_dict(key);
     if (old_val != NULL) {
         free(old_val);
-        ok |= ERROR_KEY_VAL_PARAM;
+        ok = DICT_ERROR_KEY_VAL_PARAM;
     }
     else {
         if (key!=NULL && val!= NULL) {
@@ -71,7 +70,7 @@ reprompib_error_t reprompib_add_element_to_dict(char* key, const char* val) {
             dict.n_elems++;
         }
         else {
-            ok |= ERROR_KEY_VAL_PARAM;
+            ok = DICT_ERROR_KEY_VAL_PARAM;
         }
 
         if (dict.n_elems == dict.size) {
@@ -102,15 +101,15 @@ char* reprompib_get_value_from_dict(char* key) {
 }
 
 
-reprompib_error_t reprompib_remove_element_from_dict(char* key) {
-    reprompib_error_t ok = SUCCESS;
+reprompib_dict_error_t reprompib_remove_element_from_dict(char* key) {
+  reprompib_dict_error_t ok = DICT_SUCCESS;
     int i = 0, j;
 
     if (key == NULL) {
-        ok |= ERROR_KEY_VAL_PARAM;
+        ok = DICT_ERROR_KEY_VAL_PARAM;
     }
     else {
-        ok = ERROR_KEY_VAL_PARAM;
+        ok = DICT_ERROR_KEY_VAL_PARAM;
         for (i=0; i<dict.n_elems; i++) {
             if (strcmp(key, dict.data[i].key) == 0) {
                 free(dict.data[i].key);
@@ -122,7 +121,7 @@ reprompib_error_t reprompib_remove_element_from_dict(char* key) {
                 }
 
                 dict.n_elems = dict.n_elems-1;
-                ok = SUCCESS;
+                ok = DICT_SUCCESS;
                 break;
             }
         }

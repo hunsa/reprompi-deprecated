@@ -24,7 +24,7 @@
 #ifndef REPROMPIB_KEYVALUE_STORE_H_
 #define REPROMPIB_KEYVALUE_STORE_H_
 
-#include "reprompi_bench/misc.h"
+//#include "reprompi_bench/misc.h"
 
 typedef struct reprompib_params_keyval {
     char* key;
@@ -38,13 +38,18 @@ typedef struct reprompib_dictionary {
     int size;
 } reprompib_dictionary_t;
 
+typedef enum {
+    DICT_SUCCESS = 0,
+    DICT_ERROR_KEY_VAL_PARAM
+} reprompib_dict_error_t;
+
 
 
 void reprompib_init_dictionary(void);
 void reprompib_cleanup_dictionary(void);
-reprompib_error_t reprompib_add_element_to_dict(char* key, const char* val);
+reprompib_dict_error_t reprompib_add_element_to_dict(char* key, const char* val);
 char* reprompib_get_value_from_dict(char* key);
-reprompib_error_t reprompib_remove_element_from_dict(char* key);
+reprompib_dict_error_t reprompib_remove_element_from_dict(char* key);
 
 void reprompib_print_dictionary(FILE* f);
 
