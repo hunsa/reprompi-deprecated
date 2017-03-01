@@ -24,6 +24,9 @@
 // avoid getsubopt bug
 #define _XOPEN_SOURCE 500
 
+// fix strdup warning
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
