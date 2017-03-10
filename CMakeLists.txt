@@ -53,7 +53,7 @@ option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
 
 ############ PGtune support ########
 
-set(PGTUNE_LIBRARY_NAME "libpgtune_lib" CACHE STRING  "Change the name of the PGtune library [default: libpgtune_lib]")
+set(PGTUNE_LIBRARY_NAME "libpgmpicli" CACHE STRING  "Change the name of the PGtune library [default: libpgmpicli]")
 set(PGTUNE_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGtune library")
 option(ENABLE_PGTUNE "Use PGtune" on)
 
