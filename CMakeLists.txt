@@ -53,17 +53,17 @@ option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
 
 ############ PGtune support ########
 
-set(PGTUNE_LIBRARY_NAME "libpgmpicli" CACHE STRING  "Change the name of the PGtune library [default: libpgmpicli]")
+set(PGTUNE_LIBRARY_NAME "pgmpicli" CACHE STRING  "Change the name of the PGtune library [default: libpgmpicli]")
 set(PGTUNE_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGtune library")
 option(ENABLE_PGTUNE "Use PGtune" on)
 
-SET(LIBRARY_SUFFIX "so")
-IF(APPLE)
- SET(LIBRARY_SUFFIX "dylib")
-ENDIF(APPLE)
+#SET(LIBRARY_SUFFIX "so")
+#IF(APPLE)
+# SET(LIBRARY_SUFFIX "dylib")
+#ENDIF(APPLE)
 
 if (ENABLE_PGTUNE)
-    find_library (PGTUNE_LIBRARY ${PGTUNE_LIBRARY_NAME}.${LIBRARY_SUFFIX}
+    find_library (PGTUNE_LIBRARY ${PGTUNE_LIBRARY_NAME}
               PATHS ${PGTUNE_LIBRARY_DEFAULT_PATH}
               PATHS ENV LD_LIBRARY_PATH DYLD_LIBRARY_PATH
               PATH_SUFFIXES lib)
