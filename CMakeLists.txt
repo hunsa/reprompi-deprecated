@@ -52,31 +52,13 @@ option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
 
 
 ############ PGtune support ########
+set(PGMPI_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGMPI library")
+option(ENABLE_PGMPI "Use PGMPI" on)
 
-set(PGTUNE_LIBRARY_NAME "pgmpicli" CACHE STRING  "Change the name of the PGtune library [default: libpgmpicli]")
-set(PGTUNE_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGtune library")
-option(ENABLE_PGTUNE "Use PGtune" on)
-
-#SET(LIBRARY_SUFFIX "so")
-#IF(APPLE)
-# SET(LIBRARY_SUFFIX "dylib")
-#ENDIF(APPLE)
-
-if (ENABLE_PGTUNE)
-    find_library (PGTUNE_LIBRARY ${PGTUNE_LIBRARY_NAME}
-              PATHS ${PGTUNE_LIBRARY_DEFAULT_PATH}
-              PATHS ENV LD_LIBRARY_PATH DYLD_LIBRARY_PATH
-              PATH_SUFFIXES lib)
-    if (PGTUNE_LIBRARY)
-        message(STATUS "PGtune library path: ${PGTUNE_LIBRARY}" )
-        set(COMMON_LIBRARIES ${PGTUNE_LIBRARY} ${COMMON_LIBRARIES} )
-        
-    else(PGTUNE_LIBRARY)
-        message(STATUS "PGtune library path: not found" )
-        message(STATUS "Compiling without PGtune support" )
-    endif()
-endif()
-########################################
+if (ENABLE_PGMPI)
+    find_package(PGMPI)
+endif(ENABLE_PGMPI)
+####################################
 
 SET(MY_COMPILE_FLAGS "")
 
@@ -182,12 +164,12 @@ if(GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --verify HEAD RESULT_VARIABLE res_var OUTPUT_VARIABLE GIT_COM_ID )
     if( NOT ${res_var} EQUAL 0 )
         set(GIT_COM_ID "unknown")
-        message( WARNING "Git failed (not a repo). Build will not contain git revision info." )
+        message(STATUS "Git failed (not a repo). Build will not contain git revision info." )
     endif()
     string( REPLACE "\n" "" GIT_COMMIT_ID ${GIT_COM_ID} )
 else()
     set(GIT_COMMIT_ID "unknown_git_not_found")
-    message( WARNING "Git not found. Build will not contain git revision info." )
+    message(STATUS "Git not found. Build will not contain git revision info." )
 endif()
 configure_file("${SRC_DIR}/version.h.in" "${SRC_DIR}/version.h" @ONLY)
 
@@ -199,7 +181,7 @@ ${SRC_DIR}/reprompi_bench/output_management/runtimes_computation.c
 )
 
 
-add_executable(mpibenchmark
+set(REPROMPIBENCH_FILES
 ${SRC_DIR}/benchmarkMPIcalls.c
 ${SRC_DIR}/benchmark_job.c
 ${SRC_DIR}/reprompi_bench/misc.c
@@ -215,11 +197,34 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
 # collective functions
 ${COLL_OPS_SRC_FILES}
 )
+
+
+add_executable(mpibenchmark
+${REPROMPIBENCH_FILES}
+)
 TARGET_LINK_LIBRARIES(mpibenchmark ${COMMON_LIBRARIES} )
 SET_TARGET_PROPERTIES(mpibenchmark PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
 
 
-
+if (ENABLE_PGMPI)
+    if (PGMPI_FOUND)
+        add_executable(mpibenchmark_pgmpicli
+        ${REPROMPIBENCH_FILES}
+        )
+        TARGET_LINK_LIBRARIES(mpibenchmark_pgmpicli ${PGMPI_CLI_LIBRARIES} ${COMMON_LIBRARIES} )
+        SET_TARGET_PROPERTIES(mpibenchmark_pgmpicli PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
+        
+        add_executable(mpibenchmark_pgmpituned
+        ${REPROMPIBENCH_FILES}
+        )
+        TARGET_LINK_LIBRARIES(mpibenchmark_pgmpituned ${PGMPI_TUNED_LIBRARIES} ${COMMON_LIBRARIES} )
+        SET_TARGET_PROPERTIES(mpibenchmark_pgmpituned PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
+    else(PGMPI_FOUND)
+        message(STATUS "PGMPI not found. Cannot generate PGMPI-linked benchmark binaries." )
+    endif(PGMPI_FOUND)
+endif (ENABLE_PGMPI)
+    
+    
 if (COMPILE_SANITY_CHECK_TESTS)
     ADD_SUBDIRECTORY(${SRC_DIR}/sanity_check)
 endif()

@@ -10,7 +10,7 @@ ${SRC_DIR}/pred_bench/nrep_estimation.c
 )
 
 
-add_executable(mpibenchmarkPredNreps
+set(MPIBENCH_PREDNREPS_FILES
 benchmarkMPIcallsPred.c
 parse_options.c
 pred_benchmark_job.c
@@ -23,9 +23,30 @@ ${COMMON_OPTION_PARSER_SRC_FILES}
 ${COLL_OPS_SRC_FILES}
 )
 
-TARGET_LINK_LIBRARIES(mpibenchmarkPredNreps ${COMMON_LIBRARIES} )
-SET_TARGET_PROPERTIES(mpibenchmarkPredNreps PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
+
+add_executable(mpibenchPredNreps
+${MPIBENCH_PREDNREPS_FILES}
+)
+TARGET_LINK_LIBRARIES(mpibenchPredNreps ${COMMON_LIBRARIES} )
+SET_TARGET_PROPERTIES(mpibenchPredNreps PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
 
 
 
+if (ENABLE_PGMPI)
+    if (PGMPI_FOUND)
+        add_executable(mpibenchPredNreps_pgmpicli
+        ${MPIBENCH_PREDNREPS_FILES}
+        )
+        TARGET_LINK_LIBRARIES(mpibenchPredNreps_pgmpicli ${PGMPI_CLI_LIBRARIES} ${COMMON_LIBRARIES} )
+        SET_TARGET_PROPERTIES(mpibenchPredNreps_pgmpicli PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
+        
+        add_executable(mpibenchPredNreps_pgmpituned
+        ${MPIBENCH_PREDNREPS_FILES}
+        )
+        TARGET_LINK_LIBRARIES(mpibenchPredNreps_pgmpituned ${PGMPI_TUNED_LIBRARIES} ${COMMON_LIBRARIES} )
+        SET_TARGET_PROPERTIES(mpibenchPredNreps_pgmpituned PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
+    else(PGMPI_FOUND)
+        message(STATUS "PGMPI not found. Cannot generate PGMPI-linked binaries for NREP prediction." )
+    endif(PGMPI_FOUND)
+endif (ENABLE_PGMPI)
 
