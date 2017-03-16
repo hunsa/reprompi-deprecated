@@ -88,14 +88,14 @@ void reprompib_nrep_pred_print_help(void) {
     printf("%-40s %-40s\n", "--time-limit=<time_s>",
         "total run-time of an experiment (nrep measurements of one MPI call for a fixed message size)");
     printf("%-40s %-40s\n", "--threshold=<th>",
-        "relative standard error threshold (limits the number of prediction measurements)");
+        "relative standard error threshold (limits the number of prediction measurements) (default: 0.01)");
     printf("%-40s %-40s\n", "--nrep-per-pred-round=<nreps>",
         "number of measurements before attempting to predict nrep (default: 5)");
 
     printf(
         "\nEXAMPLES: mpirun -np 4 ./bin/nrep_pred --calls-list=MPI_Bcast --msizes-list=8,512 --max-nrep=1000 --min-nrep=3 --time-limit=0.01\n");
     printf(
-        "\n          mpirun -np 4 ./bin/nrep_pred --calls-list=MPI_Bcast --msizes-list=512 --max-nrep=1000 --min-nrep=3 --time-limit=0.01 --nrep-per-pred-round=5\n");
+        "\n          mpirun -np 4 ./bin/nrep_pred --calls-list=MPI_Bcast --msizes-list=512 --max-nrep=1000 --min-nrep=3 --threshold=0.02 --time-limit=0.01 --nrep-per-pred-round=5\n");
 
     printf("\n\n");
   }

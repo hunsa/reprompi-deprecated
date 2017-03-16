@@ -47,6 +47,13 @@ typedef enum nrep_pred_state {
   NREP_PRED_NOT_DONE
 } nrep_pred_state_t;
 
+
+typedef struct summary {
+  double median;
+  double min;
+  double max;
+} array_summary_t;
+
 // can only be done at the root
 static nrep_pred_state_t check_prediction_ready(const double* maxRuntimes_sec, const long measured_nreps,
     const double rse_threshold, const int root_proc) {
@@ -73,14 +80,13 @@ static nrep_pred_state_t check_prediction_ready(const double* maxRuntimes_sec, c
   return state;
 }
 
-static double compute_array_median(const double* my_array, const long array_length) {
-  double median;
+static int compute_array_summary(const double* my_array, const long array_length, array_summary_t* summ) {
   int i;
   double tmp_array[array_length];
 
   if (array_length <= 0) {   // incorrect length
-    fprintf(stderr, "ERROR: Cannot compute median for array length: %ld\n", array_length);
-    exit(1);
+    fprintf(stderr, "ERROR: Cannot compute summary for array length: %ld\n", array_length);
+    return 1;
   }
 
   for (i = 0; i < array_length; i++) {
@@ -92,8 +98,10 @@ static double compute_array_median(const double* my_array, const long array_leng
   //}
 
   gsl_sort(tmp_array, 1, array_length);
-  median = gsl_stats_quantile_from_sorted_data(tmp_array, 1, array_length, 0.5);
-  return median;
+  summ->median = gsl_stats_quantile_from_sorted_data(tmp_array, 1, array_length, 0.5);
+  summ->min = tmp_array[0];
+  summ->max = tmp_array[array_length-1];
+  return 0;
 }
 
 static long compute_nreps(const double ref_runtime_s, const double time_limit_s, const int root_proc) {
@@ -111,9 +119,9 @@ static long compute_nreps(const double ref_runtime_s, const double time_limit_s,
   return nreps;
 }
 
-static void nrep_pred_print_prediction_results(const job_t job, const reprompib_common_options_t opts,
-    const nrep_pred_options_t pred_params, const long measured_nreps, const long estimated_nreps,
-    const double ref_runtime_s) {
+static void nrep_pred_print_prediction_results(const job_t* job, const reprompib_common_options_t* opts,
+    const nrep_pred_options_t* pred_params, const long measured_nreps, const long estimated_nreps,
+    const array_summary_t* summ) {
   int my_rank;
   FILE* f;
 
@@ -121,15 +129,15 @@ static void nrep_pred_print_prediction_results(const job_t job, const reprompib_
 
   f = stdout;
   if (my_rank == OUTPUT_ROOT_PROC) {
-    if (opts.output_file != NULL) {
-      f = fopen(opts.output_file, "a");
+    if (opts->output_file != NULL) {
+      f = fopen(opts->output_file, "a");
     }
 
-    fprintf(f, "%25s %10ld %10ld     %.10f %10ld \n", get_call_from_index(job.call_index), job.msize, measured_nreps,
-        ref_runtime_s, estimated_nreps);
+    fprintf(f, "%25s %10ld %10ld     %.10f     %.10f %10ld \n", get_call_from_index(job->call_index), job->msize, measured_nreps,
+        summ->min, summ->median, estimated_nreps);
   }
 
-  if (opts.output_file != NULL) {
+  if (opts->output_file != NULL) {
     fclose(f);
   }
 }
@@ -144,7 +152,7 @@ void nrep_pred_print_results_header(const char* filename) {
     if (filename != NULL) {
       f = fopen(filename, "a");
     }
-    fprintf(f, "%25s %10s %10s %16s %10s\n", "test", "msize", "meas_nreps", "meas_median_sec", "nreps");
+    fprintf(f, "%25s %10s %10s %16s %16s %10s\n", "test", "msize", "meas_nreps", "meas_min_sec", "meas_median_sec", "nreps");
     if (filename != NULL) {
       fclose(f);
     }
@@ -257,9 +265,9 @@ int main(int argc, char* argv[]) {
       }
 
       // gather the run-times obtained in this round to the root
-      round_start_index = current_index - pred_params.nrep_per_pred_round[round];
+      round_start_index = current_index - current_nreps;
       round_maxRuntimes_sec = maxRuntimes_sec + round_start_index;
-      compute_runtimes_local_clocks(tstart_sec, tend_sec, round_start_index, pred_params.nrep_per_pred_round[round],
+      compute_runtimes_local_clocks(tstart_sec, tend_sec, round_start_index, current_nreps,
           OUTPUT_ROOT_PROC, round_maxRuntimes_sec);
 
       // verify the prediction stopping conditions and broadcast them to all processes
@@ -273,16 +281,16 @@ int main(int argc, char* argv[]) {
 
     // estimate needed nreps based on the measured run-times in maxRuntimes_sec
     if (my_rank == OUTPUT_ROOT_PROC) {  // data is only on the root process
-      double median;
+      array_summary_t summ;
 
-      median = compute_array_median(maxRuntimes_sec, current_index);
-      if (median == 0) {
-        fprintf(stderr, "ERROR: Incorrect measurements: median_runtime=0");
+      ret = compute_array_summary(maxRuntimes_sec, current_index, &summ);
+      if (ret) {
+        fprintf(stderr, "ERROR: Cannot compute summary for %ld elements\n", current_index);
         MPI_Finalize();
         exit(1);
       }
 
-      estimated_nreps = compute_nreps(median, pred_params.time_limit_s, OUTPUT_ROOT_PROC);
+      estimated_nreps = compute_nreps(summ.min, pred_params.time_limit_s, OUTPUT_ROOT_PROC);
 
       if (estimated_nreps < pred_params.min_nrep) {
         fprintf(stderr, "WARNING: Estimated nreps too small (%ld). Using specified min: %ld\n", estimated_nreps,
@@ -296,7 +304,7 @@ int main(int argc, char* argv[]) {
       }
 
       // print_results
-      nrep_pred_print_prediction_results(job, opts, pred_params, current_index, estimated_nreps, median);
+      nrep_pred_print_prediction_results(&job, &opts, &pred_params, current_index, estimated_nreps, &summ);
     }
 
     collective_calls[job.call_index].cleanup_data(&coll_params);
