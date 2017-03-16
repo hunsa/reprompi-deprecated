@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     reprompib_validate_common_options_or_abort(ret, &(opts.common_opt), reprompib_print_benchmark_help);
 
     init_collective_basic_info(opts.common_opt, procs, &coll_basic_info);
-    generate_job_list(opts, &jlist);
+    generate_job_list(&(opts.common_opt), opts.n_rep, &jlist);
 
 
     // execute the benchmark jobs

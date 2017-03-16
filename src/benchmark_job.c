@@ -111,7 +111,7 @@ int read_input_jobs(char* file_name, job_list_t* jlist) {
     return len_jobs;
 }
 
-void generate_job_list(reprompib_options_t opts, job_list_t* jlist) {
+void generate_job_list(const reprompib_common_options_t *opts, const int predefined_n_rep, job_list_t* jlist) {
     int sizeindex, cindex, i;
     int my_rank;
 
@@ -122,23 +122,23 @@ void generate_job_list(reprompib_options_t opts, job_list_t* jlist) {
     jlist->jobs = NULL;
 
     /* read jobs from input file and ignore other options */
-    if (opts.common_opt.input_file != NULL) {
-        read_input_jobs(opts.common_opt.input_file, jlist);
+    if (opts->input_file != NULL) {
+        read_input_jobs(opts->input_file, jlist);
     } else {
         /* create job list according to command line options */
 
-        if (opts.common_opt.n_msize > 0 && opts.common_opt.n_calls > 0) /* we have jobs to run */
+        if (opts->n_msize > 0 && opts->n_calls > 0) /* we have jobs to run */
         {
             // create the benchmark jobs
             jlist->jobs = (job_t*) malloc(
-                    opts.common_opt.n_calls * opts.common_opt.n_msize * sizeof(job_t));
+                    opts->n_calls * opts->n_msize * sizeof(job_t));
 
             i = 0;
-            for (sizeindex = 0; sizeindex < opts.common_opt.n_msize; sizeindex++) {
-                for (cindex = 0; cindex < opts.common_opt.n_calls; cindex++) {
-                    jlist->jobs[i].msize = opts.common_opt.msize_list[sizeindex];
-                    jlist->jobs[i].call_index = opts.common_opt.list_mpi_calls[cindex];
-                    jlist->jobs[i].n_rep = opts.n_rep;
+            for (sizeindex = 0; sizeindex < opts->n_msize; sizeindex++) {
+                for (cindex = 0; cindex < opts->n_calls; cindex++) {
+                    jlist->jobs[i].msize = opts->msize_list[sizeindex];
+                    jlist->jobs[i].call_index = opts->list_mpi_calls[cindex];
+                    jlist->jobs[i].n_rep = predefined_n_rep;
 
                     i++;
                 }
@@ -156,7 +156,7 @@ void generate_job_list(reprompib_options_t opts, job_list_t* jlist) {
             for (i = 0; i < jlist->n_jobs; i++) {
                 jlist->job_indices[i] = i;
             }
-            if (opts.common_opt.enable_job_shuffling > 0) {
+            if (opts->enable_job_shuffling > 0) {
                 shuffle(jlist->job_indices, jlist->n_jobs);
             }
 

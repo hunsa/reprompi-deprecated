@@ -25,8 +25,6 @@
 #include <stdio.h>
 #include <mpi.h>
 
-#include "reprompi_bench/misc.h"
-
 static const int OUTPUT_ROOT_PROC = 0;
 
 void reprompib_print_common_help(void) {

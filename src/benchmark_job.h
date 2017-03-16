@@ -40,7 +40,7 @@ typedef struct {
 
 } job_list_t;
 
-void generate_job_list(reprompib_options_t opts, job_list_t* jlist);
+void generate_job_list(const reprompib_common_options_t *opts, const int predefined_n_rep, job_list_t* jlist);
 void cleanup_job_list(job_list_t jobs);
 
 #endif /* BENCHMARK_JOB_H_ */
