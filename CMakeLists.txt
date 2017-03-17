@@ -230,7 +230,7 @@ if (COMPILE_SANITY_CHECK_TESTS)
 endif()
 
 if (COMPILE_PRED_BENCHMARK)
-    #ADD_SUBDIRECTORY(${SRC_DIR}/pred_bench)
+    ADD_SUBDIRECTORY(${SRC_DIR}/pred_bench)
     ADD_SUBDIRECTORY(${SRC_DIR}/nrep_prediction)
 endif()
 

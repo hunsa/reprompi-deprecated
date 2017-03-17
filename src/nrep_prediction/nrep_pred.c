@@ -182,7 +182,6 @@ int main(int argc, char* argv[]) {
   long round_start_index;
 
   /* start up MPI
-   *
    * */
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);

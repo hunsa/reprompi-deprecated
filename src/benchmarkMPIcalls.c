@@ -184,15 +184,6 @@ int main(int argc, char* argv[]) {
             sync_f.stop_sync();
         }
 
-        /*        if (my_rank == 1) {
-            for (i=0; i< job.msize;i++) {
-                printf("%c " , coll_params.rbuf[i]);
-            }
-            printf("\n");
-
-        }
-
-         */
         //print summarized data
         reprompib_print_bench_output(job, tstart_sec, tend_sec, sync_f.get_errorcodes,
                 sync_f.get_normalized_time, opts);

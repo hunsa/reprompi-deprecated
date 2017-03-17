@@ -47,6 +47,17 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
+static int cmpfunc (const void * a, const void * b)
+{
+  if (*(double*)a > *(double*)b) {
+    return 1;
+  } else if (*(double*)a < *(double*)b) {
+    return -1;
+  } else {
+    return 0;
+  }
+}
+
 void print_measurement_results_prediction(job_t job, reprompib_common_options_t opts,
         double* maxRuntimes_sec, int verbose, nrep_pred_params_t pred_params,
         pred_conditions_t conds) {
@@ -65,19 +76,19 @@ void print_measurement_results_prediction(job_t job, reprompib_common_options_t 
             f = fopen(opts.output_file, "a");
         }
 
+        if (job.n_rep == 0) {   // no correct results
+            // runtime_sec = 0;
+            mean_runtime_sec = 0;
+            median_runtime_sec = 0;
+        }
+        else {      // print the last measured runtime
+            //runtime_sec = maxRuntimes_sec[job.n_rep - 1];
+            mean_runtime_sec = gsl_stats_mean(maxRuntimes_sec, 1, job.n_rep);
+            qsort(maxRuntimes_sec, job.n_rep, sizeof(double), cmpfunc);
+            median_runtime_sec = gsl_stats_median_from_sorted_data  (maxRuntimes_sec, 1, job.n_rep);
+        }
+
         for (j=0; j < conds.n_methods; j++) {
-
-            if (job.n_rep == 0) {   // no correct results
-                // runtime_sec = 0;
-                mean_runtime_sec = 0;
-                median_runtime_sec = 0;
-            }
-            else {      // print the last measured runtime
-                //runtime_sec = maxRuntimes_sec[job.n_rep - 1];
-                mean_runtime_sec = gsl_stats_mean(maxRuntimes_sec, 1, job.n_rep);
-                median_runtime_sec = gsl_stats_quantile_from_sorted_data (maxRuntimes_sec, 1, job.n_rep, 0.5);
-            }
-
             fprintf(f, "%s %ld %ld %.10f %.10f %s %.10f\n", get_call_from_index(job.call_index), job.n_rep,
                     job.msize, mean_runtime_sec, median_runtime_sec, get_prediction_methods_list()[pred_params.info[j].method],
                     conds.conditions[j]);
@@ -223,7 +234,6 @@ int main(int argc, char* argv[]) {
     reprompib_dictionary_t params_dict;
 
     /* start up MPI
-     *
      * */
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -293,12 +303,6 @@ int main(int argc, char* argv[]) {
 
         while (1) {
 
-            /*if (my_rank==0) {
-                fprintf(stdout, "starting new nrep=%ld current_meas_index=%d runt_index=%d \n",
-                        nrep, current_index, runtimes_index );
-            }
-             */
-
             // main measurement loop
             for (i = 0; i < nrep; i++) {
                 sync_f.start_sync();
@@ -352,12 +356,6 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
-
-        /*if (my_rank==0) {
-            fprintf(stdout, "=================\n runt_index=%d \n",
-                     runtimes_index );
-        }
-         */
 
         job.n_rep = runtimes_index;
         // print_results
