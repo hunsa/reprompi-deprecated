@@ -43,6 +43,7 @@ reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv
 
     optind = 1;
     optopt = 0;
+    opterr = 0; // ignore invalid options
     while (1) {
 
         /* getopt_long stores the option index here. */
@@ -69,9 +70,7 @@ reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv
             break;
 
         case '?':
-            //printf("Unknown option %s\n\n", optarg);
-            //print_help();
-            ret |= ERROR_UNKNOWN_OPTION;
+             break;
         }
     }
 
@@ -94,6 +93,7 @@ reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv
      */
 
     optind = 1;	// reset optind to enable option re-parsing
+    opterr = 1; // reset opterr
     return ret;
 }
 

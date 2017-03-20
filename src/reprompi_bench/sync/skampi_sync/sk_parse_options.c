@@ -42,6 +42,7 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
 
     optind = 1;
     optopt = 0;
+    opterr = 0; // ignore invalid options
     while (1) {
 
         /* getopt_long stores the option index here. */
@@ -60,7 +61,7 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
             break;
 
         case '?':
-            ret |= ERROR_UNKNOWN_OPTION;
+            break;
         }
     }
 
@@ -75,5 +76,6 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
      printf("# 	window=%lf \n", opts_p->window_size_sec);
      */
     optind = 1;	// reset optind to enable option re-parsing
+    opterr = 1; // reset opterr
     return ret;
 }
