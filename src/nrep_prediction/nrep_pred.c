@@ -292,11 +292,15 @@ int main(int argc, char* argv[]) {
       estimated_nreps = compute_nreps(summ.min, pred_params.time_limit_s, OUTPUT_ROOT_PROC);
 
       if (estimated_nreps < pred_params.min_nrep) {
-        fprintf(stderr, "WARNING: Estimated nreps too small (%ld). Using specified min: %ld\n", estimated_nreps,
+        fprintf(stderr, "WARNING: %s, msize=%ld: Estimated nreps too small (%ld). Using specified min: %ld\n",
+            get_call_from_index(job.call_index), job.msize,
+            estimated_nreps,
             pred_params.min_nrep);
         estimated_nreps = pred_params.min_nrep;
       } else if (estimated_nreps > pred_params.max_nrep) {
-        fprintf(stderr, "WARNING: Estimated nreps too large (%ld). Using specified max: %ld\n", estimated_nreps,
+        fprintf(stderr, "WARNING: %s, msize=%ld: Estimated nreps too large (%ld). Using specified max: %ld\n",
+            get_call_from_index(job.call_index), job.msize,
+            estimated_nreps,
             pred_params.max_nrep);
 
         estimated_nreps = pred_params.max_nrep;
