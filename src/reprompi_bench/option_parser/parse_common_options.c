@@ -39,6 +39,7 @@
 #include "reprompi_bench/misc.h"
 #include "parse_common_options.h"
 
+static const int LEN_MPICALLS_BATCH = 10;
 static const int LEN_MSIZES_BATCH = 10;
 static const int STRING_SIZE = 256;
 
@@ -192,40 +193,35 @@ static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options
 static reprompib_error_t parse_call_list(char* subopts, reprompib_common_options_t* opts_p) {
     reprompib_error_t ok = SUCCESS;
     char * value;
-    int index, i;
-    unsigned int calls = 0;
+    int mpicall_index, i;
 
+    opts_p->list_mpi_calls = (int*) calloc(LEN_MPICALLS_BATCH, sizeof(int));
     opts_p->n_calls = 0;
 
+    i = 0;
     while (*subopts != '\0') {
-        index = getsubopt(&subopts, get_mpi_calls_list(), &value);
-        if (index >=0 && index < N_MPI_CALLS) {
-            if (calls & (1 << index) ) { // already have this MPI call, keep it only once
-                continue;
-            }
-            calls |= 1 << index;
-            opts_p->n_calls++;
+        mpicall_index = getsubopt(&subopts, get_mpi_calls_list(), &value);  // returns -1 on error
+
+        if (mpicall_index >=0 && mpicall_index < N_MPI_CALLS) { // valid mpi call
+          opts_p->list_mpi_calls[i++] = mpicall_index;
+          opts_p->n_calls++;
+
+          if (i % LEN_MPICALLS_BATCH == 0) {
+            opts_p->list_mpi_calls = (int*) realloc(opts_p->list_mpi_calls, (i + LEN_MPICALLS_BATCH) * sizeof(int));
+          }
         }
         else {
             ok |= ERROR_MPI_CALL_LIST;
+            break;
         }
     }
 
     if (opts_p->n_calls > 0) {
-        index = 0;
-        opts_p->list_mpi_calls = (int*) malloc(opts_p->n_calls * sizeof(int));
+      opts_p->list_mpi_calls = (int*) realloc(opts_p->list_mpi_calls, opts_p->n_calls * sizeof(int));
 
-        i = 0;
-        while (i < opts_p->n_calls && calls > 0) {
-            if (calls % 2)
-                opts_p->list_mpi_calls[i++] = index;
-            calls = calls >> 1;
-            index++;
-        }
-
-    }
-
-    if (opts_p->n_calls <= 0) {
+    } else {
+        free(opts_p->list_mpi_calls);
+        opts_p->list_mpi_calls = NULL;
         ok |= ERROR_MPI_CALL_LIST_EMPTY;
     }
 
