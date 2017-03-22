@@ -129,6 +129,7 @@ ${SRC_DIR}/collective_ops/mpi_reduce_mockups.c
 ${SRC_DIR}/collective_ops/mpi_reduce_scatter_mockups.c
 ${SRC_DIR}/collective_ops/mpi_scan_mockups.c
 ${SRC_DIR}/collective_ops/mpi_scatter_mockups.c
+${SRC_DIR}/collective_ops/pingpong.c
 )
 
 set(COMMON_OPTION_PARSER_SRC_FILES

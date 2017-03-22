@@ -185,6 +185,26 @@ const collective_ops_t collective_calls[] = {
                 &initialize_data_GL_Scatter_as_Bcast,
                 &cleanup_data_GL_Scatter_as_Bcast
         },
+        [PINGPONG_SEND_RECV] = {
+                &execute_pingpong_Send_Recv,
+                &initialize_data_pingpong,
+                &cleanup_data_pingpong
+        },
+        [PINGPONG_SENDRECV] = {
+                &execute_pingpong_Sendrecv,
+                &initialize_data_pingpong,
+                &cleanup_data_pingpong
+        },
+        [PINGPONG_ISEND_RECV] = {
+                &execute_pingpong_Isend_Recv,
+                &initialize_data_pingpong,
+                &cleanup_data_pingpong
+        },
+        [PINGPONG_ISEND_IRECV] = {
+                &execute_pingpong_Isend_Irecv,
+                &initialize_data_pingpong,
+                &cleanup_data_pingpong
+        },
         [BBARRIER] = {
                 &execute_BBarrier,
                 &initialize_data_default,
@@ -230,6 +250,10 @@ static char* const mpi_calls_opts[] = {
         [GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER] = "GL_Reduce_scatter_block_as_ReduceScatter",
         [GL_SCAN_AS_EXSCANREDUCELOCAL] = "GL_Scan_as_ExscanReducelocal",
         [GL_SCATTER_AS_BCAST] = "GL_Scatter_as_Bcast",
+        [PINGPONG_SEND_RECV] = "Send_Recv",
+        [PINGPONG_SENDRECV] = "Sendrecv",
+        [PINGPONG_ISEND_RECV] = "Isend_Recv",
+        [PINGPONG_ISEND_IRECV] = "Isend_Irecv",
         [BBARRIER] = "BBarrier",
         [EMPTY] = "Empty",
         NULL
@@ -311,6 +335,9 @@ void initialize_common_data(const basic_collective_params_t info,
 
     params->root = info.root;
 
+    params->pingpong_ranks[0] = info.pingpong_ranks[0];
+    params->pingpong_ranks[1] = info.pingpong_ranks[1];
+
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->tmp_buf = NULL;
@@ -325,6 +352,9 @@ void init_collective_basic_info(reprompib_common_options_t opts, int procs, basi
     coll_basic_info->nprocs = procs;
     coll_basic_info->op = opts.operation;
     coll_basic_info->root = 0;
+
+    coll_basic_info->pingpong_ranks[0] = opts.pingpong_ranks[0];
+    coll_basic_info->pingpong_ranks[1] = opts.pingpong_ranks[1];
 
     if (opts.root_proc >= 0 && opts.root_proc < procs) {
         coll_basic_info->root = opts.root_proc;

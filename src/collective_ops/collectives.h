@@ -58,6 +58,10 @@ enum {
     GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER,
     GL_SCAN_AS_EXSCANREDUCELOCAL,
     GL_SCATTER_AS_BCAST,
+    PINGPONG_SEND_RECV,
+    PINGPONG_SENDRECV,
+    PINGPONG_ISEND_RECV,
+    PINGPONG_ISEND_IRECV,
     BBARRIER,
     EMPTY,
     N_MPI_CALLS         // number of calls
@@ -79,6 +83,9 @@ typedef struct collparams {
     int rcount;
     int* counts_array;
     int* displ_array;
+
+    // parameters relevant for ping-pong operations
+    int pingpong_ranks[2];
 } collective_params_t;
 
 
@@ -87,6 +94,9 @@ typedef struct basic_collparams {
     int root;
     MPI_Datatype datatype;
     MPI_Op op;
+
+    // parameters relevant for ping-pong operations
+    int pingpong_ranks[2];
 } basic_collective_params_t;
 
 
@@ -145,6 +155,12 @@ void execute_GL_Scan_as_ExscanReducelocal(collective_params_t* params);
 void execute_GL_Scatter_as_Bcast(collective_params_t* params);
 
 
+// pingpong operations
+void execute_pingpong_Send_Recv(collective_params_t* params);
+void execute_pingpong_Isend_Recv(collective_params_t* params);
+void execute_pingpong_Isend_Irecv(collective_params_t* params);
+void execute_pingpong_Sendrecv(collective_params_t* params);
+
 
 
 // buffer initialization functions
@@ -180,6 +196,10 @@ void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collec
 void initialize_data_GL_Scan_as_ExscanReducelocal(const basic_collective_params_t info, const long msize, collective_params_t* params);
 void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, const long msize, collective_params_t* params);
 
+// buffer initialization for pingpongs
+void initialize_data_pingpong(const basic_collective_params_t info, const long msize, collective_params_t* params);
+
+
 // buffer cleanup functions
 void cleanup_data_default(collective_params_t* params);
 
@@ -211,6 +231,11 @@ void cleanup_data_GL_Reduce_scatter_as_ReduceScatterv(collective_params_t* param
 void cleanup_data_GL_Reduce_scatter_block_as_ReduceScatter(collective_params_t* params);
 void cleanup_data_GL_Scan_as_ExscanReducelocal(collective_params_t* params);
 void cleanup_data_GL_Scatter_as_Bcast(collective_params_t* params);
+
+
+// buffer initialization for pingpongs
+void cleanup_data_pingpong(collective_params_t* params);
+
 
 #endif /* COLLECTIVES_H_ */
 
