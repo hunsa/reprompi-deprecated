@@ -48,7 +48,7 @@ reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv) 
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, lm_opts_str, lm_long_options,
+        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
@@ -56,15 +56,15 @@ reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv) 
             break;
 
         switch (c) {
-        case '1': /* window size */
+        case REPROMPI_ARGS_WINSYNC_WIN_SIZE: /* window size */
             opts_p->window_size_sec = atof(optarg) * 1e-6;
             break;
 
-        case '2': /* number of fit points for the linear model */
+        case REPROMPI_ARGS_WINSYNC_NFITPOINTS: /* number of fit points for the linear model */
             opts_p->n_fitpoints = atoi(optarg);
             break;
 
-        case '3': /* number of exchanges for the linear model */
+        case REPROMPI_ARGS_WINSYNC_NEXCHANGES: /* number of exchanges for the linear model */
             opts_p->n_exchanges = atoi(optarg);
             break;
 

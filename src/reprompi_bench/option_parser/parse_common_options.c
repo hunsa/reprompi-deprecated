@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <errno.h>
 #include <mpi.h>
 #include "option_parser_helpers.h"
 #include "option_parser_constants.h"
@@ -72,6 +73,8 @@ static void init_parameters(reprompib_common_options_t* opts_p) {
     opts_p->operation = MPI_BOR;
     opts_p->datatype = MPI_CHAR;
 
+    opts_p->pingpong_ranks[0] = -1;
+    opts_p->pingpong_ranks[1] = -1;
 }
 
 void reprompib_free_common_parameters(const reprompib_common_options_t* opts_p) {
@@ -341,6 +344,70 @@ static reprompib_error_t parse_datatype(char* arg, reprompib_common_options_t* o
     return ok;
 }
 
+
+static reprompib_error_t parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_p) {
+    reprompib_error_t ok = SUCCESS;
+    char* ranks_tok;
+    char* save_str;
+    char* s;
+    int index;
+    int rank;
+    char *endptr;
+    int nprocs, my_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    save_str = (char*) malloc(STRING_SIZE * sizeof(char));
+    s = save_str;
+
+    /* Parse the list of ping-pong ranks */
+    ranks_tok = strtok_r(optarg, ",", &save_str);
+    index = 0;
+    while (ranks_tok != NULL) {
+
+      errno = 0;    /* To distinguish success/failure after strtol */
+      rank = strtol(ranks_tok, &endptr, 10);
+
+      if (errno != 0 || endptr == ranks_tok)  {
+        ok = ERROR_UNKNOWN_OPTION;
+        break;
+      }
+
+      printf("rank=%d\n", rank);
+      if (rank < 0 || rank >= nprocs) {
+        ok = ERROR_UNKNOWN_OPTION;
+        break;
+      } else {
+
+        if (index >= 2) { // cannot have more than two pingpong ranks
+          ok = ERROR_UNKNOWN_OPTION;
+          break;
+        }
+        opts_p->pingpong_ranks[index++] = rank;
+        ranks_tok = strtok_r(NULL, ",", &save_str);
+      }
+    }
+
+    free(s);
+
+    if (index != 2) { // we need two ranks for the pingpong
+      ok = ERROR_UNKNOWN_OPTION;
+    }
+
+    if (opts_p->pingpong_ranks[0] == opts_p->pingpong_ranks[1]) { // the pingpong ranks should be different
+      ok = ERROR_UNKNOWN_OPTION;
+    }
+
+    if (ok != SUCCESS) {
+      if (my_rank == OUTPUT_ROOT_PROC) {
+        fprintf(stderr, "\nERROR: Invalid ping-pong ranks (only two different positive integers that are smaller than the total number of processes are accepted)\n");
+      }
+      MPI_Finalize();
+      exit(0);
+    }
+    return ok;
+}
+
 reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv, reprompib_dictionary_t* dict) {
     int c;
     reprompib_error_t ret = SUCCESS;
@@ -356,7 +423,7 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, default_opts_str, default_long_options,
+        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
@@ -365,46 +432,49 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
 
         switch (c) {
 
-        case 'v': /* verbose flag */
+        case REPROMPI_ARGS_VERBOSE: /* verbose flag */
             opts_p->verbose = 1;
             break;
 
-        case 'f': /* input file */
+        case REPROMPI_ARGS_INPUT_FILE: /* input file */
             opts_p->input_file = (char*)malloc((strlen(optarg)+1) * sizeof(char));
             strcpy(opts_p->input_file, optarg);
             break;
 
-        case 'a': /* list of calls */
+        case REPROMPI_ARGS_CALLS_LIST: /* list of calls */
 
             ret |= parse_call_list(optarg, opts_p);
             break;
 
-        case 'b': /* list of message sizes */
+        case REPROMPI_ARGS_MSIZES_LIST: /* list of message sizes */
             ret |= parse_msize_list(optarg, opts_p);
             break;
 
-        case 'c':
+        case REPROMPI_ARGS_MSIZES_INTERVAL:
             /* Interval of power of 2 message sizes */
             ret |= parse_msize_interval(optarg, opts_p);
             break;
-        case 'z': /* list of key-value parameters */
+        case REPROMPI_ARGS_PARAMS: /* list of key-value parameters */
             ret |= parse_keyvalue_list(optarg, opts_p, dict);
             break;
-        case '5': /* set root node for collective function */
+        case REPROMPI_ARGS_ROOT_PROC: /* set root node for collective function */
             opts_p->root_proc = atoi(optarg);
             break;
-        case '6': /* set operation for collective function */
+        case REPROMPI_ARGS_OPERATION: /* set operation for collective function */
             ret |= parse_operation(optarg, opts_p);
             break;
-        case '7': /* set operation for collective function */
+        case REPROMPI_ARGS_DATATYPE: /* set operation for collective function */
             ret |= parse_datatype(optarg, opts_p);
             break;
-        case '8': /* enable job shuffling */
+        case REPROMPI_ARGS_SHUFFLE_JOBS: /* enable job shuffling */
             opts_p->enable_job_shuffling = 1;
             break;
-        case '9': /* enable job shuffling */
+        case REPROMPI_ARGS_OUTPUT_FILE: /* path to an output file */
             opts_p->output_file = (char*)malloc((strlen(optarg)+1) * sizeof(char));
             strcpy(opts_p->output_file, optarg);
+            break;
+        case REPROMPI_ARGS_PINGPONG_RANKS: /* set the ranks between which to run the ping-pong operations*/
+            parse_pingpong_ranks(optarg, opts_p);
             break;
         case '?':
             break;
@@ -452,19 +522,6 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
         ret = SUCCESS;
     }
 
-    /*	if (is_rootproc())
-     {
-     int i;
-     printf("# Run options: \n");
-     printf("# 	total repetitions=%ld \n", opts_p->n_rep);
-     printf("# 	MPI call indexes:\n");
-     for (i=0; i< opts_p->n_calls; i++)
-     printf ("#		%s\n", get_call_from_index(opts_p->list_mpi_calls[i]));
-     printf("#	Message sizes:\n");
-     for (i=0; i< opts_p->n_msize; i++)
-     printf("#		%ld\n", opts_p->msize_list[i]);
-     }
-     */
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1;	// reset opterr to catch invalid options
     return ret;

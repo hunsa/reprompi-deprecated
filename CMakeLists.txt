@@ -132,6 +132,7 @@ ${SRC_DIR}/collective_ops/mpi_scatter_mockups.c
 )
 
 set(COMMON_OPTION_PARSER_SRC_FILES
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_constants.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_common_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 )

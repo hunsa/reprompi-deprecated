@@ -43,6 +43,8 @@ typedef struct reprompib_common_opt {
     char* input_file;
     char* output_file;
 
+    // parameters relevant for ping-pong operations
+    int pingpong_ranks[2];
 } reprompib_common_options_t;
 
 

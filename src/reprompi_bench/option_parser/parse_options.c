@@ -117,7 +117,7 @@ reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc,
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, default_opts_str, default_long_options,
+        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
@@ -126,15 +126,15 @@ reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc,
 
         switch (c) {
 
-        case 'r': /* total number of (correct) repetitions */
+        case REPROMPI_ARGS_NREPS: /* total number of (correct) repetitions */
             opts_p->n_rep = atol(optarg);
             break;
 
-        case 's': /* list of summary options */
+        case REPROMPI_ARGS_SUMMARY: /* list of summary options */
             ret |= parse_summary_list(optarg, opts_p);
             break;
 
-        case 'h':
+        case REPROMPI_ARGS_HELP:
             reprompib_print_benchmark_help();
             printhelp = 1;
             break;
