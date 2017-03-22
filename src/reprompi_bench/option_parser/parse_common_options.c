@@ -372,8 +372,6 @@ static reprompib_error_t parse_pingpong_ranks(char* optarg, reprompib_common_opt
         ok = ERROR_UNKNOWN_OPTION;
         break;
       }
-
-      printf("rank=%d\n", rank);
       if (rank < 0 || rank >= nprocs) {
         ok = ERROR_UNKNOWN_OPTION;
         break;
