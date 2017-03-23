@@ -123,8 +123,10 @@ void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t
         fprintf(f, "#@operation=%s\n", get_mpi_operation_str(opts.operation));
         fprintf(f, "#@datatype=%s\n", type_name);
         fprintf(f, "#@root_proc=%d\n", opts.root_proc);
-        fprintf(f, "#@pingpong_ranks=%d,%d\n", opts.pingpong_ranks[0], opts.pingpong_ranks[1]);
 
+        if (opts.pingpong_ranks[0] >=0 && opts.pingpong_ranks[1] >=0) {
+          fprintf(f, "#@pingpong_ranks=%d,%d\n", opts.pingpong_ranks[0], opts.pingpong_ranks[1]);
+        }
         print_common_settings_to_file(f, opts, print_sync_info, dict);
     }
 }

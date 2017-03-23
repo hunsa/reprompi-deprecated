@@ -47,6 +47,8 @@ void reprompib_print_common_help(void) {
                 "list of power of 2 message sizes as an interval between 2^<min> and 2^<max>,",
                 "", "with <step> distance between values, ", "",
                 "e.g., --msize-interval min=1,max=4,step=1");
+        printf("%-40s %-40s\n", "--pingpong-ranks=<rank1,rank2>",
+                "two comma-separated ranks to be used for the ping-pong operations");
         printf("%-40s %-40s\n", "--root-proc=<process_id>",
                 "root node for collective operations");
         printf("%-40s %-40s\n %50s%s\n", "--operation=<mpi_op>",
@@ -68,10 +70,11 @@ void reprompib_print_common_help(void) {
         printf("%-40s %-40s\n %50s%s\n", "--calls-list=<args>",
                 "list of comma-separated MPI calls to be benchmarked,", "",
                 "e.g., --calls-list=MPI_Bcast,MPI_Allgather");
-        printf("%40s Supported MPI calls:\n", "");
-        printf("%50s%s\n%50s%s", "",
+        printf("%40s Supported MPI calls (and ping-pong operations):\n", "");
+        printf("%50s%s\n%50s%s\n%50s%s", "",
                 "MPI_Bcast, MPI_Alltoall, MPI_Allgather, MPI_Scan, MPI_Gather,",
-                "","MPI_Scatter, MPI_Reduce, MPI_Allreduce, MPI_Barrier\n");
+                "", "MPI_Scatter, MPI_Reduce, MPI_Allreduce, MPI_Barrier, Send_Recv,",
+                "", "Isend_Recv, Isend_Irecv, Sendrecv\n");
 
         printf("\nWindow-based synchronization options:\n");
         printf("%-40s %-40s\n", "--window-size=<win>",
@@ -111,6 +114,7 @@ void reprompib_print_benchmark_help(void) {
         printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msize-interval min=1,max=8,step=1 -r 5\n");
         printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 -r 5 --fitpoints=10 --exchanges=20\n");
         printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 -r 5 --params=p1:1,p2:aaa,p3:34\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=Sendrecv --msizes-list=10 --pingpong-ranks=0,3 -r 5 --summary \n");
 
         printf("\n\n");
     }

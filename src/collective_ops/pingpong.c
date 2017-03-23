@@ -178,7 +178,8 @@ void initialize_data_pingpong(const basic_collective_params_t info, const long m
    if (local_proc_name_len == other_proc_name_len &&    // print warning if the two ranks are on the same node
        strcmp(local_proc_name, other_proc_name) == 0) {
          if (params->rank == params->pingpong_ranks[0]) {
-           fprintf(stderr, "WARNING: The two ping-pong ranks are running on the same node (%s)\n", local_proc_name);
+           fprintf(stderr, "WARNING: The two ping-pong ranks (%d, %d) are running on the same node (%s)\n",
+               params->pingpong_ranks[0], params->pingpong_ranks[1], local_proc_name);
          }
    }
 
