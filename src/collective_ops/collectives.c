@@ -205,6 +205,11 @@ const collective_ops_t collective_calls[] = {
                 &initialize_data_pingpong,
                 &cleanup_data_pingpong
         },
+        [PINGPONG_SEND_IRECV] = {
+                &execute_pingpong_Send_Irecv,
+                &initialize_data_pingpong,
+                &cleanup_data_pingpong
+        },
         [BBARRIER] = {
                 &execute_BBarrier,
                 &initialize_data_default,
@@ -254,6 +259,7 @@ static char* const mpi_calls_opts[] = {
         [PINGPONG_SENDRECV] = "Sendrecv",
         [PINGPONG_ISEND_RECV] = "Isend_Recv",
         [PINGPONG_ISEND_IRECV] = "Isend_Irecv",
+        [PINGPONG_SEND_IRECV] = "Send_Irecv",
         [BBARRIER] = "BBarrier",
         [EMPTY] = "Empty",
         NULL

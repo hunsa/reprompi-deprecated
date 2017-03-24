@@ -62,6 +62,7 @@ enum {
     PINGPONG_SENDRECV,
     PINGPONG_ISEND_RECV,
     PINGPONG_ISEND_IRECV,
+    PINGPONG_SEND_IRECV,
     BBARRIER,
     EMPTY,
     N_MPI_CALLS         // number of calls
@@ -159,6 +160,7 @@ void execute_GL_Scatter_as_Bcast(collective_params_t* params);
 void execute_pingpong_Send_Recv(collective_params_t* params);
 void execute_pingpong_Isend_Recv(collective_params_t* params);
 void execute_pingpong_Isend_Irecv(collective_params_t* params);
+void execute_pingpong_Send_Irecv(collective_params_t* params);
 void execute_pingpong_Sendrecv(collective_params_t* params);
 
 
