@@ -53,91 +53,114 @@ inline void execute_pingpong_Send_Recv(collective_params_t* params) {
 /***************************************/
 // MPI_Isend + MPI_Recv
 inline void execute_pingpong_Isend_Recv(collective_params_t* params) {
-  int src_rank, dest_rank;
+  int src_rank, dst_rank;
   int recv_rank;
+  int flag = 0;
   MPI_Status stat;
   MPI_Request req;
 
-  src_rank = params->pingpong_ranks[0];
-  dest_rank = params->pingpong_ranks[1];
-  assert(src_rank != dest_rank);
+  src_rank  = params->pingpong_ranks[0];
+  dst_rank = params->pingpong_ranks[1];
+  assert(src_rank != dst_rank);
 
   if (params->rank == src_rank) {
-    recv_rank = dest_rank;
-  } else {
+    recv_rank = dst_rank;
+    flag = 1;
+  } else if( params->rank == dst_rank ) {
     recv_rank = src_rank;
+    flag = 1;
   }
-  MPI_Isend(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &req);
-  MPI_Recv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &stat);
-  MPI_Wait(&req, &stat);
+
+  if( flag == 1 ) {
+    MPI_Isend(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &req);
+    MPI_Recv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &stat);
+    MPI_Wait(&req, &stat);
+  }
 }
 
 /***************************************/
 // MPI_Isend + MPI_Irecv
 inline void execute_pingpong_Isend_Irecv(collective_params_t* params) {
-  int src_rank, dest_rank;
+  int src_rank, dst_rank;
   const int nreqs = 2;
   int recv_rank;
+  int flag = 0;
   MPI_Request reqs[nreqs];
   MPI_Status stats[nreqs];
 
   src_rank = params->pingpong_ranks[0];
-  dest_rank = params->pingpong_ranks[1];
-  assert(src_rank != dest_rank);
+  dst_rank = params->pingpong_ranks[1];
+  assert(src_rank != dst_rank);
 
   if (params->rank == src_rank) {
-    recv_rank = dest_rank;
-  } else {
+    recv_rank = dst_rank;
+    flag = 1;
+  } else if( params->rank == dst_rank ) {
     recv_rank = src_rank;
+    flag = 1;
   }
 
-  MPI_Isend(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &reqs[0]);
-  MPI_Irecv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &reqs[1]);
-  MPI_Waitall(nreqs, reqs, stats);
+  if( flag == 1 ) {
+    MPI_Isend(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &reqs[0]);
+    MPI_Irecv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &reqs[1]);
+    MPI_Waitall(nreqs, reqs, stats);
+  }
 }
 
 /***************************************/
 // MPI_Send + MPI_Irecv
 inline void execute_pingpong_Send_Irecv(collective_params_t* params) {
-  int src_rank, dest_rank;
+  int src_rank, dst_rank;
   int recv_rank;
+  int flag = 0;
   MPI_Request req;
   MPI_Status stat;
 
   src_rank  = params->pingpong_ranks[0];
-  dest_rank = params->pingpong_ranks[1];
-  assert(src_rank != dest_rank);
+  dst_rank  = params->pingpong_ranks[1];
+  assert(src_rank != dst_rank);
 
   if (params->rank == src_rank) {
-    recv_rank = dest_rank;
-  } else {
+    recv_rank = dst_rank;
+    flag = 1;
+  } else if( params->rank == dst_rank ) {
     recv_rank = src_rank;
+    flag = 1;
   }
 
-  MPI_Irecv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &req);
-  MPI_Send(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD);
-  MPI_Wait(&req, &stat);
+  if( flag == 1 ) {
+    MPI_Irecv(params->rbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD, &req);
+    MPI_Send(params->sbuf, params->msize, params->datatype, recv_rank, TAG, MPI_COMM_WORLD);
+    MPI_Wait(&req, &stat);
+  }
 }
 
 /***************************************/
 // MPI_Sendrecv
 inline void execute_pingpong_Sendrecv(collective_params_t* params) {
-  int src_rank, dest_rank;
+  int src_rank, dst_rank;
   int recv_rank;
   MPI_Status stat;
+  int flag = 0;
 
-  src_rank = params->pingpong_ranks[0];
-  dest_rank = params->pingpong_ranks[1];
-  assert(src_rank != dest_rank);
+  src_rank  = params->pingpong_ranks[0];
+  dst_rank = params->pingpong_ranks[1];
+  assert(src_rank != dst_rank);
 
   if (params->rank == src_rank) {
-    recv_rank = dest_rank;
-  } else {
+    recv_rank = dst_rank;
+    flag = 1;
+  } else if (params->rank == dst_rank) {
     recv_rank = src_rank;
+    flag = 1;
   }
-  MPI_Sendrecv(params->sbuf, params->msize, params->datatype, recv_rank, TAG, params->rbuf, params->msize,
-      params->datatype, dest_rank, TAG,
-      MPI_COMM_WORLD, &stat);
+
+  if( flag == 1 ) {
+    MPI_Sendrecv(params->sbuf, params->msize, params->datatype, recv_rank, TAG, params->rbuf, params->msize,
+        params->datatype, recv_rank, TAG,
+        MPI_COMM_WORLD, &stat);
+  }
+
 }
 
 void initialize_data_pingpong(const basic_collective_params_t info, const long msize, collective_params_t* params) {
