@@ -244,7 +244,7 @@ reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, default_opts_str, default_long_options,
+        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
@@ -253,27 +253,27 @@ reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char
 
         switch (c) {
 
-        case 'p':
+        case REPROMPI_ARGS_NREPPRED_NREP_LIMITS:
             /* Settings for estimating the number of repetitions */
             ret |= parse_nreps_interval(optarg, opts_p);
             break;
 
-        case 'd':
+        case REPROMPI_ARGS_NREPPRED_PRED_METHOD:
             /* List of methods estimating the number of repetitions */
             ret |= parse_prediction_methods(optarg, opts_p);
             break;
 
-        case 't':
+        case REPROMPI_ARGS_NREPPRED_VAR_THRES:
             /* List of method thresholds for estimating the number of repetitions */
             ret |= parse_prediction_thresholds(optarg, opts_p);
             break;
 
-        case 'w':
+        case REPROMPI_ARGS_NREPPRED_VAR_WIN:
             /* List of method windows for estimating the number of repetitions */
             ret |= parse_prediction_windows(optarg, opts_p);
             break;
 
-        case 'h':
+        case REPROMPI_ARGS_HELP:
             reprompib_print_prediction_help();
             printhelp = 1;
             break;
