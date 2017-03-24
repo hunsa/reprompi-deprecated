@@ -106,13 +106,13 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
     double* maxRuntimes_sec;
     int i;
     int my_rank;
-    int* sync_errorcodes;
     long current_start_index;
-
+#ifdef ENABLE_WINDOWSYNC
+    int* sync_errorcodes = NULL;
+#endif
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     maxRuntimes_sec = NULL;
-    sync_errorcodes = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
         maxRuntimes_sec = (double*) malloc(job.n_rep * sizeof(double));
 
@@ -290,13 +290,14 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
     double* maxRuntimes_sec;
     int i;
     int my_rank;
-    int* sync_errorcodes;
     long current_start_index;
+#ifdef ENABLE_WINDOWSYNC
+    int* sync_errorcodes = NULL;
+#endif
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     maxRuntimes_sec = NULL;
-    sync_errorcodes = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
         maxRuntimes_sec = (double*) malloc(job.n_rep * sizeof(double));
 

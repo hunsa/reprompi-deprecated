@@ -34,6 +34,7 @@ typedef struct {
     long n_rep; /* --repetitions */
     double window_size_sec; /* --window-size */
 
+    double wait_time_sec; /* --wait-time */
 } sk_options_t;
 
 

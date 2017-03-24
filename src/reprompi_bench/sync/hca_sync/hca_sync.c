@@ -34,6 +34,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
+#include "reprompi_bench/sync/sync_constants.h"
 #include "hca_parse_options.h"
 #include "hca_sync.h"
 
@@ -438,9 +439,11 @@ void print_models(int my_rank, lm_t *linear_models, int nprocs, int round) {
 
 
 void hca_init_parameters(hca_options_t* opts_p) {
-    opts_p->window_size_sec = 0;
-    opts_p->n_fitpoints = 20;
-    opts_p->n_exchanges = 10;
+    opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
+    opts_p->n_fitpoints = REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
+    opts_p->n_exchanges = REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
+    opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
+
     opts_p->n_rep = 0;
 }
 
@@ -670,7 +673,7 @@ void hca_init_synchronization(void) {
 
     repetition_counter = 0;
     if( my_rank == master_rank ) {
-        start_sync = hca_get_adjusted_time() + parameters.window_size_sec;
+        start_sync = hca_get_adjusted_time() + parameters.wait_time_sec;
     }
     MPI_Bcast(&start_sync, 1, MPI_DOUBLE, master_rank, MPI_COMM_WORLD);
 
@@ -725,9 +728,10 @@ void hca_cleanup_synchronization_module(void)
 void hca_print_sync_parameters(FILE* f)
 {
     fprintf (f, "#@sync=HCA\n");
-    fprintf(f, "#@window_s=%.20f\n", parameters.window_size_sec);
+    fprintf(f, "#@window_s=%.10f\n", parameters.window_size_sec);
     fprintf(f, "#@fitpoints=%d\n", parameters.n_fitpoints);
     fprintf(f, "#@exchanges=%d\n", parameters.n_exchanges);
+    fprintf(f, "#@wait_time_s=%.10f\n", parameters.wait_time_sec);
 #ifdef ENABLE_LOGP_SYNC
     fprintf(f, "#@hcasynctype=logp\n");
 #else

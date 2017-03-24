@@ -55,7 +55,8 @@ typedef enum reprompi_nrep_pred_getopt_ids {
 typedef enum reprompi_win_sync_getopt_ids {
   REPROMPI_ARGS_WINSYNC_WIN_SIZE = 700,
   REPROMPI_ARGS_WINSYNC_NFITPOINTS,
-  REPROMPI_ARGS_WINSYNC_NEXCHANGES
+  REPROMPI_ARGS_WINSYNC_NEXCHANGES,
+  REPROMPI_ARGS_WINSYNC_WAITTIME
 } reprompi_win_sync_getopt_ids_t;
 
 extern const struct option reprompi_default_long_options[];

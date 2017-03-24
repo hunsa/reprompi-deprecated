@@ -60,6 +60,9 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
             opts_p->window_size_sec = atof(optarg) * 1e-6;
             break;
 
+        case REPROMPI_ARGS_WINSYNC_WAITTIME: /* wait time before starting the first measurement  (in usec) */
+            opts_p->wait_time_sec = atof(optarg) * 1e-6;
+            break;
         case '?':
             break;
         }
@@ -69,12 +72,6 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
         ret |= ERROR_WIN;
     }
 
-    /*
-     printf("# SKaMPI options: \n");
-     printf("# 	total repetitions=%ld \n", opts_p->n_rep);
-     printf("# 	batch repetitions=%ld \n", opts_p->n_batch);
-     printf("# 	window=%lf \n", opts_p->window_size_sec);
-     */
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1; // reset opterr
     return ret;

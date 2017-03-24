@@ -19,32 +19,13 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 </license>
-*/
+ */
 
-#ifndef JK_SYNC_H_
-#define JK_SYNC_H_
+#include <stdio.h>
+#include <stdlib.h>
 
-typedef struct {
-    long n_rep; /* --repetitions */
-    double window_size_sec; /* --window-size */
+const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT = 20;
+const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT = 10;
 
-    int n_fitpoints; /* --fitpoints */
-    int n_exchanges; /* --exchanges */
-
-    double wait_time_sec; /* --wait-time */
-} jk_options_t;
-
-int jk_init_synchronization_module(int argc, char* argv[], long nrep);
-void jk_init_synchronization(void);
-void jk_sync_clocks(void);
-void jk_start_synchronization(void);
-void jk_stop_synchronization(void);
-void jk_cleanup_synchronization_module(void);
-
-int* jk_get_local_sync_errorcodes(void);
-
-double jk_get_normalized_time(double local_time);
-
-void jk_print_sync_parameters(FILE* f);
-
-#endif /* JK_SYNC_H_ */
+const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT = 1e-3;
+const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT = 0;

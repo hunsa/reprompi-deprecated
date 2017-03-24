@@ -21,30 +21,16 @@
 </license>
 */
 
-#ifndef JK_SYNC_H_
-#define JK_SYNC_H_
 
-typedef struct {
-    long n_rep; /* --repetitions */
-    double window_size_sec; /* --window-size */
+#ifndef REPROMPI_SYNC_CONSTANTS_H_
+#define REPROMPI_SYNC_CONSTANTS_H_
 
-    int n_fitpoints; /* --fitpoints */
-    int n_exchanges; /* --exchanges */
+extern const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
+extern const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
 
-    double wait_time_sec; /* --wait-time */
-} jk_options_t;
+extern const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
+extern const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
 
-int jk_init_synchronization_module(int argc, char* argv[], long nrep);
-void jk_init_synchronization(void);
-void jk_sync_clocks(void);
-void jk_start_synchronization(void);
-void jk_stop_synchronization(void);
-void jk_cleanup_synchronization_module(void);
 
-int* jk_get_local_sync_errorcodes(void);
 
-double jk_get_normalized_time(double local_time);
-
-void jk_print_sync_parameters(FILE* f);
-
-#endif /* JK_SYNC_H_ */
+#endif /* REPROMPI_SYNC_CONSTANTS_H_ */

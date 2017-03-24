@@ -31,6 +31,7 @@ typedef struct {
     int n_fitpoints; /* --fitpoints */
     int n_exchanges; /* --exchanges */
 
+    double wait_time_sec; /* --wait-time */
 } hca_options_t;
 
 int hca_init_synchronization_module(int argc, char* argv[], long nrep);

@@ -38,6 +38,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
+#include "reprompi_bench/sync/sync_constants.h"
 #include "sk_parse_options.h"
 #include "sk_sync.h"
 
@@ -68,7 +69,8 @@ enum {
 
 
 void sk_init_parameters(sk_options_t* opts_p) {
-    opts_p->window_size_sec = 0;
+    opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
+    opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
     opts_p->n_rep = 0;
 }
 
@@ -340,7 +342,7 @@ void sk_init_synchronization(void) {
 
     repetition_counter = 0;
     if (my_rank == 0) {
-        start_batch = get_time() + parameters.window_size_sec;
+        start_batch = get_time() + parameters.wait_time_sec;
     }
 
     MPI_Bcast(&start_batch, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -407,7 +409,8 @@ void sk_cleanup_synchronization_module(void) {
 
 void sk_print_sync_parameters(FILE* f) {
     fprintf(f, "#@sync=SKaMPI\n");
-    fprintf(f, "#@window_s=%.20f\n", parameters.window_size_sec);
+    fprintf(f, "#@window_s=%.10f\n", parameters.window_size_sec);
+    fprintf(f, "#@wait_time_s=%.10f\n", parameters.wait_time_sec);
 }
 
 inline double sk_get_timediff_to_root(void) {

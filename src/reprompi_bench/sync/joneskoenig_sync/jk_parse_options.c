@@ -56,7 +56,7 @@ reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv) 
             break;
 
         switch (c) {
-        case REPROMPI_ARGS_WINSYNC_WIN_SIZE: /* window size */
+        case REPROMPI_ARGS_WINSYNC_WIN_SIZE: /* window size (in usec)*/
             opts_p->window_size_sec = atof(optarg) * 1e-6;
             break;
 
@@ -66,6 +66,10 @@ reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv) 
 
         case REPROMPI_ARGS_WINSYNC_NEXCHANGES: /* number of exchanges for the linear model */
             opts_p->n_exchanges = atoi(optarg);
+            break;
+
+        case REPROMPI_ARGS_WINSYNC_WAITTIME: /* wait time before starting the first measurement  (in usec) */
+            opts_p->wait_time_sec = atof(optarg) * 1e-6;
             break;
 
         case '?':
@@ -83,12 +87,6 @@ reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv) 
         ret |= ERROR_EXCHANGES;
     }
 
-    /*	printf("# LM options: \n");
-     printf("# 	total repetitions=%ld \n", opts_p->n_rep);
-     printf("#	n-fit=%d \n", opts_p->n_fitpoints);
-     printf("# 	window=%lf \n", opts_p->window_size_sec);
-     printf("# 	exchanges=%d \n", opts_p->n_exchanges);
-     */
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1; // reset opterr
     return ret;
