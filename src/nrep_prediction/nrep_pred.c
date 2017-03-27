@@ -198,15 +198,18 @@ int main(int argc, char* argv[]) {
   // parse arguments and set-up benchmarking jobs
   // print_command_line_args(argc, argv);
   ret = reprompib_parse_common_options(&opts, argc, argv, &params_dict);
+  reprompib_validate_common_options_or_abort(ret, &opts, reprompib_print_benchmark_help);
   if (ret != SUCCESS) {
+    fprintf(stderr, "ERROR: parsing command line arguments\n");
     MPI_Finalize();
-    exit(1);
+    exit(0);
   }
   // start synchronization module
   ret = sync_f.init_sync_module(argc, argv, pred_params.max_nrep);
   if (ret != SUCCESS) {
+    fprintf(stderr, "ERROR: parsing command line arguments\n");
     MPI_Finalize();
-    exit(1);
+    exit(0);
   }
 
   // parse command-line arguments for the prediction module
