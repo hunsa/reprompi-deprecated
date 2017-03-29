@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mpi.h"
+
+#include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
 
@@ -54,9 +56,9 @@ void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_
     params->scount = msize;
     params->rcount = msize + params->nprocs; // at most one extra element per process
 
-    params->sbuf = (char*) malloc((params->scount + params->nprocs) * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
-    params->tmp_buf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc((params->scount + params->nprocs), params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
 }
 

@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mpi.h"
+#include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
 
@@ -53,8 +54,8 @@ void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, c
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);;
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);;
 }
 
 

@@ -49,6 +49,7 @@ option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
 #endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
 
 option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
+set(OPTION_BUFFER_ALIGNMENT "" CACHE STRING "Alignment to use for buffer allocation [default: no alignment(allocation with calloc)]")
 
 
 ############ PGtune support ########
@@ -98,6 +99,9 @@ if(ENABLE_DOUBLE_BARRIER)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_DOUBLE_BARRIER")
 endif()
 
+if(OPTION_BUFFER_ALIGNMENT)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DOPTION_BUFFER_ALIGNMENT=${OPTION_BUFFER_ALIGNMENT}")
+endif()
 
 if (GSL_INCLUDE_DIR)
     SET(HCA_FILES
@@ -118,6 +122,10 @@ if (GSL_INCLUDE_DIR)
 endif(GSL_INCLUDE_DIR)
 
 
+set(BUF_MANAGER_SRC_FILES
+${SRC_DIR}/buf_manager/mem_allocation.c
+)
+
 set(COLL_OPS_SRC_FILES
 ${SRC_DIR}/collective_ops/collectives.c
 ${SRC_DIR}/collective_ops/mpi_collectives.c
@@ -130,7 +138,10 @@ ${SRC_DIR}/collective_ops/mpi_reduce_scatter_mockups.c
 ${SRC_DIR}/collective_ops/mpi_scan_mockups.c
 ${SRC_DIR}/collective_ops/mpi_scatter_mockups.c
 ${SRC_DIR}/collective_ops/pingpong.c
+# memory allocation
+${BUF_MANAGER_SRC_FILES}
 )
+
 
 set(COMMON_OPTION_PARSER_SRC_FILES
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_constants.c

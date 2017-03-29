@@ -27,6 +27,7 @@
 #include "mpi.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
+#include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
 const collective_ops_t collective_calls[] = {
@@ -314,8 +315,8 @@ void initialize_data_default(const basic_collective_params_t info, const long ms
     params->scount = msize;
     params->rcount = msize;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
     memset(params->sbuf, 0, params->scount * params->datatypesize);
     memset(params->rbuf, 0, params->rcount * params->datatypesize);
 

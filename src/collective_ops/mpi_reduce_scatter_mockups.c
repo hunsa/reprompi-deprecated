@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mpi.h"
+#include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
 
@@ -49,10 +50,10 @@ void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collec
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
-    params->tmp_buf = (char*) malloc(params->scount * params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
 
 }
 
@@ -91,10 +92,10 @@ void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_param
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
-    params->tmp_buf = (char*) malloc(params->scount * params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
 
 }
 
@@ -132,14 +133,14 @@ void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
-    params->tmp_buf = (char*) malloc(params->scount * params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
 
     // we send the same number of elements (msize) to all processes
-    params->counts_array = (int*) malloc(params->nprocs * sizeof(int));
-    params->displ_array = (int*) malloc(params->nprocs * sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
 
     params->counts_array[0] = msize;
     params->displ_array[0] = 0;

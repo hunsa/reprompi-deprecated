@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "mpi.h"
+#include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
 
@@ -47,8 +48,8 @@ void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info
     params->scount = msize;
     params->rcount = msize * params->nprocs;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 }
 
 
@@ -89,10 +90,10 @@ void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, c
     params->scount = msize;
     params->rcount = msize * params->nprocs;
 
-    params->sbuf = (char*) malloc(params->scount * params->datatypesize);
-    params->rbuf = (char*) malloc(params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
-    params->tmp_buf = (char*) malloc(params->rcount * params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
     // set identity operand for different operations
     if (params->op == MPI_BAND || params->op == MPI_PROD) {
