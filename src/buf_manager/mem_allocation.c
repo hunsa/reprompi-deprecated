@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <errno.h>
 
 #include "mem_allocation.h"
 
@@ -32,6 +33,7 @@ void* reprompi_calloc(size_t count, size_t elem_size) {
 
 #ifdef OPTION_BUFFER_ALIGNMENT
   int is_power_of_two;
+  int err;
   size_t align = OPTION_BUFFER_ALIGNMENT;
 
   assert(align > 0);
@@ -39,9 +41,25 @@ void* reprompi_calloc(size_t count, size_t elem_size) {
   is_power_of_two = !(align & (align-1));
   assert(is_power_of_two);
 
-  posix_memalign(&buf, align, count*elem_size);
+  err = posix_memalign(&buf, align, count*elem_size);
+
+  if (err == ENOMEM) {
+    fprintf(stderr, "Cannot allocate memory with size %zu Bytes\n", count*elem_size);
+    exit(1);
+  }
+  if (err == EINVAL) {
+    fprintf(stderr, "Cannot allocate memory with alignment %zu\n", align);
+    exit(1);
+  }
 #else
+  errno = 0;
   buf = calloc(count, elem_size);
+
+  if (errno == ENOMEM) {
+    fprintf(stderr, "Cannot allocate memory with size %zu Bytes\n", count*elem_size);
+    exit(1);
+  }
 #endif
+
   return buf;
 }
