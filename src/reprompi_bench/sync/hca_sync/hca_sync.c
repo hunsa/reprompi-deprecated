@@ -73,7 +73,7 @@ inline double hca_get_adjusted_time(void) {
 }
 
 
-inline lm_t merge_linear_models(lm_t lm1, lm_t lm2) {
+inline static lm_t merge_linear_models(lm_t lm1, lm_t lm2) {
     lm_t new_model;
 
     new_model.intercept = 0;
