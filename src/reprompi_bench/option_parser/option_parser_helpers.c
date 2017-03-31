@@ -23,6 +23,7 @@
 
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <mpi.h>
 
 static const int OUTPUT_ROOT_PROC = 0;
@@ -165,4 +166,13 @@ void reprompib_print_prediction_help(void) {
 
 
 
+void reprompib_print_error_and_exit(const char* error_str) {
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
+  if (my_rank == OUTPUT_ROOT_PROC) {
+    fprintf(stderr, "\nERROR: %s\n\n", error_str);
+  }
+  MPI_Finalize();
+  exit(0);
+}

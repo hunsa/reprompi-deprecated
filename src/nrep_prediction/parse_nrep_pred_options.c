@@ -101,19 +101,6 @@ void reprompib_nrep_pred_print_help(void) {
   }
 }
 
-static void print_error_and_exit(const char error_str[]) {
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-  reprompib_nrep_pred_print_help();
-
-  if (my_rank == OUTPUT_ROOT_PROC) {
-    fprintf(stderr, "ERROR: %s\n\n", error_str);
-  }
-  MPI_Finalize();
-  exit(0);
-}
-
 void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) {
   int c, i;
   int printhelp = 0;
@@ -172,22 +159,22 @@ void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) 
 
   // check for errors
   if (opts_p->max_nrep <= 0) {
-    print_error_and_exit("Invalid max_nrep (should be positive)");
+    reprompib_print_error_and_exit("Invalid max_nrep (should be positive)");
   }
   if (opts_p->min_nrep <= 0) {
-    print_error_and_exit("Invalid min_nrep (should be positive)");
+    reprompib_print_error_and_exit("Invalid min_nrep (should be positive)");
   }
   if (opts_p->min_nrep >= opts_p->max_nrep) {
-    print_error_and_exit("Invalid min_nrep (should be smaller than max_nrep)");
+    reprompib_print_error_and_exit("Invalid min_nrep (should be smaller than max_nrep)");
   }
   if (opts_p->threshold <= 0) {
-    print_error_and_exit("Invalid prediction threshold (should be positive)");
+    reprompib_print_error_and_exit("Invalid prediction threshold (should be positive)");
   }
   if (opts_p->time_limit_s <= 0) {
-    print_error_and_exit("Invalid time limit (should be positive)");
+    reprompib_print_error_and_exit("Invalid time limit (should be positive)");
   }
   if (opts_p->nrep_per_pred_round[0] <= 1) {
-    print_error_and_exit("Invalid prediction nrep per round (should be >1)");
+    reprompib_print_error_and_exit("Invalid prediction nrep per round (should be >1)");
   }
 
   optind = 1;	// reset optind to enable option re-parsing

@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 #include <mpi.h>
 #include "option_parser_helpers.h"
@@ -92,45 +93,89 @@ void reprompib_free_common_parameters(const reprompib_common_options_t* opts_p) 
     }
 }
 
+
+static int reprompib_str_to_size_t(const char *str, size_t* result) {
+  char *endptr;
+  int error = 0;
+  long res;
+
+  errno = 0;
+  res = strtol(str, &endptr, 10);
+
+  /* Check for various possible errors */
+  if ((errno == ERANGE && (res == LONG_MAX || res == LONG_MIN)) || (errno != 0 && res == 0)) {
+    error = 1;
+  }
+  if (endptr == str) {  // no digits parsed
+    error = 1;
+  }
+  if (res <= 0) {
+    error = 1;
+  }
+
+  if (!error) {
+    *result = (size_t)res;
+  }
+  else {
+    *result = 0;
+  }
+
+  return error;
+}
+
 static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_options_t* opts_p) {
     reprompib_error_t ok = SUCCESS;
     char * value;
-    int min = 0, max = -1, step = 1, i, index;
+    size_t min = 0, max = 0, step = 1, i, index;
+    int err;
 
     while (*subopts != '\0') {
         switch (getsubopt(&subopts, msize_interval_opts, &value)) {
         case MIN:
-            if (value == NULL) {
-                ok |= ERROR_MSIZE_MIN;
-                break;
-            }
-            min = atoi(value);
+          if (value == NULL) {
+            ok = ERROR_MSIZE_MIN;
             break;
+          }
+          err = reprompib_str_to_size_t(value, &min);
+          if (err) {
+            ok = ERROR_MSIZE_MIN;
+          }
+          break;
         case MAX:
-            if (value == NULL) {
-                ok |= ERROR_MSIZE_MAX;
-                break;
-            }
-            max = atoi(value);
+          if (value == NULL) {
+            ok = ERROR_MSIZE_MAX;
             break;
+          }
+          err = reprompib_str_to_size_t(value, &max);
+          if (err) {
+            ok = ERROR_MSIZE_MAX;
+          }
+          break;
         case STEP:
-            if (value == NULL) {
-                ok |= ERROR_MSIZE_STEP;
-                break;
-            }
-            step = atoi(value);
+          if (value == NULL) {
+            ok = ERROR_MSIZE_STEP;
             break;
+          }
+          err = reprompib_str_to_size_t(value, &step);
+          if (err) {
+            ok = ERROR_MSIZE_STEP;
+          }
+          break;
         default:
             /* Unknown suboption. */
-            ok |= ERROR_MSIZE_INTERVAL_UNKNOWN;
+            ok = ERROR_MSIZE_INTERVAL_UNKNOWN;
             break;
         }
     }
 
-    if (max - min >= 0) /* the msize interval option has valid values  */
+    if (ok != SUCCESS) {
+      reprompib_print_error_and_exit("Invalid message sizes interval (--msize-interval min=<min>,max=<max>,step=<step>)");
+    }
+
+    if ((ssize_t)max - (ssize_t)min >= 0) /* the msize interval option has valid values  */
     {
         opts_p->n_msize = (max - min + step) / step;
-        opts_p->msize_list = (long *) malloc(opts_p->n_msize * sizeof(long));
+        opts_p->msize_list = (size_t *) malloc(opts_p->n_msize * sizeof(size_t));
         for (i = min, index = 0; i <= max; i += step, index++) {
             opts_p->msize_list[index] = 1 << i;
         }
@@ -138,7 +183,8 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
         /* return success */
         ok = SUCCESS;
     } else {
-        ok |= ERROR_MSIZE_INTERVAL_MINMAX;
+        ok = ERROR_MSIZE_INTERVAL_MINMAX;
+        reprompib_print_error_and_exit("Invalid message sizes interval - min is larger than max (--msize-interval min=<min>,max=<max>,step=<step>)");
     }
 
     return ok;
@@ -157,35 +203,42 @@ static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options
     /* Parse the list of message sizes */
     if (msizes != NULL) {
         index = 0;
-        opts_p->msize_list = (long *) malloc(LEN_MSIZES_BATCH * sizeof(long));
+        opts_p->msize_list = (size_t*) malloc(LEN_MSIZES_BATCH * sizeof(size_t));
 
         msizes_tok = strtok_r(msizes, ",", &save_str);
         while (msizes_tok != NULL) {
-            long msize = atol(msizes_tok);
 
-            if (msize <= 0) {
-                ok |= ERROR_MSIZE_LIST;
-                msizes_tok = strtok_r(NULL, ",", &save_str);
-                continue;
+            size_t msize;
+            int err;
+
+            err = reprompib_str_to_size_t(msizes_tok, &msize);
+            if (err) {
+                ok = ERROR_MSIZE_LIST;
+                break;
             }
 
             opts_p->msize_list[index++] = msize;
             msizes_tok = strtok_r(NULL, ",", &save_str);
 
             if (index % LEN_MSIZES_BATCH == 0) {
-                opts_p->msize_list = (long*) realloc(opts_p->msize_list,
-                        (index + LEN_MSIZES_BATCH) * sizeof(long));
+                opts_p->msize_list = (size_t*) realloc(opts_p->msize_list,
+                        (index + LEN_MSIZES_BATCH) * sizeof(size_t));
             }
 
         }
         opts_p->n_msize = index;
 
+        if (ok != SUCCESS) {
+          reprompib_print_error_and_exit("Invalid list of message sizes (--msizes-list=<list of comma-separated positive integers>)");
+        }
+
         // make sure we have valid message sizes to test
         if (index > 0) {
-            opts_p->msize_list = (long*) realloc(opts_p->msize_list,
-                    index * sizeof(long));
+            opts_p->msize_list = (size_t*) realloc(opts_p->msize_list,
+                    index * sizeof(size_t));
         } else {
-            ok |= ERROR_MSIZE_LIST_EMPTY;
+            ok = ERROR_MSIZE_LIST_EMPTY;
+            reprompib_print_error_and_exit("List of message sizes is empty (--msizes-list=<list of comma-separated positive integers>)");
         }
     }
 

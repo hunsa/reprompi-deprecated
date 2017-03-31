@@ -70,7 +70,7 @@ enum {
 
 
 typedef struct collparams {
-    long msize;
+    size_t msize;
     char* sbuf;
     char* rbuf;
     char* tmp_buf;
@@ -80,8 +80,8 @@ typedef struct collparams {
     int datatypesize;
     MPI_Op op;
     int rank;
-    int scount;
-    int rcount;
+    size_t scount;
+    size_t rcount;
     int* counts_array;
     int* displ_array;
 

@@ -32,7 +32,7 @@ typedef struct reprompib_common_opt {
     int* list_mpi_calls;
 
     int n_msize; /* number of message sizes to measure */
-    long* msize_list; /* --msizes-list / --msize-interval */
+    size_t* msize_list; /* --msizes-list / --msize-interval */
 
     int enable_job_shuffling;
 

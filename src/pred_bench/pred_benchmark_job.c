@@ -55,7 +55,8 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
     int expected_result = 0;
     int len_jobs;
     char mpi_call[100];
-    long msize, nrep;
+    size_t msize;
+    long nrep;
     int mpi_call_index;
 
     jlist->jobs = (job_t*) malloc(LEN_JOB_BATCH * sizeof(job_t));
@@ -65,7 +66,7 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
     if (file) {
 
         while (1) {
-            result = fscanf(file, "%s %ld %ld", mpi_call, &msize, &nrep);
+            result = fscanf(file, "%s %zu %ld", mpi_call, &msize, &nrep);
 
             /* number of job parameters for MPI_Barrier sync: MPI call, msize, nrep */
             expected_result = 3;
