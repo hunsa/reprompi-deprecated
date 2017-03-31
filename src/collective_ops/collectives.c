@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
@@ -314,6 +316,9 @@ void initialize_data_default(const basic_collective_params_t info, const long ms
 
     params->scount = msize;
     params->rcount = msize;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);

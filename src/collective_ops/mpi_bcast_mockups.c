@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 
 #include "buf_manager/mem_allocation.h"
@@ -55,6 +57,9 @@ void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_
 
     params->scount = msize;
     params->rcount = msize + params->nprocs; // at most one extra element per process
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc((params->scount + params->nprocs), params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);

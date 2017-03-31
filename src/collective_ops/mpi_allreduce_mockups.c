@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 
 #include "buf_manager/mem_allocation.h"
@@ -50,6 +52,9 @@ void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t
 
     params->scount = msize;
     params->rcount = msize;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
@@ -91,6 +96,9 @@ void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collecti
 
     params->scount = msize;
     params->rcount = msize;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     // we send the same number of elements to all processes
     params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
@@ -145,6 +153,9 @@ void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_col
     params->scount = msize;
     params->rcount = msize;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
+
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
     params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
@@ -195,6 +206,9 @@ void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collect
     // total count for the initial message and the final result
     params->scount = msize;
     params->rcount = msize;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     // each process receives a different number of elements according to its rank
     params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));

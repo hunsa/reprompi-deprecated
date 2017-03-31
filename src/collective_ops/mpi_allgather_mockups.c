@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
@@ -60,6 +62,9 @@ void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t in
     // source buffer must contain msize elements repeated nprocs times
     params->scount = msize * params->nprocs;
     params->rcount = msize * params->nprocs;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
@@ -103,6 +108,9 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
@@ -174,6 +182,9 @@ void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);

@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
@@ -88,6 +90,8 @@ void initialize_data_Scatter(const basic_collective_params_t info, const long ms
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 }
@@ -123,6 +127,8 @@ void initialize_data_Gather(const basic_collective_params_t info, const long msi
     params->scount = msize;
     params->rcount = msize * params->nprocs;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
@@ -157,6 +163,8 @@ void initialize_data_Allgather(const basic_collective_params_t info, const long 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 
@@ -193,6 +201,10 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
+
+    assert (msize < INT_MAX);
     // we send the same number of elements to all processes
     params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
     for (i=0; i< params->nprocs; i++) {
@@ -236,6 +248,8 @@ void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, 
     params->scount = msize * params->nprocs;
     params->rcount = msize;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 }
@@ -268,6 +282,8 @@ void initialize_data_Alltoall(const basic_collective_params_t info, const long m
     params->scount = msize * params->nprocs;
     params->rcount = msize * params->nprocs;
 
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
 

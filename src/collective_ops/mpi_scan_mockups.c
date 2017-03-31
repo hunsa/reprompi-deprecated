@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
@@ -59,6 +61,9 @@ void initialize_data_GL_Scan_as_ExscanReducelocal(const basic_collective_params_
 
     params->scount = msize;
     params->rcount = msize;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);

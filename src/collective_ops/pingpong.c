@@ -25,6 +25,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
@@ -235,6 +237,8 @@ void initialize_data_pingpong(const basic_collective_params_t info, const long m
   params->msize = msize;
   params->scount = 0;
   params->rcount = 0;
+
+  assert (params->msize < INT_MAX);
 
   params->sbuf = (char*)reprompi_calloc(params->msize, params->datatypesize);
   params->rbuf = (char*)reprompi_calloc(params->msize, params->datatypesize);

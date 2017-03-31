@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <limits.h>
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
@@ -47,6 +49,8 @@ void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
@@ -89,6 +93,9 @@ void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, c
 
     params->scount = msize;
     params->rcount = msize * params->nprocs;
+
+    assert (params->scount < INT_MAX);
+    assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
