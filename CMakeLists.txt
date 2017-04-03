@@ -48,7 +48,8 @@ option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
 #    option(ENABLE_WINDOWSYNC_NG "NetGauge window-based synchronization [default: MPI_Barrier() synchronization]" off)
 #endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
 
-option(COMPILE_SANITY_CHECK_TESTS "Enable to compile sanity check code" off)
+option(COMPILE_SANITY_CHECK_TESTS "Enable sanity check tests" off)
+option(COMPILE_SANITY_CHECK_CLOCK "Enable clock sanity checks" on)
 set(OPTION_BUFFER_ALIGNMENT "" CACHE STRING "Alignment to use for buffer allocation [default: no alignment(allocation with calloc)]")
 
 
@@ -252,6 +253,9 @@ if (COMPILE_BENCH_TESTS)
     ADD_SUBDIRECTORY(${SRC_DIR}/test)
 endif()
 
+if (COMPILE_SANITY_CHECK_CLOCK)
+    ADD_SUBDIRECTORY(${SRC_DIR}/sanity_check/clock)
+endif()
 
 #ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 
