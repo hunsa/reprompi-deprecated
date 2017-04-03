@@ -15,6 +15,8 @@ ${SRC_DIR}/reprompi_bench/sync/time_measurement.c
 set(MEASURE_CLOCK_DRIFT
 measure_clock_drift.c
 parse_test_options.c
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_constants.c
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SYNC_SRC_FILES}
 )
@@ -37,6 +39,8 @@ ${MEASURE_CLOCK_DRIFT}
 set(SYNC_DURATION
 sync_duration.c
 parse_test_options.c
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_constants.c
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SYNC_SRC_FILES}
 )
@@ -106,7 +110,4 @@ if(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
     SET_TARGET_PROPERTIES(measure_clock_drift_NG PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS_NG}")
     SET_TARGET_PROPERTIES(sync_duration_NG PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS_NG}")
 endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
-
-
-
 
