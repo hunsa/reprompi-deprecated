@@ -54,12 +54,14 @@ void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sy
         FILE* f;
 
         f = stdout;
-        fprintf(f, "#@nrep=%ld\n", opts.n_rep);
-        if (opts.common_opt.output_file != NULL) {
+        if (opts.n_rep > 0) {
+          fprintf(f, "#@nrep=%ld\n", opts.n_rep);
+          if (opts.common_opt.output_file != NULL) {
             f = fopen(opts.common_opt.output_file, "a");
             fprintf(f, "#@nrep=%ld\n", opts.n_rep);
             fflush(f);
             fclose(f);
+          }
         }
     }
 }
