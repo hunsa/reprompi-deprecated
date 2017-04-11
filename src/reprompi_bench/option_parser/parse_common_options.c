@@ -72,7 +72,7 @@ static void init_parameters(reprompib_common_options_t* opts_p) {
     opts_p->input_file = NULL;
     opts_p->output_file = NULL;
     opts_p->operation = MPI_BOR;
-    opts_p->datatype = MPI_CHAR;
+    opts_p->datatype = MPI_BYTE;
 
     opts_p->pingpong_ranks[0] = -1;
     opts_p->pingpong_ranks[1] = -1;
@@ -374,20 +374,23 @@ static reprompib_error_t parse_operation(char* arg, reprompib_common_options_t* 
 static reprompib_error_t parse_datatype(char* arg, reprompib_common_options_t* opts_p) {
     reprompib_error_t ok = SUCCESS;
     if (arg != NULL && strlen(arg) > 0) {
-        if (strcmp("MPI_CHAR", arg) == 0) {
-            opts_p->datatype = MPI_CHAR;
+        if (strcmp("MPI_BYTE", arg) == 0) {
+          opts_p->datatype = MPI_BYTE;
+        }
+        else if (strcmp("MPI_CHAR", arg) == 0) {
+          opts_p->datatype = MPI_CHAR;
         }
         else if (strcmp("MPI_INT", arg) == 0) {
-            opts_p->datatype = MPI_INT;
+          opts_p->datatype = MPI_INT;
         }
         else if (strcmp("MPI_FLOAT", arg) == 0) {
-            opts_p->datatype = MPI_FLOAT;
+          opts_p->datatype = MPI_FLOAT;
         }
         else if (strcmp("MPI_DOUBLE", arg) == 0) {
-            opts_p->datatype = MPI_DOUBLE;
+          opts_p->datatype = MPI_DOUBLE;
         }
         else {
-            ok = ERROR_DATATYPE;
+          ok = ERROR_DATATYPE;
         }
     }
     else {

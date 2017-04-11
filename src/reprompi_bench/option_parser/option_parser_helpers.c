@@ -59,9 +59,9 @@ void reprompib_print_common_help(void) {
         printf("%50s%s\n", "","MPI_BOR, MPI_BAND, MPI_LOR, MPI_LAND, MPI_MIN, MPI_MAX, MPI_SUM, MPI_PROD");
         printf("%-40s %-40s\n %50s%s\n", "--datatype=<mpi_type>",
                 "MPI datatype used by collective operations", "",
-                "e.g., --datatype=MPI_CHAR ");
+                "e.g., --datatype=MPI_BYTE ");
         printf("%40s Supported datatypes:\n", "");
-        printf("%50s%s\n", "","MPI_CHAR, MPI_INT, MPI_FLOAT, MPI_DOUBLE");
+        printf("%50s%s\n", "","MPI_BYTE, MPI_CHAR, MPI_INT, MPI_FLOAT, MPI_DOUBLE");
 
         printf("%-40s %-40s\n", "--shuffle-jobs",
                 "shuffle experiments before running the benchmark");
