@@ -39,6 +39,17 @@
 static const int OUTPUT_ROOT_PROC = 0;
 static const int OUTPUT_NITERATIONS_CHUNK = 3000; // approx. 1 MB per process
 
+typedef enum output_msize {
+  OUTPUT_MSIZE_BYTES = 0,
+  OUTPUT_COUNT
+} output_msize_t;
+
+#ifdef PRINT_MSIZES_BYTES
+static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_MSIZE_BYTES;
+#else
+static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_COUNT;
+#endif
+
 void print_results_header(reprompib_options_t opts) {
     int my_rank;
 
@@ -47,12 +58,18 @@ void print_results_header(reprompib_options_t opts) {
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE * f;
         int i;
+        char msize_str[10];
 
+        if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
+          strcpy(msize_str, "msize_bytes");
+        } else {
+          strcpy(msize_str, "count");
+        }
 
         f = stdout;
         // print summary to stdout
         if (opts.n_print_summary_selected >0) {
-            fprintf(f, "%50s %10s %10s %10s ", "test", "msize", "total_nrep", "valid_nrep");
+            fprintf(f, "%50s %10s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
             for (i = 0; i < N_SUMMARY_METHODS; i++) {
                 if (opts.print_summary_methods[i] > 0) {
                     fprintf(f, "%10s_sec ", get_summary_opts_list()[i]);
@@ -73,9 +90,9 @@ void print_results_header(reprompib_options_t opts) {
             }
 
 #ifdef ENABLE_WINDOWSYNC
-            fprintf(f, "test nrep msize errorcode");
+            fprintf(f, "%50s %10s %10s %10s ", "test", "nrep", msize_str, "errorcode");
 #else
-            fprintf(f, "test nrep msize");
+            fprintf(f, "%50s %10s %10s ", "test", "nrep", msize_str);
 #endif
 
             if (opts.common_opt.verbose == 1) {
@@ -107,10 +124,22 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
     int i;
     int my_rank;
     long current_start_index;
+    size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
     int* sync_errorcodes = NULL;
 #endif
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
+      MPI_Aint lb, extent;
+      MPI_Type_get_extent(, &lb, &extent);
+
+      // compute msize in bytes
+      msize_value = job.msize;
+    } else {    // print counts
+      msize_value = job.msize;
+    }
+
 
     maxRuntimes_sec = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
