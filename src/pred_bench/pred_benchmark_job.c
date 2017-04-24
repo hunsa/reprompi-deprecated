@@ -55,7 +55,7 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
     int expected_result = 0;
     int len_jobs;
     char mpi_call[100];
-    size_t count;
+    size_t msize;
     long nrep;
     int mpi_call_index;
 
@@ -66,7 +66,7 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
     if (file) {
 
         while (1) {
-            result = fscanf(file, "%s %zu %ld", mpi_call, &count, &nrep);
+            result = fscanf(file, "%s %zu %ld", mpi_call, &msize, &nrep);
 
             /* number of job parameters for MPI_Barrier sync: MPI call, count, nrep */
             expected_result = 3;
@@ -91,7 +91,7 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
                 continue;
             }
             jlist->jobs[len_jobs].call_index = mpi_call_index;
-            jlist->jobs[len_jobs].count = count;
+            jlist->jobs[len_jobs].msize = msize;
             jlist->jobs[len_jobs].n_rep = nrep;
 
             len_jobs++;
@@ -117,6 +117,7 @@ int read_input_pred_jobs(char* file_name, pred_job_list_t* jlist) {
 void generate_pred_job_list(pred_options_t opts, pred_job_list_t* jlist) {
     int sizeindex, cindex, i;
     int my_rank;
+    int datatypesize;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
@@ -150,6 +151,25 @@ void generate_pred_job_list(pred_options_t opts, pred_job_list_t* jlist) {
             jlist->n_jobs = i;
         }
     }
+
+
+    // compute counts for each collective and
+    // make sure the message sizes specified at the command line (or in the input file)
+    // are multiples of the datatype size
+    MPI_Type_size(opts.options.datatype, &datatypesize);
+    for (i=0; i<jlist->n_jobs; i++) {
+      jlist->jobs[i].count = jlist->jobs[i].msize/datatypesize;
+
+      if (jlist->jobs[i].count * datatypesize != jlist->jobs[i].msize) {
+        if (my_rank == OUTPUT_ROOT_PROC) {
+          printf("ERROR: Message size %zu for %s is not a multiple of the datatype size (%d)\n",
+              jlist->jobs[i].msize, get_call_from_index(jlist->jobs[i].call_index), datatypesize);
+        }
+        MPI_Finalize();
+        exit(1);
+      }
+    }
+
 
     jlist->prediction_params = opts.prediction_params;
 

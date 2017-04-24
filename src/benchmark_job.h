@@ -29,6 +29,7 @@
 typedef struct {
     int call_index;
     size_t count;
+    size_t msize;
     long n_rep;
 } job_t;
 

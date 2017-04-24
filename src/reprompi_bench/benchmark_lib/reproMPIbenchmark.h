@@ -66,7 +66,6 @@
 
 typedef struct {
     char* testname;
-    size_t count;
     long n_rep;
 
     char** user_svars;
