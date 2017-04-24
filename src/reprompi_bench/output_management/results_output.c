@@ -44,7 +44,7 @@ typedef enum output_msize {
   OUTPUT_COUNT
 } output_msize_t;
 
-#ifdef PRINT_MSIZES_BYTES
+#ifdef OPTION_PRINT_MSIZES_BYTES
 static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_MSIZE_BYTES;
 #else
 static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_COUNT;
@@ -58,7 +58,7 @@ void print_results_header(reprompib_options_t opts) {
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE * f;
         int i;
-        char msize_str[10];
+        char msize_str[16];
 
         if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
           strcpy(msize_str, "msize_bytes");
@@ -69,7 +69,7 @@ void print_results_header(reprompib_options_t opts) {
         f = stdout;
         // print summary to stdout
         if (opts.n_print_summary_selected >0) {
-            fprintf(f, "%50s %10s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
+            fprintf(f, "%50s %12s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
             for (i = 0; i < N_SUMMARY_METHODS; i++) {
                 if (opts.print_summary_methods[i] > 0) {
                     fprintf(f, "%10s_sec ", get_summary_opts_list()[i]);
@@ -90,9 +90,9 @@ void print_results_header(reprompib_options_t opts) {
             }
 
 #ifdef ENABLE_WINDOWSYNC
-            fprintf(f, "%50s %10s %10s %10s ", "test", "nrep", msize_str, "errorcode");
+            fprintf(f, "%50s %10s %12s %10s ", "test", "nrep", msize_str, "errorcode");
 #else
-            fprintf(f, "%50s %10s %10s ", "test", "nrep", msize_str);
+            fprintf(f, "%50s %10s %12s ", "test", "nrep", msize_str);
 #endif
 
             if (opts.common_opt.verbose == 1) {
@@ -134,13 +134,10 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
-      MPI_Aint lb, extent;
-      MPI_Type_get_extent(, &lb, &extent);
-
-      // compute msize in bytes
+      // print msize in bytes
       msize_value = job.msize;
     } else {    // print counts
-      msize_value = job.msize;
+      msize_value = job.count;
     }
 
 
@@ -172,12 +169,12 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         for (i = 0; i < job.n_rep; i++) {
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
-            fprintf(f, "%50s %10d %10ld %10d %14.10f\n", get_call_from_index(job.call_index), i,
-                    job.count, sync_errorcodes[i],
+            fprintf(f, "%50s %10d %12ld %10d %14.10f\n", get_call_from_index(job.call_index), i,
+                    msize_value, sync_errorcodes[i],
                     maxRuntimes_sec[i]);
 #else   // measurements with Barrier-based synchronization
-            fprintf(f, "%50s %10d %10ld %14.10f\n", get_call_from_index(job.call_index), i,
-                    job.count, maxRuntimes_sec[i]);
+            fprintf(f, "%50s %10d %12ld %14.10f\n", get_call_from_index(job.call_index), i,
+                    msize_value, maxRuntimes_sec[i]);
 #endif
         }
 
@@ -203,9 +200,17 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
     int my_rank, np;
     int chunk_id, nchunks;
     int current_rep_id, chunk_nrep = 0;
+    size_t msize_value;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
+
+    if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
+      // print msize in bytes
+      msize_value = job.msize;
+    } else {    // print counts
+      msize_value = job.count;
+    }
 
     if (verbose == 0) {
         print_runtimes(f, job, tstart_sec, tend_sec, get_errorcodes,
@@ -282,8 +287,8 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                     for (i = 0; i < chunk_nrep; i++) {
                         current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
 #ifdef ENABLE_WINDOWSYNC
-                        fprintf(f, "%7d %50s %10d %10ld %10d %14.10f %14.10f %14.10f %14.10f\n", proc_id,
-                                get_call_from_index(job.call_index), current_rep_id, job.count,
+                        fprintf(f, "%7d %50s %10d %12ld %10d %14.10f %14.10f %14.10f %14.10f\n", proc_id,
+                                get_call_from_index(job.call_index), current_rep_id, msize_value,
                                 errorcodes[proc_id * chunk_nrep + i],
                                 local_start_sec[proc_id * chunk_nrep + i],
                                 local_end_sec[proc_id * chunk_nrep + i],
@@ -291,8 +296,8 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                                 global_end_sec[proc_id * chunk_nrep + i]);
 
 #else
-                        fprintf(f, "%7d %50s %10d %10ld %14.10f %14.10f\n", proc_id,
-                                get_call_from_index(job.call_index), current_rep_id, job.count,
+                        fprintf(f, "%7d %50s %10d %12ld %14.10f %14.10f\n", proc_id,
+                                get_call_from_index(job.call_index), current_rep_id, msize_value,
                                 local_start_sec[proc_id * chunk_nrep + i],
                                 local_end_sec[proc_id * chunk_nrep + i]);
 #endif
@@ -323,11 +328,20 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
     int i;
     int my_rank;
     long current_start_index;
+    size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
     int* sync_errorcodes = NULL;
 #endif
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
+      // print msize in bytes
+      msize_value = job.msize;
+    } else {    // print counts
+      msize_value = job.count;
+    }
+
 
     maxRuntimes_sec = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
@@ -371,7 +385,7 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 #endif
 
         gsl_sort(maxRuntimes_sec, 1, nreps);
-        fprintf(f, "%50s %10ld %10ld %10ld ", get_call_from_index(job.call_index), job.count, job.n_rep, nreps);
+        fprintf(f, "%50s %12ld %10ld %10ld ", get_call_from_index(job.call_index), msize_value, job.n_rep, nreps);
         for (i = 0; i < N_SUMMARY_METHODS; i++) {
             if (summary_methods[i] > 0) {
 

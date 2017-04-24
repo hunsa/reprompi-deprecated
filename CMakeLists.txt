@@ -51,7 +51,7 @@ option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
 option(COMPILE_SANITY_CHECK_TESTS "Enable sanity check tests" off)
 option(COMPILE_SANITY_CHECK_CLOCK "Enable clock sanity checks" on)
 set(OPTION_BUFFER_ALIGNMENT "" CACHE STRING "Alignment to use for buffer allocation [default: no alignment(allocation with calloc)]")
-option(PRINT_MSIZES_BYTES "Print message sizes in the output instead of MPI call counts [default: counts]" off)
+option(OPTION_PRINT_MSIZES_BYTES "Print message sizes in the output instead of MPI call counts [default: counts]" off)
 
 
 ############ PGtune support ########
@@ -103,6 +103,10 @@ endif()
 
 if(OPTION_BUFFER_ALIGNMENT)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DOPTION_BUFFER_ALIGNMENT=${OPTION_BUFFER_ALIGNMENT}")
+endif()
+
+if(OPTION_PRINT_MSIZES_BYTES)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DOPTION_PRINT_MSIZES_BYTES=${OPTION_PRINT_MSIZES_BYTES}")
 endif()
 
 if (GSL_INCLUDE_DIR)
