@@ -97,12 +97,12 @@ void print_results_header(reprompib_options_t opts) {
 
             if (opts.common_opt.verbose == 1) {
 #ifdef ENABLE_WINDOWSYNC
-                fprintf(f, " loc_tstart_sec loc_tend_sec gl_tstart_sec gl_tend_sec\n");
+                fprintf(f, "%14s %14s %14s %14s \n", "loc_tstart_sec", "loc_tend_sec", "gl_tstart_sec", "gl_tend_sec");
 #else
-                fprintf(f, " loc_tstart_sec loc_tend_sec\n");
+                fprintf(f,  "%14s %14s \n", "loc_tstart_sec", "loc_tend_sec");
 #endif
             } else {
-                fprintf(f, " runtime_sec\n");
+                fprintf(f,  "%14s \n", "runtime_sec");
             }
         }
 
@@ -114,6 +114,9 @@ void print_results_header(reprompib_options_t opts) {
     }
 
 }
+
+
+
 
 
 
@@ -169,11 +172,11 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         for (i = 0; i < job.n_rep; i++) {
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
-            fprintf(f, "%s %d %ld %d %.10f\n", get_call_from_index(job.call_index), i,
+            fprintf(f, "%50s %10d %10ld %10d %14.10f\n", get_call_from_index(job.call_index), i,
                     job.msize, sync_errorcodes[i],
                     maxRuntimes_sec[i]);
 #else   // measurements with Barrier-based synchronization
-            fprintf(f, "%s %d %ld %.10f\n", get_call_from_index(job.call_index), i,
+            fprintf(f, "%50s %10d %10ld %14.10f\n", get_call_from_index(job.call_index), i,
                     job.msize, maxRuntimes_sec[i]);
 #endif
         }
@@ -279,7 +282,7 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                     for (i = 0; i < chunk_nrep; i++) {
                         current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
 #ifdef ENABLE_WINDOWSYNC
-                        fprintf(f, "%d %s %d %ld %d %.10f %.10f %.10f %.10f\n", proc_id,
+                        fprintf(f, "%7d %50s %10d %10ld %10d %14.10f %14.10f %14.10f %14.10f\n", proc_id,
                                 get_call_from_index(job.call_index), current_rep_id, job.msize,
                                 errorcodes[proc_id * chunk_nrep + i],
                                 local_start_sec[proc_id * chunk_nrep + i],
@@ -288,7 +291,7 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                                 global_end_sec[proc_id * chunk_nrep + i]);
 
 #else
-                        fprintf(f, "%d %s %d %ld %.10f %.10f\n", proc_id,
+                        fprintf(f, "%7d %50s %10d %10ld %14.10f %14.10f\n", proc_id,
                                 get_call_from_index(job.call_index), current_rep_id, job.msize,
                                 local_start_sec[proc_id * chunk_nrep + i],
                                 local_end_sec[proc_id * chunk_nrep + i]);
