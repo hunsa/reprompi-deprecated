@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
             print_results_header(opts);
         }
 
-        collective_calls[job.call_index].initialize_data(coll_basic_info, job.msize, &coll_params);
+        collective_calls[job.call_index].initialize_data(coll_basic_info, job.count, &coll_params);
 
         // initialize synchronization
         sync_f.sync_clocks();

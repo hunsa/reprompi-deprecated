@@ -106,9 +106,11 @@ void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t
     int my_rank, len;
     char type_name[MPI_MAX_OBJECT_NAME];
     MPI_Aint lb, extent;
+    int datatypesize;
 
     MPI_Type_get_name(opts.datatype, type_name, &len);
     MPI_Type_get_extent(opts.datatype, &lb, &extent);
+    MPI_Type_size(opts.datatype, &datatypesize);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
@@ -120,14 +122,15 @@ void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t
           }
         }
         if (opts.n_msize > 0) {
-          fprintf(f, "#Message sizes:\n");
+          fprintf(f, "#Message counts:\n");
           for (i = 0; i < opts.n_msize; i++) {
             fprintf(f, "#\t%ld\n", opts.msize_list[i]);
           }
         }
         fprintf(f, "#@operation=%s\n", get_mpi_operation_str(opts.operation));
         fprintf(f, "#@datatype=%s\n", type_name);
-        fprintf(f, "#@datatype_extent=%zu\n", extent);
+        fprintf(f, "#@datatype_extent_bytes=%zu\n", extent);
+        fprintf(f, "#@datatype_size_bytes=%d\n", datatypesize);
         fprintf(f, "#@root_proc=%d\n", opts.root_proc);
 
         if (opts.pingpong_ranks[0] >=0 && opts.pingpong_ranks[1] >=0) {

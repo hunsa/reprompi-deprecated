@@ -173,11 +173,11 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
             fprintf(f, "%50s %10d %10ld %10d %14.10f\n", get_call_from_index(job.call_index), i,
-                    job.msize, sync_errorcodes[i],
+                    job.count, sync_errorcodes[i],
                     maxRuntimes_sec[i]);
 #else   // measurements with Barrier-based synchronization
             fprintf(f, "%50s %10d %10ld %14.10f\n", get_call_from_index(job.call_index), i,
-                    job.msize, maxRuntimes_sec[i]);
+                    job.count, maxRuntimes_sec[i]);
 #endif
         }
 
@@ -283,7 +283,7 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
                         current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
 #ifdef ENABLE_WINDOWSYNC
                         fprintf(f, "%7d %50s %10d %10ld %10d %14.10f %14.10f %14.10f %14.10f\n", proc_id,
-                                get_call_from_index(job.call_index), current_rep_id, job.msize,
+                                get_call_from_index(job.call_index), current_rep_id, job.count,
                                 errorcodes[proc_id * chunk_nrep + i],
                                 local_start_sec[proc_id * chunk_nrep + i],
                                 local_end_sec[proc_id * chunk_nrep + i],
@@ -292,7 +292,7 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
 
 #else
                         fprintf(f, "%7d %50s %10d %10ld %14.10f %14.10f\n", proc_id,
-                                get_call_from_index(job.call_index), current_rep_id, job.msize,
+                                get_call_from_index(job.call_index), current_rep_id, job.count,
                                 local_start_sec[proc_id * chunk_nrep + i],
                                 local_end_sec[proc_id * chunk_nrep + i]);
 #endif
@@ -371,7 +371,7 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 #endif
 
         gsl_sort(maxRuntimes_sec, 1, nreps);
-        fprintf(f, "%50s %10ld %10ld %10ld ", get_call_from_index(job.call_index), job.msize, job.n_rep, nreps);
+        fprintf(f, "%50s %10ld %10ld %10ld ", get_call_from_index(job.call_index), job.count, job.n_rep, nreps);
         for (i = 0; i < N_SUMMARY_METHODS; i++) {
             if (summary_methods[i] > 0) {
 

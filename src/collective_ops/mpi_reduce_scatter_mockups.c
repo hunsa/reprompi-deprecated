@@ -44,21 +44,21 @@ inline void execute_GL_Reduce_scatter_block_as_ReduceScatter(collective_params_t
 }
 
 
-void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the block received by each process after scatter
+    params->count = count; // size of the block received by each process after scatter
 
-    params->scount = msize * params->nprocs;
-    params->rcount = msize;
+    params->scount = count * params->nprocs;
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
-    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
 
 }
 
@@ -83,27 +83,27 @@ inline void execute_GL_Reduce_scatter_as_Allreduce(collective_params_t* params) 
                params->op, MPI_COMM_WORLD);
 
 #ifdef COMPILE_BENCH_TESTS
-   memcpy((char*)params->rbuf, (char*)params->tmp_buf + params->rank * params->msize * params->datatypesize,
-           params->msize * params->datatypesize);
+   memcpy((char*)params->rbuf, (char*)params->tmp_buf + params->rank * params->count * params->datatype_extent,
+           params->count * params->datatype_extent);
 #endif
 }
 
 
-void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the block received by each process after scatter
+    params->count = count; // size of the block received by each process after scatter
 
-    params->scount = msize * params->nprocs;
-    params->rcount = msize;
+    params->scount = count * params->nprocs;
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
-    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
 
 }
 
@@ -131,32 +131,32 @@ inline void execute_GL_Reduce_scatter_as_ReduceScatterv(collective_params_t* par
 
 }
 
-void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_params_t info, const long count, collective_params_t* params) {
     int i;
 
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the block received by each process after scatter
+    params->count = count; // size of the block received by each process after scatter
 
-    params->scount = msize * params->nprocs;
-    params->rcount = msize;
+    params->scount = count * params->nprocs;
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
-    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
 
-    // we send the same number of elements (msize) to all processes
+    // we send the same number of elements (count) to all processes
     params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
     params->displ_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
 
-    params->counts_array[0] = msize;
+    params->counts_array[0] = count;
     params->displ_array[0] = 0;
     for (i=1; i< params->nprocs; i++) {
-        params->counts_array[i] = msize;
+        params->counts_array[i] = count;
         params->displ_array[i] = params->displ_array[i-1] + params->counts_array[i-1];
     }
 }

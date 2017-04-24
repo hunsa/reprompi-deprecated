@@ -133,7 +133,7 @@ static void nrep_pred_print_prediction_results(const job_t* job, const reprompib
       f = fopen(opts->output_file, "a");
     }
 
-    fprintf(f, "%25s %10ld %10ld     %.10f     %.10f %10ld \n", get_call_from_index(job->call_index), job->msize, measured_nreps,
+    fprintf(f, "%25s %10ld %10ld     %.10f     %.10f %10ld \n", get_call_from_index(job->call_index), job->count, measured_nreps,
         summ->min, summ->median, estimated_nreps);
   }
 
@@ -152,7 +152,7 @@ void nrep_pred_print_results_header(const char* filename) {
     if (filename != NULL) {
       f = fopen(filename, "a");
     }
-    fprintf(f, "%25s %10s %10s %16s %16s %10s\n", "test", "msize", "meas_nreps", "meas_min_sec", "meas_median_sec", "nreps");
+    fprintf(f, "%25s %10s %10s %16s %16s %10s\n", "test", "count", "meas_nreps", "meas_min_sec", "meas_median_sec", "nreps");
     if (filename != NULL) {
       fclose(f);
     }
@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
     max_nreps = pred_params.max_nrep;
   }
 
-  // generate list of jobs ((mpifunc, msize) tuples) with nrep=0 for each of them
+  // generate list of jobs ((mpifunc, count) tuples) with nrep=0 for each of them
   generate_job_list(&opts, 0, &jlist);
 
   init_collective_basic_info(opts, procs, &coll_basic_info);
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     tend_sec = (double*) malloc(max_nreps * sizeof(double));
     maxRuntimes_sec = (double*) malloc(max_nreps * sizeof(double));
 
-    collective_calls[job.call_index].initialize_data(coll_basic_info, job.msize, &coll_params);
+    collective_calls[job.call_index].initialize_data(coll_basic_info, job.count, &coll_params);
 
     current_index = 0;
     for (round = 0; round < pred_params.n_pred_rounds; round++) {
@@ -295,14 +295,14 @@ int main(int argc, char* argv[]) {
       estimated_nreps = compute_nreps(summ.min, pred_params.time_limit_s, OUTPUT_ROOT_PROC);
 
       if (estimated_nreps < pred_params.min_nrep) {
-        fprintf(stderr, "WARNING: %s, msize=%ld: Estimated nreps too small (%ld). Using specified min: %ld\n",
-            get_call_from_index(job.call_index), job.msize,
+        fprintf(stderr, "WARNING: %s, count=%ld: Estimated nreps too small (%ld). Using specified min: %ld\n",
+            get_call_from_index(job.call_index), job.count,
             estimated_nreps,
             pred_params.min_nrep);
         estimated_nreps = pred_params.min_nrep;
       } else if (estimated_nreps > pred_params.max_nrep) {
-        fprintf(stderr, "WARNING: %s, msize=%ld: Estimated nreps too large (%ld). Using specified max: %ld\n",
-            get_call_from_index(job.call_index), job.msize,
+        fprintf(stderr, "WARNING: %s, count=%ld: Estimated nreps too large (%ld). Using specified max: %ld\n",
+            get_call_from_index(job.call_index), job.count,
             estimated_nreps,
             pred_params.max_nrep);
 

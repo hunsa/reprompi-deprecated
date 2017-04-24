@@ -41,26 +41,26 @@ inline void execute_GL_Scatter_as_Bcast(collective_params_t* params) {
               params->root, MPI_COMM_WORLD);
 
 #ifdef COMPILE_BENCH_TESTS
-    memcpy((char*)params->rbuf, (char*)params->sbuf + params->rank * params->msize * params->datatypesize,
-            params->msize * params->datatypesize);
+    memcpy((char*)params->rbuf, (char*)params->sbuf + params->rank * params->count * params->datatype_extent,
+            params->count * params->datatype_extent);
 #endif
 
 }
 
 
-void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // size of the block scattered to each process
+    params->count = count; // size of the block scattered to each process
 
-    params->scount = msize * params->nprocs;
-    params->rcount = msize;
+    params->scount = count * params->nprocs;
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);;
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);;
 }
 
 

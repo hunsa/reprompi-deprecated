@@ -215,12 +215,10 @@ void print_runtimes(FILE* f, reprompib_job_t job, double* tstart_sec, double* te
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
             fprintf(f, "%20s %4s %12d %8d %16.10f\n", timername, "all",
-                   // job.testname, job.msize,
                     sync_errorcodes[i],i,
                     maxRuntimes_sec[i]);
 #else   // measurements with Barrier-based synchronization
             fprintf(f, "%20s %4s %8d %16.10f\n", timername, "all",
-                    //job.testname, job.msize,
                     i, maxRuntimes_sec[i]);
 #endif
         }
@@ -388,7 +386,6 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
 #ifdef ENABLE_WINDOWSYNC
                         fprintf(f, "%20s %4d %12d %8d %16.10f %16.10f %16.10f %16.10f\n",
                                 timername, proc_id,
-                                //job.testname, job.msize,
                                 errorcodes[proc_id * job.n_rep + i], i,
                                 local_start_sec[proc_id * job.n_rep + i],
                                 local_end_sec[proc_id * job.n_rep + i],
@@ -398,7 +395,6 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
 #else
                         fprintf(f, "%20s %4d %8d %16.10f %16.10f\n", timername,
                                 proc_id,
-                                //job.testname, job.msize,
                                 i, local_start_sec[proc_id * job.n_rep + i],
                                 local_end_sec[proc_id * job.n_rep + i]);
 #endif

@@ -53,7 +53,7 @@ int read_input_jobs(char* file_name, job_list_t* jlist) {
     int expected_result = 0;
     int len_jobs;
     char mpi_call[100];
-    size_t msize;
+    size_t count;
     long nrep;
     int mpi_call_index;
 
@@ -64,9 +64,9 @@ int read_input_jobs(char* file_name, job_list_t* jlist) {
     if (file) {
 
         while (1) {
-            result = fscanf(file, "%s %zu %ld", mpi_call, &msize, &nrep);
+            result = fscanf(file, "%s %zu %ld", mpi_call, &count, &nrep);
 
-            /* number of job parameters for MPI_Barrier sync: MPI call, msize, nrep */
+            /* number of job parameters for MPI_Barrier sync: MPI call, count, nrep */
             expected_result = 3;
 
             if (result == EOF) {
@@ -79,7 +79,7 @@ int read_input_jobs(char* file_name, job_list_t* jlist) {
                 break;
             }
 
-            //printf("%s %ld %ld\n", mpi_call, msize, nrep);
+            //printf("%s %ld %ld\n", mpi_call, count, nrep);
 
             // fill in job info
             mpi_call_index = get_call_index(mpi_call);
@@ -89,7 +89,7 @@ int read_input_jobs(char* file_name, job_list_t* jlist) {
                 continue;
             }
             jlist->jobs[len_jobs].call_index = mpi_call_index;
-            jlist->jobs[len_jobs].msize = msize;
+            jlist->jobs[len_jobs].count = count;
             jlist->jobs[len_jobs].n_rep = nrep;
 
             len_jobs++;
@@ -137,7 +137,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
             i = 0;
             for (sizeindex = 0; sizeindex < opts->n_msize; sizeindex++) {
                 for (cindex = 0; cindex < opts->n_calls; cindex++) {
-                    jlist->jobs[i].msize = opts->msize_list[sizeindex];
+                    jlist->jobs[i].count = opts->msize_list[sizeindex];
                     jlist->jobs[i].call_index = opts->list_mpi_calls[cindex];
                     jlist->jobs[i].n_rep = predefined_n_rep;
 

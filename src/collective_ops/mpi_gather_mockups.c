@@ -35,25 +35,25 @@
 // MPI_Gather with Allgather
 
 inline void execute_GL_Gather_as_Allgather(collective_params_t* params) {
-    MPI_Allgather(params->sbuf, params->msize, params->datatype,
-            params->rbuf, params->msize, params->datatype,
+    MPI_Allgather(params->sbuf, params->count, params->datatype,
+            params->rbuf, params->count, params->datatype,
             MPI_COMM_WORLD);
 
 }
 
 
-void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize; // block size per process
+    params->count = count; // block size per process
 
-    params->scount = msize;
-    params->rcount = msize * params->nprocs;
+    params->scount = count;
+    params->rcount = count * params->nprocs;
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 }
 
 
@@ -74,8 +74,8 @@ void cleanup_data_GL_Gather_as_Allgather(collective_params_t* params) {
 inline void execute_GL_Gather_as_Reduce(collective_params_t* params) {
 
 #ifdef COMPILE_BENCH_TESTS
-    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatypesize, (char*)params->sbuf,
-            params->scount * params->datatypesize);
+    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatype_extent, (char*)params->sbuf,
+            params->scount * params->datatype_extent);
 #endif
 
     MPI_Reduce(params->tmp_buf, params->rbuf, params->rcount,
@@ -83,24 +83,24 @@ inline void execute_GL_Gather_as_Reduce(collective_params_t* params) {
 }
 
 
-void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long msize, collective_params_t* params) {
+void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long count, collective_params_t* params) {
     int num_ints, num_adds, num_dtypes, combiner;
     int i;
 
     initialize_common_data(info, params);
 
-    params->msize = msize;
+    params->count = count;
 
-    params->scount = msize;
-    params->rcount = msize * params->nprocs;
+    params->scount = count;
+    params->rcount = count * params->nprocs;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
-    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
+    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
     // set identity operand for different operations
     if (params->op == MPI_BAND || params->op == MPI_PROD) {
@@ -120,16 +120,16 @@ void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, c
                     }
                 }
                 else {
-                    memset( params->tmp_buf, 0xFF, params->rcount * params->datatypesize);
+                    memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
                 }
             }
         }
         else {
-            memset( params->tmp_buf, 0xFF, params->rcount * params->datatypesize);
+            memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
         }
     }
     else {
-        memset(params->tmp_buf, 0, params->rcount * params->datatypesize);
+        memset(params->tmp_buf, 0, params->rcount * params->datatype_extent);
     }
 
 }

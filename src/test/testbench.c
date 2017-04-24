@@ -82,11 +82,11 @@ void set_buffer_const(const test_type val, const int n_elems, char* buffer) {
 void collect_buffers(const collective_params_t params, char* send_buffer, char* recv_buffer) {
 
     // gather measurement results
-    MPI_Gather(params.sbuf,  params.scount * params.datatypesize, MPI_CHAR,
-            send_buffer,  params.scount * params.datatypesize, MPI_CHAR,
+    MPI_Gather(params.sbuf,  params.scount * params.datatype_extent, MPI_CHAR,
+            send_buffer,  params.scount * params.datatype_extent, MPI_CHAR,
             0, MPI_COMM_WORLD);
-    MPI_Gather(params.rbuf,  params.rcount * params.datatypesize, MPI_CHAR,
-            recv_buffer,  params.rcount * params.datatypesize, MPI_CHAR,
+    MPI_Gather(params.rbuf,  params.rcount * params.datatype_extent, MPI_CHAR,
+            recv_buffer,  params.rcount * params.datatype_extent, MPI_CHAR,
             0, MPI_COMM_WORLD);
 }
 
@@ -141,11 +141,11 @@ void check_results(char coll1[], char coll2[],
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     // gather send and receive buffers from all processes
-    send_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.scount * coll_params.datatypesize);
-    mockup_send_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.scount * mockup_params.datatypesize);
+    send_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.scount * coll_params.datatype_extent);
+    mockup_send_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.scount * mockup_params.datatype_extent);
 
-    recv_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.rcount * coll_params.datatypesize);
-    mockup_recv_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.rcount * mockup_params.datatypesize);
+    recv_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.rcount * coll_params.datatype_extent);
+    mockup_recv_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.rcount * mockup_params.datatype_extent);
 
     collect_buffers(coll_params, (char*)send_buffer, (char*)recv_buffer);
     collect_buffers(mockup_params, (char*)mockup_send_buffer, (char*)mockup_recv_buffer);
@@ -204,7 +204,7 @@ void check_results(char coll1[], char coll2[],
 
 
 void test_collective(basic_collective_params_t basic_coll_info,
-        long msize, int coll_index, int mockup_index) {
+        long count, int coll_index, int mockup_index) {
 
     long n_elems, i;
     int check_only_at_root = 0;
@@ -212,8 +212,8 @@ void test_collective(basic_collective_params_t basic_coll_info,
     collective_params_t coll_params, mockup_params;
 
     // initialize operations
-    collective_calls[coll_index].initialize_data(basic_coll_info, msize, &coll_params);
-    collective_calls[mockup_index].initialize_data(basic_coll_info, msize, &mockup_params);
+    collective_calls[coll_index].initialize_data(basic_coll_info, count, &coll_params);
+    collective_calls[mockup_index].initialize_data(basic_coll_info, count, &mockup_params);
 
     // setup buffers
     n_elems = coll_params.scount;
@@ -246,14 +246,14 @@ void test_collective(basic_collective_params_t basic_coll_info,
 int main(int argc, char* argv[]) {
     int nprocs;
     basic_collective_params_t basic_coll_info;
-    long msize = 100;
+    long count = 100;
 
 
     srand(1000);
 
 
     if (argc > 1) {
-        msize = atol(argv[1]);
+        count = atol(argv[1]);
     }
 
     /* start up MPI
@@ -269,33 +269,33 @@ int main(int argc, char* argv[]) {
     basic_coll_info.root = 0;
     basic_coll_info.nprocs = nprocs;
 
-    test_collective(basic_coll_info, msize, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, msize, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
-    test_collective(basic_coll_info, msize, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
+    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
+    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
+    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
 
-    test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
-    test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
+    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
+    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
 
-    test_collective(basic_coll_info, msize, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
+    test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
 
-    test_collective(basic_coll_info, msize, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
-    test_collective(basic_coll_info, msize, MPI_GATHER, GL_GATHER_AS_REDUCE);
+    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
+    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
 
-    test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
+    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
 
-    test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
+    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
 
-    test_collective(basic_coll_info, msize, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, msize, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
-    test_collective(basic_coll_info, msize, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
+    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
+    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
+    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
 
-    test_collective(basic_coll_info, msize, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
+    test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
 
-    test_collective(basic_coll_info, msize, MPI_SCATTER, GL_SCATTER_AS_BCAST);
+    test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
-    if (msize % nprocs == 0) {  // only works if the number of processes is a divisor of msize
-        test_collective(basic_coll_info, msize, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
-        test_collective(basic_coll_info, msize, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+    if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
+        test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
+        test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
     }
     else {
 

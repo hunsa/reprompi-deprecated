@@ -90,7 +90,7 @@ void print_measurement_results_prediction(job_t job, reprompib_common_options_t 
 
         for (j=0; j < conds.n_methods; j++) {
             fprintf(f, "%s %ld %ld %.10f %.10f %s %.10f\n", get_call_from_index(job.call_index), job.n_rep,
-                    job.msize, mean_runtime_sec, median_runtime_sec, get_prediction_methods_list()[pred_params.info[j].method],
+                    job.count, mean_runtime_sec, median_runtime_sec, get_prediction_methods_list()[pred_params.info[j].method],
                     conds.conditions[j]);
         }
 
@@ -128,7 +128,7 @@ void print_initial_settings_prediction(pred_options_t opts, print_sync_info_t pr
         nrep_pred_params_t pred_params, const reprompib_dictionary_t* dict) {
     FILE* f;
     int my_rank;
-    const char header[] = "test nrep msize mean_runtime_sec median_runtime_sec pred_method pred_value";
+    const char header[] = "test nrep count mean_runtime_sec median_runtime_sec pred_method pred_value";
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
         current_index = 0;
         runtimes_index = 0;
 
-        collective_calls[job.call_index].initialize_data(coll_basic_info, job.msize, &coll_params);
+        collective_calls[job.call_index].initialize_data(coll_basic_info, job.count, &coll_params);
 
         // initialize synchronization window
         sync_f.init_sync();

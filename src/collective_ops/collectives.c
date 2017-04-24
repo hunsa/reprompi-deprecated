@@ -308,22 +308,22 @@ inline void execute_Empty(collective_params_t* params) {
 
 
 
-void initialize_data_default(const basic_collective_params_t info, const long msize,
+void initialize_data_default(const basic_collective_params_t info, const long count,
         collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->msize = msize;
+    params->count = count;
 
-    params->scount = msize;
-    params->rcount = msize;
+    params->scount = count;
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatypesize);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatypesize);
-    memset(params->sbuf, 0, params->scount * params->datatypesize);
-    memset(params->rbuf, 0, params->rcount * params->datatypesize);
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
+    memset(params->sbuf, 0, params->scount * params->datatype_extent);
+    memset(params->rbuf, 0, params->rcount * params->datatype_extent);
 
 }
 
@@ -338,8 +338,12 @@ void cleanup_data_default(collective_params_t* params) {
 
 void initialize_common_data(const basic_collective_params_t info,
         collective_params_t* params) {
+
+    MPI_Aint lb;
+
+    MPI_Type_get_extent(info.datatype, &lb, &(params->datatype_extent));
     params->datatype = info.datatype;
-    MPI_Type_size(params->datatype, &params->datatypesize);
+
     params->op = info.op;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &params->rank);
