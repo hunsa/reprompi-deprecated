@@ -7,6 +7,7 @@ project(reprompi)
 
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
 
 
 set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake" 
@@ -42,6 +43,7 @@ option(ENABLE_DOUBLE_BARRIER "Call barrier twice for synchronization [default: d
 set(FREQUENCY_MHZ 2300 CACHE STRING "CPU Frequency (needed for RDTSCP-based time measurements)")
 
 option(COMPILE_PRED_BENCHMARK "Enable benchmark with repetitions prediction [default: enabled]" on)
+option(COMPILE_BENCH_LIBRARY "Compile ReproMPI library [default: disabled]" off)
 option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
 
 #if(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
@@ -262,8 +264,9 @@ if (COMPILE_SANITY_CHECK_CLOCK)
     ADD_SUBDIRECTORY(${SRC_DIR}/sanity_check/clock)
 endif()
 
-#ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
-
+if (COMPILE_BENCH_LIBRARY)
+    ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
+endif()
 
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
