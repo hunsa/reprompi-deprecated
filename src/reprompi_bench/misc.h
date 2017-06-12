@@ -78,4 +78,6 @@ double repro_min(double a, double b);
 double repro_max(double a, double b);
 void shuffle(int *array, size_t n);
 
+int reprompib_str_to_long(const char *str, long* result);
+
 #endif /* MISC_H__ */

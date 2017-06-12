@@ -94,39 +94,10 @@ void reprompib_free_common_parameters(const reprompib_common_options_t* opts_p) 
 }
 
 
-static int reprompib_str_to_size_t(const char *str, size_t* result) {
-  char *endptr;
-  int error = 0;
-  long res;
-
-  errno = 0;
-  res = strtol(str, &endptr, 10);
-
-  /* Check for various possible errors */
-  if ((errno == ERANGE && (res == LONG_MAX || res == LONG_MIN)) || (errno != 0 && res == 0)) {
-    error = 1;
-  }
-  if (endptr == str) {  // no digits parsed
-    error = 1;
-  }
-  if (res <= 0) {
-    error = 1;
-  }
-
-  if (!error) {
-    *result = (size_t)res;
-  }
-  else {
-    *result = 0;
-  }
-
-  return error;
-}
-
 static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_options_t* opts_p) {
     reprompib_error_t ok = SUCCESS;
     char * value;
-    size_t min = 0, max = 0, step = 1, i, index;
+    long min = 0, max = 0, step = 1, i, index;
     int err;
 
     while (*subopts != '\0') {
@@ -136,8 +107,8 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
             ok = ERROR_MSIZE_MIN;
             break;
           }
-          err = reprompib_str_to_size_t(value, &min);
-          if (err) {
+          err = reprompib_str_to_long(value, &min);
+          if (err || min <= 0) {
             ok = ERROR_MSIZE_MIN;
           }
           break;
@@ -146,8 +117,8 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
             ok = ERROR_MSIZE_MAX;
             break;
           }
-          err = reprompib_str_to_size_t(value, &max);
-          if (err) {
+          err = reprompib_str_to_long(value, &max);
+          if (err || max <= 0) {
             ok = ERROR_MSIZE_MAX;
           }
           break;
@@ -156,8 +127,8 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
             ok = ERROR_MSIZE_STEP;
             break;
           }
-          err = reprompib_str_to_size_t(value, &step);
-          if (err) {
+          err = reprompib_str_to_long(value, &step);
+          if (err || step <= 0) {
             ok = ERROR_MSIZE_STEP;
           }
           break;
@@ -208,11 +179,11 @@ static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options
         msizes_tok = strtok_r(msizes, ",", &save_str);
         while (msizes_tok != NULL) {
 
-            size_t msize;
+            long msize;
             int err;
 
-            err = reprompib_str_to_size_t(msizes_tok, &msize);
-            if (err) {
+            err = reprompib_str_to_long(msizes_tok, &msize);
+            if (err || msize <=0) {
                 ok = ERROR_MSIZE_LIST;
                 break;
             }

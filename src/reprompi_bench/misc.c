@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#include <errno.h>
 
 #include "misc.h"
 
@@ -105,4 +107,29 @@ void shuffle(int *array, size_t n) {
     }
 }
 
+
+int reprompib_str_to_long(const char *str, long* result) {
+  char *endptr;
+  int error = 0;
+  long res;
+
+  errno = 0;
+  res = strtol(str, &endptr, 10);
+
+  /* Check for various possible errors */
+  if ((errno == ERANGE && (res == LONG_MAX || res == LONG_MIN)) || (errno != 0 && res == 0)) {
+    error = 1;
+  }
+  if (endptr == str) {  // no digits parsed
+    error = 1;
+  }
+  if (!error) {
+    *result = res;
+  }
+  else {
+    *result = 0;
+  }
+
+  return error;
+}
 
