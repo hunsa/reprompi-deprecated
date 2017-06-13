@@ -29,6 +29,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
@@ -119,6 +120,7 @@ void reprompib_print_bench_output(reprompib_job_t job, double* tstart_sec, doubl
 void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_functions_t* sync_f_p, reprompib_options_t *opts_p) {
     reprompib_error_t ret;
     int my_rank;
+    reprompib_sync_options_t sync_opts;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
@@ -138,15 +140,16 @@ void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_funct
     // initialize synchronization functions according to the configured synchronization method
     initialize_sync_implementation(sync_f_p);
 
+    sync_f_p->parse_sync_params(argc, argv, &sync_opts);
+
     // start synchronization module
-    ret = sync_f_p->init_sync_module(argc, argv, opts_p->n_rep);
-    reprompib_validate_common_options_or_abort(ret, &(opts_p->common_opt), reprompib_print_benchmark_help);
+    sync_f_p->init_sync_module(sync_opts, opts_p->n_rep);
+
     if (ret != 0) {
         reprompib_print_benchmark_help();
         MPI_Finalize();
         exit(1);
     }
-
 }
 
 

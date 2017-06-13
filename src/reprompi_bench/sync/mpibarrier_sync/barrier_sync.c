@@ -26,14 +26,17 @@
 #include <stdio.h>
 
 #include "reprompi_bench/misc.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "barrier_sync.h"
 
 inline double mpibarrier_get_normalized_time(double local_time) {
     return local_time;
 }
 
-int mpibarrier_init_synchronization_module(int argc, char* argv[], long nrep) {
-    return SUCCESS;
+void mpibarrier_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep) {
+}
+
+void mpibarrier_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
 }
 
 void mpibarrier_init_synchronization(void) {

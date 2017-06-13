@@ -30,6 +30,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "pred_benchmark_job.h"
 #include "reprompi_bench/option_parser/option_parser_helpers.h"
@@ -232,6 +233,7 @@ int main(int argc, char* argv[]) {
     long updated_batch_nreps;
     reprompib_sync_functions_t sync_f;
     reprompib_dictionary_t params_dict;
+    reprompib_sync_options_t sync_opts;
 
     /* start up MPI
      * */
@@ -255,6 +257,8 @@ int main(int argc, char* argv[]) {
     ret = reprompib_parse_options(&opts, argc, argv, &params_dict);
     reprompib_validate_common_options_or_abort(ret, &(opts.options), reprompib_print_prediction_help);
 
+    sync_f.parse_sync_params(argc, argv, &sync_opts);
+
     init_collective_basic_info(opts.options, procs, &coll_basic_info);
     generate_pred_job_list(opts, &jlist);
 
@@ -272,11 +276,7 @@ int main(int argc, char* argv[]) {
         }
 
         // start synchronization module
-        ret = sync_f.init_sync_module(argc, argv, jlist.prediction_params.n_rep_max);
-        reprompib_validate_common_options_or_abort(ret, &(opts.options), reprompib_print_prediction_help);
-        if (ret != SUCCESS) {
-            break;
-        }
+        sync_f.init_sync_module(sync_opts, jlist.prediction_params.n_rep_max);
 
         if (jindex == 0) {
             print_initial_settings_prediction(opts, sync_f.print_sync_info, jlist.prediction_params, &params_dict);

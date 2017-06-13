@@ -34,6 +34,7 @@
 
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "benchmark_job.h"
@@ -172,6 +173,7 @@ int main(int argc, char* argv[]) {
   time_t start_time, end_time;
   reprompib_sync_functions_t sync_f;
   reprompib_dictionary_t params_dict;
+  reprompib_sync_options_t sync_opts;
 
   nrep_pred_options_t pred_params;
   job_list_t jlist;
@@ -205,12 +207,8 @@ int main(int argc, char* argv[]) {
     exit(0);
   }
   // start synchronization module
-  ret = sync_f.init_sync_module(argc, argv, pred_params.max_nrep);
-  if (ret != SUCCESS) {
-    fprintf(stderr, "ERROR: parsing command line arguments\n");
-    MPI_Finalize();
-    exit(0);
-  }
+  sync_f.parse_sync_params(argc, argv, &sync_opts);
+  sync_f.init_sync_module(sync_opts, pred_params.max_nrep);
 
   // parse command-line arguments for the prediction module
   nrep_pred_parse_params(argc, argv, &pred_params);

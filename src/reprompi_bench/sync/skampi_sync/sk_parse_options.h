@@ -25,8 +25,6 @@
 #ifndef SK_PARSE_OPTIONS_H_
 #define SK_PARSE_OPTIONS_H_
 
-#include "sk_sync.h"
-
-reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv);
+void sk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p);
 
 #endif /* PARSE_OPTIONS_H_ */

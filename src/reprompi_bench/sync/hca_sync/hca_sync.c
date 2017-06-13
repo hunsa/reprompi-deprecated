@@ -34,7 +34,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/sync/sync_constants.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "hca_parse_options.h"
 #include "hca_sync.h"
 
@@ -50,7 +50,7 @@ double initial_timestamp = 0;
 
 
 // options specified from the command line
-static hca_options_t parameters;
+static reprompi_hca_params_t parameters;
 
 //linear model
 typedef struct {
@@ -330,7 +330,7 @@ void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double 
 
 
 lm_t hca_learn_model(const int root_rank, const int other_rank,
-        const hca_options_t params, const double my_rtt) {
+        const reprompi_hca_params_t params, const double my_rtt) {
     int i, j;
     int my_rank, np;
     MPI_Status status;
@@ -438,25 +438,15 @@ void print_models(int my_rank, lm_t *linear_models, int nprocs, int round) {
 }
 
 
-void hca_init_parameters(hca_options_t* opts_p) {
-    opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
-    opts_p->n_fitpoints = REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
-    opts_p->n_exchanges = REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
-    opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
-
-    opts_p->n_rep = 0;
-}
-
-int hca_init_synchronization_module(int argc, char* argv[], long nrep)
+void hca_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep)
 {
-    int i, ret;
+    int i;
 
-    hca_init_parameters(&parameters);
-    ret = hca_parse_options(&parameters, argc, argv);
+    parameters.n_exchanges = parsed_opts.n_exchanges;
+    parameters.n_fitpoints = parsed_opts.n_fitpoints;
+    parameters.wait_time_sec = parsed_opts.wait_time_sec;
+    parameters.window_size_sec = parsed_opts.window_size_sec;
     parameters.n_rep = nrep;
-    if (ret != SUCCESS) {
-        return ret;
-    }
 
     invalid  = (int*)calloc(parameters.n_rep, sizeof(int));
     for(i = 0; i < parameters.n_rep; i++)
@@ -466,7 +456,6 @@ int hca_init_synchronization_module(int argc, char* argv[], long nrep)
     repetition_counter = 0;
 
     initial_timestamp = get_time();
-    return ret;
 }
 
 

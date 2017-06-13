@@ -37,9 +37,11 @@
 #include "hca_parse_options.h"
 
 
-reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv) {
+void hca_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
     int c;
     reprompib_error_t ret = SUCCESS;
+
+    reprompi_init_sync_parameters(opts_p);
 
     optind = 1;
     optopt = 0;
@@ -91,6 +93,5 @@ reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv
 
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1; // reset opterr
-    return ret;
 }
 

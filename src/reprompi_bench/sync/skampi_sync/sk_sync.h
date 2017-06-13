@@ -29,16 +29,17 @@
 #ifndef SK_SYNC_H_
 #define SK_SYNC_H_
 
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 
 typedef struct {
     long n_rep; /* --repetitions */
     double window_size_sec; /* --window-size */
 
     double wait_time_sec; /* --wait-time */
-} sk_options_t;
+} reprompi_sk_options_t;
 
 
-int sk_init_synchronization_module(int argc, char* argv[], long nrep);
+void sk_init_synchronization_module(const reprompib_sync_options_t opts_p, const long nrep);
 void sk_sync_clocks(void);
 void sk_init_synchronization(void);
 void sk_start_synchronization(void);

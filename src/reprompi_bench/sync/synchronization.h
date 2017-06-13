@@ -24,7 +24,9 @@
 #ifndef REPROMPIB_SYNCHRONIZATION_H_
 #define REPROMPIB_SYNCHRONIZATION_H_
 
-typedef int (*init_sync_module_t)(int argc, char* argv[], long nrep);
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+
+typedef void (*init_sync_module_t)(const reprompib_sync_options_t parsed_opts, const long nrep);
 typedef void (*sync_clocks_t)(void);
 typedef void (*init_sync_t)(void);
 typedef void (*start_sync_t)(void);
@@ -34,6 +36,7 @@ typedef int* (*sync_errorcodes_t)(void);
 typedef double (*sync_normtime_t)(double local_time);
 typedef void (*print_sync_info_t)(FILE* f);
 typedef double (*sync_time_t)(void);
+typedef void (*parse_sync_params_t)(int argc, char** argv, reprompib_sync_options_t* parsed_opts);
 
 typedef struct {
     init_sync_module_t init_sync_module;
@@ -46,6 +49,7 @@ typedef struct {
     sync_errorcodes_t get_errorcodes;
     print_sync_info_t print_sync_info;
     sync_time_t get_time;
+    parse_sync_params_t parse_sync_params;
 } reprompib_sync_functions_t;
 
 void initialize_sync_implementation(reprompib_sync_functions_t *sync_f);

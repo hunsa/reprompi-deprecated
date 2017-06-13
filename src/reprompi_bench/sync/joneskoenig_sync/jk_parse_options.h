@@ -25,8 +25,6 @@
 #ifndef LM_PARSE_OPTIONS_H_
 #define LM_PARSE_OPTIONS_H_
 
-#include "jk_sync.h"
-
-reprompib_error_t jk_parse_options(jk_options_t* opts_p, int argc, char **argv);
+void jk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p);
 
 #endif /* LM_PARSE_OPTIONS_H_ */

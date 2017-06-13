@@ -36,9 +36,11 @@
 #include "sk_sync.h"
 #include "sk_parse_options.h"
 
-reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) {
+void sk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
     int c;
     reprompib_error_t ret = SUCCESS;
+
+    reprompi_init_sync_parameters(opts_p);
 
     optind = 1;
     optopt = 0;
@@ -74,5 +76,4 @@ reprompib_error_t sk_parse_options(sk_options_t* opts_p, int argc, char **argv) 
 
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1; // reset opterr
-    return ret;
 }

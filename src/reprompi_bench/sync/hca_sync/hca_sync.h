@@ -24,6 +24,8 @@
 #ifndef HCA_SYNC_H_
 #define HCA_SYNC_H_
 
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+
 typedef struct {
     long n_rep; /* --repetitions */
     double window_size_sec; /* --window-size */
@@ -32,9 +34,9 @@ typedef struct {
     int n_exchanges; /* --exchanges */
 
     double wait_time_sec; /* --wait-time */
-} hca_options_t;
+} reprompi_hca_params_t;
 
-int hca_init_synchronization_module(int argc, char* argv[], long nrep);
+void hca_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep);
 void hca_init_synchronization(void);
 void hca_synchronize_clocks(void);
 void hca_start_synchronization(void);

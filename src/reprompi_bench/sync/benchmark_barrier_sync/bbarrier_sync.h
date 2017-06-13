@@ -24,7 +24,10 @@
 #ifndef BBARRIER_SYNC_H_
 #define BBARRIER_SYNC_H_
 
-int bbarrier_init_synchronization_module(int argc, char* argv[], long nrep);
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+
+void bbarrier_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep);
+void bbarrier_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p);
 void bbarrier_init_synchronization(void);
 void bbarrier_start_synchronization(void);
 void bbarrier_stop_synchronization(void);

@@ -24,6 +24,8 @@
 #ifndef JK_SYNC_H_
 #define JK_SYNC_H_
 
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+
 typedef struct {
     long n_rep; /* --repetitions */
     double window_size_sec; /* --window-size */
@@ -32,9 +34,9 @@ typedef struct {
     int n_exchanges; /* --exchanges */
 
     double wait_time_sec; /* --wait-time */
-} jk_options_t;
+} reprompi_jk_options_t;
 
-int jk_init_synchronization_module(int argc, char* argv[], long nrep);
+void jk_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep);
 void jk_init_synchronization(void);
 void jk_sync_clocks(void);
 void jk_start_synchronization(void);

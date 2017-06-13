@@ -19,13 +19,28 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 </license>
- */
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
+#include <string.h>
+#include <assert.h>
+
+#include "sync_parse_options.h"
+
 
 const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT = 20;
 const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT = 10;
 
 const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT = 1e-3;
 const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT = 0;
+
+
+void reprompi_init_sync_parameters(reprompib_sync_options_t* opts_p) {
+  opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
+  opts_p->n_fitpoints = REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
+  opts_p->n_exchanges = REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
+  opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
+
+}

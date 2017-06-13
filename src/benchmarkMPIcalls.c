@@ -29,6 +29,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "benchmark_job.h"
 #include "reprompi_bench/option_parser/parse_options.h"
@@ -113,13 +114,13 @@ int main(int argc, char* argv[]) {
     double* tstart_sec;
     double* tend_sec;
     reprompib_options_t opts;
+    reprompib_sync_options_t sync_opts;
     job_list_t jlist;
     reprompib_error_t ret;
     collective_params_t coll_params;
     basic_collective_params_t coll_basic_info;
     time_t start_time, end_time;
     reprompib_sync_functions_t sync_f;
-
     reprompib_dictionary_t params_dict;
 
     /* start up MPI
@@ -145,6 +146,8 @@ int main(int argc, char* argv[]) {
     ret = reprompib_parse_options(&opts, argc, argv, &params_dict);
     reprompib_validate_common_options_or_abort(ret, &(opts.common_opt), reprompib_print_benchmark_help);
 
+    sync_f.parse_sync_params( argc, argv, &sync_opts);
+
     init_collective_basic_info(opts.common_opt, procs, &coll_basic_info);
     generate_job_list(&(opts.common_opt), opts.n_rep, &jlist);
 
@@ -155,11 +158,7 @@ int main(int argc, char* argv[]) {
         job = jlist.jobs[jlist.job_indices[jindex]];
 
         // start synchronization module
-        ret = sync_f.init_sync_module(argc, argv, job.n_rep);
-        reprompib_validate_common_options_or_abort(ret, &(opts.common_opt), reprompib_print_benchmark_help);
-        if (ret != SUCCESS) {
-            break;
-        }
+        sync_f.init_sync_module(sync_opts, job.n_rep);
 
         tstart_sec = (double*) malloc(job.n_rep * sizeof(double));
         tend_sec = (double*) malloc(job.n_rep * sizeof(double));

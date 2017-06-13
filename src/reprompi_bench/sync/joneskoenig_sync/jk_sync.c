@@ -32,7 +32,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/sync/sync_constants.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "jk_parse_options.h"
 #include "jk_sync.h"
 
@@ -43,7 +43,7 @@ static int* invalid;
 static int repetition_counter = 0; /* current repetition index */
 
 // options specified from the command line
-static jk_options_t parameters;
+static reprompi_jk_options_t parameters;
 
 // final RTT value
 static double my_rtt;
@@ -271,23 +271,15 @@ inline double jk_get_normalized_time(double local_time) {
     return local_time - (local_time * slope + intercept);
 }
 
-void jk_init_parameters(jk_options_t* opts_p) {
-    opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
-    opts_p->n_fitpoints = REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
-    opts_p->n_exchanges = REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
-    opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
-    opts_p->n_rep = 0;
-}
 
-int jk_init_synchronization_module(int argc, char* argv[], long nrep) {
-    int i, ret;
+void jk_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep) {
+    int i;
 
-    jk_init_parameters(&parameters);
-    ret = jk_parse_options(&parameters, argc, argv);
+    parameters.n_exchanges = parsed_opts.n_exchanges;
+    parameters.n_fitpoints = parsed_opts.n_fitpoints;
+    parameters.wait_time_sec = parsed_opts.wait_time_sec;
+    parameters.window_size_sec = parsed_opts.window_size_sec;
     parameters.n_rep = nrep;
-    if (ret != SUCCESS) {
-        return ret;
-    }
 
     invalid = (int*) calloc(parameters.n_rep, sizeof(int));
     for (i = 0; i < parameters.n_rep; i++) {
@@ -295,7 +287,6 @@ int jk_init_synchronization_module(int argc, char* argv[], long nrep) {
     }
     repetition_counter = 0;
 
-    return ret;
 }
 
 void jk_sync_clocks(void) {

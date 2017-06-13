@@ -32,18 +32,23 @@
 
 #ifdef ENABLE_WINDOWSYNC_SK
 #include "skampi_sync/sk_sync.h"
+#include "skampi_sync/sk_parse_options.h"
 
 #elif  ENABLE_WINDOWSYNC_NG
 #include "netgauge_sync/ng_sync.h"
+#include "netgauge_sync/ng_parse_options.h"
 
 #elif  ENABLE_WINDOWSYNC_JK
 #include "joneskoenig_sync/jk_sync.h"
+#include "joneskoenig_sync/jk_parse_options.h"
 
 #elif ENABLE_WINDOWSYNC_HCA
 #include "hca_sync/hca_sync.h"
+#include "hca_sync/hca_parse_options.h"
 
 #elif ENABLE_GLOBAL_TIMES
 #include "hca_sync/hca_sync.h"
+#include "hca_sync/hca_parse_options.h"
 #endif
 
 #ifdef ENABLE_BENCHMARK_BARRIER
@@ -72,6 +77,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_errorcodes = sk_get_local_sync_errorcodes;
     sync_f->print_sync_info = sk_print_sync_parameters;
     sync_f->get_time = get_time;
+    sync_f->parse_sync_params = sk_parse_options;
 }
 
 #elif ENABLE_WINDOWSYNC_NG
@@ -87,6 +93,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_errorcodes = ng_get_local_sync_errorcodes;
     sync_f->print_sync_info = ng_print_sync_parameters;
     sync_f->get_time = get_time;
+    sync_f->parse_sync_params = ng_parse_options;
 }
 
 #elif ENABLE_WINDOWSYNC_JK
@@ -102,6 +109,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_errorcodes = jk_get_local_sync_errorcodes;
     sync_f->print_sync_info = jk_print_sync_parameters;
     sync_f->get_time = get_time;
+    sync_f->parse_sync_params = jk_parse_options;
 }
 
 #elif ENABLE_WINDOWSYNC_HCA
@@ -118,6 +126,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->start_sync = hca_start_synchronization;
     sync_f->stop_sync = hca_stop_synchronization;
     sync_f->get_time = hca_get_adjusted_time;
+    sync_f->parse_sync_params = hca_parse_options;
 }
 
 #elif ENABLE_GLOBAL_TIMES // barrier sync with HCA-global times
@@ -130,6 +139,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_normalized_time = hca_get_normalized_time;
     sync_f->get_errorcodes = hca_get_local_sync_errorcodes;
     sync_f->get_time = hca_get_adjusted_time;
+    sync_f->parse_sync_params = hca_parse_options;
 
 #if ENABLE_BENCHMARK_BARRIER
     sync_f->print_sync_info = bbarrier_print_sync_parameters;
@@ -155,6 +165,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_errorcodes = NULL;
     sync_f->print_sync_info = bbarrier_print_sync_parameters;
     sync_f->get_time = get_time;
+    sync_f->parse_sync_params = bbarrier_parse_options;
 }
 
 #else	// MPI_Barrier
@@ -169,6 +180,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f) {
     sync_f->get_errorcodes = NULL;
     sync_f->print_sync_info = mpibarrier_print_sync_parameters;
     sync_f->get_time = get_time;
+    sync_f->parse_sync_params = mpibarrier_parse_options;
 }
 
 #endif

@@ -30,6 +30,7 @@
 
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "parse_test_options.h"
 
 #include <gsl/gsl_statistics.h>
@@ -162,6 +163,7 @@ int main(int argc, char* argv[]) {
     double* rtts_s;
     reprompib_st_error_t ret;
     FILE* f;
+    reprompib_sync_options_t sync_opts;
 
 
     int n_pingpongs = 1000;
@@ -192,8 +194,8 @@ int main(int argc, char* argv[]) {
     validate_test_options_or_abort(ret, &opts);
 
     // initialize synchronization module
-    ret = sync_f.init_sync_module(argc, argv, opts.n_rep);
-    validate_test_options_or_abort(ret, &opts);
+    sync_f.parse_sync_params(argc, argv, &sync_opts);
+    sync_f.init_sync_module(sync_opts, opts.n_rep);
 
     n_wait_steps = opts.steps + 1;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);

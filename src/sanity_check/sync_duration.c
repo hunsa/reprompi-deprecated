@@ -30,6 +30,7 @@
 #include "mpi.h"
 
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
 
@@ -64,6 +65,7 @@ int main(int argc, char* argv[]) {
     double runtime_s;
     reprompib_st_opts_t opts;
     reprompib_st_error_t ret;
+    reprompib_sync_options_t sync_opts;
     FILE* f;
 
     double *all_runtimes = NULL;
@@ -89,8 +91,8 @@ int main(int argc, char* argv[]) {
     ret = parse_test_options(&opts, argc, argv);
     //validate_test_options_or_abort(ret, &opts);
 
-    ret = sync_f.init_sync_module(argc, argv, dummy_nrep);
-    validate_test_options_or_abort(ret, &opts);
+    sync_f.parse_sync_params(argc, argv, &sync_opts);
+    sync_f.init_sync_module(sync_opts, dummy_nrep);
     print_initial_settings(argc, argv, sync_f.print_sync_info);
 
 

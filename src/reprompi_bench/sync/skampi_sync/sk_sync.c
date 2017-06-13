@@ -38,7 +38,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/sync/sync_constants.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "sk_parse_options.h"
 #include "sk_sync.h"
 
@@ -60,7 +60,7 @@ double start_batch, start_sync, stop_sync;
 static int sync_index = 0; /* current window index within the current measurement batch */
 
 // options specified from the command line
-static sk_options_t parameters;
+static reprompi_sk_options_t parameters;
 
 enum {
     Number_ping_pongs = 100,
@@ -68,33 +68,19 @@ enum {
 };
 
 
-void sk_init_parameters(sk_options_t* opts_p) {
-    opts_p->window_size_sec = REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
-    opts_p->wait_time_sec = REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
-    opts_p->n_rep = 0;
-}
-
-int sk_init_synchronization_module(int argc, char* argv[], long nrep) {
-    int i, ret;
+void sk_init_synchronization_module(const reprompib_sync_options_t opts_p, const long nrep) {
+    int i;
     int np;
 
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    sk_init_parameters(&parameters);
-    ret = sk_parse_options(&parameters, argc, argv);
+    parameters.wait_time_sec = opts_p.wait_time_sec;
+    parameters.window_size_sec = opts_p.window_size_sec;
     parameters.n_rep = nrep;
-
-    if (ret != SUCCESS) {
-        return ret;
-    }
 
     tds = (double*) skampi_malloc(np * sizeof(double));
     for (i = 0; i < np; i++)
         tds[i] = 0.0;
-
-    if (ret != SUCCESS) {
-        return ret;
-    }
 
     invalid = (int*) skampi_malloc(parameters.n_rep * sizeof(int));
     for (i = 0; i < parameters.n_rep; i++) {
@@ -102,7 +88,6 @@ int sk_init_synchronization_module(int argc, char* argv[], long nrep) {
     }
     repetition_counter = 0;
 
-    return SUCCESS;
 }
 
 void print_global_time_differences() {

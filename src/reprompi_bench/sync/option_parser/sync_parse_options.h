@@ -21,16 +21,18 @@
 </license>
 */
 
+#ifndef REPROMPI_SYNC_PARSE_OPTIONS_H_
+#define REPROMPI_SYNC_PARSE_OPTIONS_H_
 
-#ifndef REPROMPI_SYNC_CONSTANTS_H_
-#define REPROMPI_SYNC_CONSTANTS_H_
+typedef struct {
+    double window_size_sec; /* --window-size */
+    int n_fitpoints; /* --fitpoints */
+    int n_exchanges; /* --exchanges */
 
-extern const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT;
-extern const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT;
-
-extern const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT;
-extern const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT;
-
+    double wait_time_sec; /* --wait-time */
+} reprompib_sync_options_t;
 
 
-#endif /* REPROMPI_SYNC_CONSTANTS_H_ */
+void reprompi_init_sync_parameters(reprompib_sync_options_t* opts_p);
+
+#endif /* REPROMPI_SYNC_PARSE_OPTIONS_H_ */

@@ -24,8 +24,8 @@
 #ifndef HCA_PARSE_OPTIONS_H_
 #define HCA_PARSE_OPTIONS_H_
 
-#include "hca_sync.h"
+#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 
-reprompib_error_t hca_parse_options(hca_options_t* opts_p, int argc, char **argv);
+void hca_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p);
 
 #endif /* HCA_PARSE_OPTIONS_H_ */
