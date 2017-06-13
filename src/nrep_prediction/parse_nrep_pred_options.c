@@ -28,6 +28,7 @@
 #include <string.h>
 #include <mpi.h>
 
+#include "reprompi_bench/misc.h"
 #include "reprompi_bench/option_parser/option_parser_helpers.h"
 #include "parse_nrep_pred_options.h"
 

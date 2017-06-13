@@ -30,6 +30,5 @@ typedef void (*print_help_t)(void);
 void reprompib_print_common_help(void);
 void reprompib_print_benchmark_help(void);
 void reprompib_print_prediction_help(void);
-void reprompib_print_error_and_exit(const char* error_str);
 
 #endif /* REPROMPIB_OPTION_PARSER_HELPERS_H_ */

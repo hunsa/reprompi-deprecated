@@ -140,7 +140,7 @@ void generate_pred_job_list(pred_options_t opts, pred_job_list_t* jlist) {
             i = 0;
             for (sizeindex = 0; sizeindex < opts.options.n_msize; sizeindex++) {
                 for (cindex = 0; cindex < opts.options.n_calls; cindex++) {
-                    jlist->jobs[i].count = opts.options.msize_list[sizeindex];
+                    jlist->jobs[i].msize = opts.options.msize_list[sizeindex];
                     jlist->jobs[i].call_index = opts.options.list_mpi_calls[cindex];
                     jlist->jobs[i].n_rep = 0;
 

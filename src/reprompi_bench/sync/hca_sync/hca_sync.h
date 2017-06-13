@@ -24,7 +24,7 @@
 #ifndef HCA_SYNC_H_
 #define HCA_SYNC_H_
 
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
 
 typedef struct {
     long n_rep; /* --repetitions */

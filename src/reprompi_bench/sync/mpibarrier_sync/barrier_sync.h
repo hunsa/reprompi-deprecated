@@ -24,7 +24,7 @@
 #ifndef BARRIER_SYNC_H_
 #define BARRIER_SYNC_H_
 
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
 
 void mpibarrier_init_synchronization_module(const reprompib_sync_options_t parsed_opts, const long nrep);
 void mpibarrier_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p);

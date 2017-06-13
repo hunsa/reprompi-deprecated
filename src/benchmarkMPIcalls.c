@@ -29,7 +29,6 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "benchmark_job.h"
 #include "reprompi_bench/option_parser/parse_options.h"

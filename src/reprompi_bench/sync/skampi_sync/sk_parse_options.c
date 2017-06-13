@@ -31,14 +31,11 @@
 #include <assert.h>
 
 #include "reprompi_bench/misc.h"
-#include "reprompi_bench/option_parser/option_parser_constants.h"
-#include "reprompi_bench/option_parser/option_parser_helpers.h"
-#include "sk_sync.h"
+#include "reprompi_bench/sync/sync_info.h"
 #include "sk_parse_options.h"
 
 void sk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
     int c;
-    reprompib_error_t ret = SUCCESS;
 
     reprompi_init_sync_parameters(opts_p);
 
@@ -50,7 +47,7 @@ void sk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
+        c = getopt_long(argc, argv, reprompi_sync_opts_str, reprompi_sync_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
@@ -70,8 +67,12 @@ void sk_parse_options(int argc, char **argv, reprompib_sync_options_t* opts_p) {
         }
     }
 
+    // check for errors
     if (opts_p->window_size_sec <= 0) {
-        ret |= ERROR_WIN;
+      reprompib_print_error_and_exit("Invalid window size (should be positive)");
+    }
+    if (opts_p->wait_time_sec <= 0) {
+      reprompib_print_error_and_exit("Invalid wait time before the first window (should be positive)");
     }
 
     optind = 1;	// reset optind to enable option re-parsing

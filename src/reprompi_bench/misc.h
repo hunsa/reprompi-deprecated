@@ -40,9 +40,6 @@ enum {
     ERROR_MSIZE_INTERVAL_UNKNOWN = 1ULL << 8,
     ERROR_MSIZE_INTERVAL_MINMAX = 1ULL << 9,
     ERROR_UNKNOWN_OPTION = 1ULL << 10,
-    ERROR_WIN = 1ULL << 11,
-    ERROR_FITPOINTS = 1ULL << 12,
-    ERROR_EXCHANGES = 1ULL << 13,
     ERROR_BATCH = 1ULL << 14,
     ERROR_NREPS_MIN = 1ULL << 15,
     ERROR_NREPS_MAX = 1ULL << 16,
@@ -64,11 +61,6 @@ enum {
     ERROR_ROOT_PROC = 1ULL << 32
 } bench_error_t;
 
-enum {
-    FLAG_START_TIME_HAS_PASSED = 0x1,
-    FLAG_SYNC_WIN_EXPIRED = 0x2
-};
-
 
 typedef uint64_t reprompib_error_t;
 
@@ -79,5 +71,6 @@ double repro_max(double a, double b);
 void shuffle(int *array, size_t n);
 
 int reprompib_str_to_long(const char *str, long* result);
+void reprompib_print_error_and_exit(const char* error_str);
 
 #endif /* MISC_H__ */

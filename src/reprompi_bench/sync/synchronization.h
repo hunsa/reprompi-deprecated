@@ -24,7 +24,7 @@
 #ifndef REPROMPIB_SYNCHRONIZATION_H_
 #define REPROMPIB_SYNCHRONIZATION_H_
 
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
 
 typedef void (*init_sync_module_t)(const reprompib_sync_options_t parsed_opts, const long nrep);
 typedef void (*sync_clocks_t)(void);

@@ -24,10 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
-#include <string.h>
-#include <assert.h>
 
-#include "sync_parse_options.h"
+#include "sync_info.h"
 
 
 const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT = 20;
@@ -35,6 +33,18 @@ const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT = 10;
 
 const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT = 1e-3;
 const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT = 0;
+
+
+const struct option reprompi_sync_long_options[] = {
+        { "window-size", required_argument, 0, REPROMPI_ARGS_WINSYNC_WIN_SIZE },
+        { "fitpoints", required_argument, 0, REPROMPI_ARGS_WINSYNC_NFITPOINTS },
+        { "exchanges", required_argument, 0, REPROMPI_ARGS_WINSYNC_NEXCHANGES },
+        { "wait-time", required_argument, 0, REPROMPI_ARGS_WINSYNC_WAITTIME },
+        { 0, 0, 0, 0 }
+};
+const char reprompi_sync_opts_str[] = "";
+
+
 
 
 void reprompi_init_sync_parameters(reprompib_sync_options_t* opts_p) {

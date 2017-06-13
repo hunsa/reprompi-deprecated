@@ -167,7 +167,7 @@ endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
 set(SYNC_SRC_FILES
 ${SRC_DIR}/reprompi_bench/sync/time_measurement.c
 ${SRC_DIR}/reprompi_bench/sync/synchronization.c
-${SRC_DIR}/reprompi_bench/sync/option_parser/sync_parse_options.c
+${SRC_DIR}/reprompi_bench/sync/sync_info.c
 ${SRC_DIR}/reprompi_bench/sync/skampi_sync/sk_parse_options.c
 ${SRC_DIR}/reprompi_bench/sync/skampi_sync/sk_sync.c
 ${SRC_DIR}/reprompi_bench/sync/joneskoenig_sync/jk_parse_options.c

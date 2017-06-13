@@ -82,9 +82,9 @@ void print_help(char* testname) {
         }
         else {
             printf(
-                    "\nEXAMPLES: mpirun -np 4 %s --window-size=100 --fitpoints=10 --exchanges=20\n", testname);
+                    "\nEXAMPLES: mpirun -np 4 %s -r 5 --window-size=100 --fitpoints=10 --exchanges=20\n", testname);
             printf(
-                    "\n          mpirun -np 4 %s --window-size=100 \n", testname);
+                    "\n          mpirun -np 4 %s -r 5 --window-size=100 \n", testname);
 
         }
 

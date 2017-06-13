@@ -32,9 +32,9 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
 
+#include "reprompi_bench/misc.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/synchronization.h"
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "benchmark_job.h"

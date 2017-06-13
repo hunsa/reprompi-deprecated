@@ -24,6 +24,14 @@
 #ifndef REPROMPI_SYNC_PARSE_OPTIONS_H_
 #define REPROMPI_SYNC_PARSE_OPTIONS_H_
 
+#include <getopt.h>
+
+
+enum {
+    FLAG_START_TIME_HAS_PASSED = 0x1,
+    FLAG_SYNC_WIN_EXPIRED = 0x2
+};
+
 typedef struct {
     double window_size_sec; /* --window-size */
     int n_fitpoints; /* --fitpoints */
@@ -31,6 +39,17 @@ typedef struct {
 
     double wait_time_sec; /* --wait-time */
 } reprompib_sync_options_t;
+
+
+typedef enum reprompi_win_sync_getopt_ids {
+  REPROMPI_ARGS_WINSYNC_WIN_SIZE = 700,
+  REPROMPI_ARGS_WINSYNC_NFITPOINTS,
+  REPROMPI_ARGS_WINSYNC_NEXCHANGES,
+  REPROMPI_ARGS_WINSYNC_WAITTIME
+} reprompi_win_sync_getopt_ids_t;
+
+extern const struct option reprompi_sync_long_options[];
+extern const char reprompi_sync_opts_str[];
 
 
 void reprompi_init_sync_parameters(reprompib_sync_options_t* opts_p);

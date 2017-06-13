@@ -26,8 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "reprompi_bench/misc.h"
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
 #include "bbarrier_sync.h"
 
 inline double bbarrier_get_normalized_time(double local_time) {

@@ -306,7 +306,8 @@ reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char
     }
 
     if (printhelp) {
-        ret = SUCCESS;
+      MPI_Finalize();
+      exit(0);
     }
 
 

@@ -30,7 +30,6 @@
 
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
 #include "parse_test_options.h"
 
 #include <gsl/gsl_statistics.h>

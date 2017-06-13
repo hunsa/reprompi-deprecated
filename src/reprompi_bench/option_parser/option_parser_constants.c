@@ -44,11 +44,6 @@ const struct option reprompi_default_long_options[] = {
         { "var-thres", required_argument, 0, REPROMPI_ARGS_NREPPRED_VAR_THRES },
         { "var-win", required_argument, 0, REPROMPI_ARGS_NREPPRED_VAR_WIN },
 
-        { "window-size", required_argument, 0, REPROMPI_ARGS_WINSYNC_WIN_SIZE },
-        { "fitpoints", required_argument, 0, REPROMPI_ARGS_WINSYNC_NFITPOINTS },
-        { "exchanges", required_argument, 0, REPROMPI_ARGS_WINSYNC_NEXCHANGES },
-        { "wait-time", required_argument, 0, REPROMPI_ARGS_WINSYNC_WAITTIME },
-
         { "verbose", no_argument, 0, REPROMPI_ARGS_VERBOSE },
         { "help", no_argument, 0, 0 },
         { 0, 0, 0, 0 }

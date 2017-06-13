@@ -34,7 +34,7 @@
 
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/sync/option_parser/sync_parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
 #include "hca_parse_options.h"
 #include "hca_sync.h"
 

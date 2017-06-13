@@ -138,6 +138,7 @@ reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc,
             reprompib_print_benchmark_help();
             printhelp = 1;
             break;
+
         case '?':
             break;
         }
@@ -150,9 +151,9 @@ reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc,
         }
     }
 
-
     if (printhelp) {
-        ret = SUCCESS;
+      MPI_Finalize();
+      exit(0);
     }
 
     optind = 1;	// reset optind to enable option re-parsing

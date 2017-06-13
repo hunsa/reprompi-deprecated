@@ -24,7 +24,7 @@
 #ifndef REPROMPI_OPTION_PARSER_CONSTANTS_H_
 #define REPROMPI_OPTION_PARSER_CONSTANTS_H_
 
-#include <stdlib.h>
+#include <getopt.h>
 
 typedef enum reprompi_common_getopt_ids {
   REPROMPI_ARGS_NREPS = 'r',
@@ -51,13 +51,6 @@ typedef enum reprompi_nrep_pred_getopt_ids {
   REPROMPI_ARGS_NREPPRED_VAR_THRES,
   REPROMPI_ARGS_NREPPRED_VAR_WIN
 } reprompi_nrep_pred_getopt_ids_t;
-
-typedef enum reprompi_win_sync_getopt_ids {
-  REPROMPI_ARGS_WINSYNC_WIN_SIZE = 700,
-  REPROMPI_ARGS_WINSYNC_NFITPOINTS,
-  REPROMPI_ARGS_WINSYNC_NEXCHANGES,
-  REPROMPI_ARGS_WINSYNC_WAITTIME
-} reprompi_win_sync_getopt_ids_t;
 
 extern const struct option reprompi_default_long_options[];
 extern const char reprompi_default_opts_str[];
