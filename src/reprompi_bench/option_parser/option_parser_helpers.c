@@ -79,7 +79,7 @@ void reprompib_print_common_help(void) {
 
         printf("\nWindow-based synchronization options:\n");
         printf("%-40s %-40s\n", "--window-size=<win>",
-                "window size in microseconds for window-based synchronization");
+                "window size in microseconds for window-based synchronization (default: 1 ms)");
         printf("%-40s %-40s\n", "--wait-time=<wait>",
                 "wait time in microseconds before the start of the first window (default: 1 ms)");
 

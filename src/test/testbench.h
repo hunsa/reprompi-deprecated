@@ -24,9 +24,6 @@
 #ifndef TESTBENCH_H_
 #define TESTBENCH_H_
 
-
-extern collective_ops_t collective_calls[];
-
 enum tests {
     TEST_SCATTER_AS_BCAST = 0,
     TEST_ALLGATHER_AS_ALLREDUCE,

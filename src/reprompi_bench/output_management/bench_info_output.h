@@ -31,8 +31,10 @@
 #endif
 
 void print_command_line_args(int argc, char* argv[]);
-void print_common_settings(reprompib_common_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict);
-void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict);
-void print_final_info(reprompib_common_options_t opts, time_t start_time, time_t end_time);
+void print_common_settings(const reprompib_common_options_t* opts, const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict);
+void print_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict);
+void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts, const print_sync_info_t print_sync_info,
+                                             const reprompib_dictionary_t* dict);
+void print_final_info(const reprompib_common_options_t* opts, const time_t start_time, const time_t end_time);
 
 #endif /* BENCH_INFO_OUTPUT_H_ */

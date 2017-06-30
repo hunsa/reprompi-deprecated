@@ -42,23 +42,23 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
+void print_initial_settings(const reprompib_options_t* opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    print_common_settings(opts.common_opt, print_sync_info, dict);
+    print_common_settings(&(opts->common_opt), print_sync_info, dict);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE* f;
 
         f = stdout;
-        if (opts.n_rep > 0) {
-          fprintf(f, "#@nrep=%ld\n", opts.n_rep);
-          if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
-            fprintf(f, "#@nrep=%ld\n", opts.n_rep);
+        if (opts->n_rep > 0) {
+          fprintf(f, "#@nrep=%ld\n", opts->n_rep);
+          if (opts->common_opt.output_file != NULL) {
+            f = fopen(opts->common_opt.output_file, "a");
+            fprintf(f, "#@nrep=%ld\n", opts->n_rep);
             fflush(f);
             fclose(f);
           }
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
         tend_sec = (double*) malloc(job.n_rep * sizeof(double));
 
         if (jindex == 0) {
-            print_initial_settings(opts, sync_f.print_sync_info, &params_dict);
+            print_initial_settings(&opts, sync_f.print_sync_info, &params_dict);
             print_results_header(opts);
         }
 
@@ -198,7 +198,7 @@ int main(int argc, char* argv[]) {
 
 
     end_time = time(NULL);
-    print_final_info(opts.common_opt, start_time, end_time);
+    print_final_info(&(opts.common_opt), start_time, end_time);
 
     cleanup_job_list(jlist);
     reprompib_free_parameters(&opts);

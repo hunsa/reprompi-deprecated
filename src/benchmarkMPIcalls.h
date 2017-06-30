@@ -62,8 +62,6 @@
 #endif
 #endif
 
-#include "collective_ops/collectives.h"
 
-extern collective_ops_t collective_calls[];
 
 #endif /* BENCHMARKMPICALLS_H_ */

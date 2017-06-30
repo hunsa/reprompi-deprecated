@@ -116,6 +116,8 @@ int get_call_index(char* name);
 char* get_call_from_index(int index);
 char* const* get_mpi_calls_list(void);
 
+extern const collective_ops_t collective_calls[];
+
 void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info);
 
 void execute_Allgather(collective_params_t* params);

@@ -132,7 +132,7 @@ void print_initial_settings_prediction(pred_options_t opts, print_sync_info_t pr
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    print_common_settings(opts.options, print_sync_info, dict);
+    print_common_settings(&(opts.options), print_sync_info, dict);
 
     print_initial_settings_prediction_to_file(stdout, opts, print_sync_info, pred_params);
 
@@ -370,7 +370,7 @@ int main(int argc, char* argv[]) {
     }
 
     end_time = time(NULL);
-    print_final_info(opts.options, start_time, end_time);
+    print_final_info(&(opts.options), start_time, end_time);
 
     cleanup_pred_job_list(jlist);
     reprompib_free_parameters(&opts);

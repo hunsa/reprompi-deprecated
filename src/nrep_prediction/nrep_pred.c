@@ -37,9 +37,9 @@
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
+#include "collective_ops/collectives.h"
 #include "benchmark_job.h"
 #include "parse_nrep_pred_options.h"
-#include "nrep_pred.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
     job = jlist.jobs[jlist.job_indices[jindex]];
 
     if (jindex == 0) {
-      print_common_settings(opts, sync_f.print_sync_info, &params_dict);
+      print_common_settings(&opts, sync_f.print_sync_info, &params_dict);
       nrep_pred_print_cli_args_to_file(opts.output_file, &pred_params);
       nrep_pred_print_results_header(opts.output_file);
     }
@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
 
   sync_f.clean_sync_module();
   end_time = time(NULL);
-  print_final_info(opts, start_time, end_time);
+  print_final_info(&opts, start_time, end_time);
 
   cleanup_job_list(jlist);
   reprompib_free_common_parameters(&opts);

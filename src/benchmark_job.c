@@ -159,11 +159,11 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
 
     if (jlist->jobs[i].count * datatypesize != jlist->jobs[i].msize) {
       if (my_rank == OUTPUT_ROOT_PROC) {
-        printf("ERROR: Message size %zu for %s is not a multiple of the datatype size (%d)\n",
+        printf("ERROR: Message size %zu for %s is not a multiple of the datatype size (%d)\n\n",
             jlist->jobs[i].msize, get_call_from_index(jlist->jobs[i].call_index), datatypesize);
       }
       MPI_Finalize();
-      exit(1);
+      exit(0);
     }
   }
 

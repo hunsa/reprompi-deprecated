@@ -68,8 +68,8 @@ void print_command_line_args(int argc, char* argv[]) {
 }
 
 
-void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info,
-                                   const reprompib_dictionary_t* dict) {
+void print_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts,
+    const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -81,8 +81,8 @@ void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, pri
         fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
         fprintf(f, "#@nprocs=%d\n", np);
 
-        if (opts.enable_job_shuffling > 0) {
-            fprintf(f, "#@job_shuffling_enabled=%d\n", opts.enable_job_shuffling);
+        if (opts->enable_job_shuffling > 0) {
+            fprintf(f, "#@job_shuffling_enabled=%d\n", opts->enable_job_shuffling);
         }
 #ifdef ENABLE_GLOBAL_TIMES
         fprintf(f, "#@clocktype=global\n");
@@ -101,47 +101,47 @@ void print_common_settings_to_file(FILE* f, reprompib_common_options_t opts, pri
     }
 }
 
-void print_benchmark_common_settings_to_file(FILE* f, reprompib_common_options_t opts, print_sync_info_t print_sync_info,
-                                             const reprompib_dictionary_t* dict) {
+void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts,
+    const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, len;
     char type_name[MPI_MAX_OBJECT_NAME];
     MPI_Aint lb, extent;
     int datatypesize;
 
-    MPI_Type_get_name(opts.datatype, type_name, &len);
-    MPI_Type_get_extent(opts.datatype, &lb, &extent);
-    MPI_Type_size(opts.datatype, &datatypesize);
+    MPI_Type_get_name(opts->datatype, type_name, &len);
+    MPI_Type_get_extent(opts->datatype, &lb, &extent);
+    MPI_Type_size(opts->datatype, &datatypesize);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         int i;
-        if (opts.n_calls > 0) {
+        if (opts->n_calls > 0) {
           fprintf(f, "#MPI calls:\n");
-          for (i = 0; i < opts.n_calls; i++) {
-            fprintf(f, "#\t%s\n", get_call_from_index(opts.list_mpi_calls[i]));
+          for (i = 0; i < opts->n_calls; i++) {
+            fprintf(f, "#\t%s\n", get_call_from_index(opts->list_mpi_calls[i]));
           }
         }
-        if (opts.n_msize > 0) {
-          fprintf(f, "#Message counts:\n");
-          for (i = 0; i < opts.n_msize; i++) {
-            fprintf(f, "#\t%ld\n", opts.msize_list[i]);
+        if (opts->n_msize > 0) {
+          fprintf(f, "#Message sizes:\n");
+          for (i = 0; i < opts->n_msize; i++) {
+            fprintf(f, "#\t%ld\n", opts->msize_list[i]);
           }
         }
-        fprintf(f, "#@operation=%s\n", get_mpi_operation_str(opts.operation));
+        fprintf(f, "#@operation=%s\n", get_mpi_operation_str(opts->operation));
         fprintf(f, "#@datatype=%s\n", type_name);
         fprintf(f, "#@datatype_extent_bytes=%zu\n", extent);
         fprintf(f, "#@datatype_size_bytes=%d\n", datatypesize);
-        fprintf(f, "#@root_proc=%d\n", opts.root_proc);
+        fprintf(f, "#@root_proc=%d\n", opts->root_proc);
 
-        if (opts.pingpong_ranks[0] >=0 && opts.pingpong_ranks[1] >=0) {
-          fprintf(f, "#@pingpong_ranks=%d,%d\n", opts.pingpong_ranks[0], opts.pingpong_ranks[1]);
+        if (opts->pingpong_ranks[0] >=0 && opts->pingpong_ranks[1] >=0) {
+          fprintf(f, "#@pingpong_ranks=%d,%d\n", opts->pingpong_ranks[0], opts->pingpong_ranks[1]);
         }
         print_common_settings_to_file(f, opts, print_sync_info, dict);
     }
 }
 
 
-void print_common_settings(reprompib_common_options_t opts, print_sync_info_t print_sync_info,
+void print_common_settings(const reprompib_common_options_t* opts, const print_sync_info_t print_sync_info,
                            const reprompib_dictionary_t* dict) {
     FILE* f = stdout;
     int my_rank;
@@ -149,8 +149,8 @@ void print_common_settings(reprompib_common_options_t opts, print_sync_info_t pr
 
     print_benchmark_common_settings_to_file(stdout, opts, print_sync_info, dict);
     if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.output_file != NULL) {
-            f = fopen(opts.output_file, "a");
+        if (opts->output_file != NULL) {
+            f = fopen(opts->output_file, "a");
             print_benchmark_common_settings_to_file(f, opts, print_sync_info, dict);
             fflush(f);
             fclose(f);
@@ -161,7 +161,7 @@ void print_common_settings(reprompib_common_options_t opts, print_sync_info_t pr
 
 
 
-void print_final_info(reprompib_common_options_t opts, time_t start_time, time_t end_time) {
+void print_final_info(const reprompib_common_options_t* opts, const time_t start_time, const time_t end_time) {
     int my_rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -172,8 +172,8 @@ void print_final_info(reprompib_common_options_t opts, time_t start_time, time_t
         fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
         fprintf (f, "# Execution time: %lds\n", end_time-start_time);
 
-        if (opts.output_file != NULL) {
-            f = fopen(opts.output_file, "a");
+        if (opts->output_file != NULL) {
+            f = fopen(opts->output_file, "a");
             fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
             fprintf (f, "# Execution time: %lds\n", end_time-start_time);
             fflush(f);

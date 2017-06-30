@@ -54,12 +54,12 @@ void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sy
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        print_common_settings_to_file(f, opts.common_opt, print_sync_info, dict);
+        print_common_settings_to_file(f, &(opts.common_opt), print_sync_info, dict);
         fprintf(f, "#@nrep=%ld\n", opts.n_rep);
 
         if (opts.common_opt.output_file != NULL) {
             f = fopen(opts.common_opt.output_file, "a");
-            print_common_settings_to_file(f, opts.common_opt, print_sync_info, dict);
+            print_common_settings_to_file(f, &(opts.common_opt), print_sync_info, dict);
             fprintf(f, "#@nrep=%ld\n", opts.n_rep);
             fflush(f);
             fclose(f);

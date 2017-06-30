@@ -33,6 +33,7 @@
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
+#include "collective_ops/collectives.h"
 #include "runtimes_computation.h"
 #include "results_output.h"
 
