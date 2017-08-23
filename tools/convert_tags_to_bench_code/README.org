@@ -1,0 +1,99 @@
+#  -*- mode: org; -*-
+
+#+TITLE:      Code generation for the ReproMPI Benchmark
+#+AUTHOR:      
+#+EMAIL:       
+
+#+OPTIONS: ^:nil toc:nil <:nil
+
+#+LaTeX_CLASS_OPTIONS: [a4paper]
+#+LaTeX_CLASS_OPTIONS: [11pt]
+
+#+LATEX_HEADER: \usepackage{bibentry}
+#+LATEX_HEADER: \nobibliography*
+#+LATEX_HEADER: \usepackage{listings}
+
+
+* How to use the code generation tool
+
+** Add annotations
+  Instrument the target code with the following annotations, similar
+  to the example in *$BENCHMARK_PATH/tools/convert_tags_to_bench_code/test_files/test1*.
+
+#+BEGIN_EXAMPLE
+  //@ add_includes
+  //@ declare_variables
+  //@ initialize_bench
+  //@ initialize_timestamps t1  
+  //@ measure_timestamp t1
+  //@ start_sync
+  //@ stop_sync
+  //@ start_measurement_loop
+  //@ stop_measurement_loop
+  //@ global key=current_scope_variable
+  //@ set var_name=current_scope_variable
+  //@ print_runtime_array name=runtime_coll end_time=t2 
+                          start_time=t1 type=reduce op=max
+			  colname1=set_var1 colname2=set_var2 .....
+			  my_counter1=cnt1 my_counter2=cnt2 .....
+  //@ print_runtime_array name=total_runtime end_time=t2 
+                          start_time=t1 type=all
+  //@ cleanup_bench
+#+END_EXAMPLE
+
+** Generate benchmarking code
+
+#+BEGIN_EXAMPLE
+  cd $BENCHMARK_PATH
+  ./tools/convert_tags_to_bench_code/bin/addBenchCode.py -d annotated_code_dir -o generated_code_dir
+
+#+END_EXAMPLE
+
+
+** Create the reproMPIbenchmark library
+
+#+BEGIN_EXAMPLE
+  cd $BENCHMARK_PATH
+  ./cmake .
+  make
+  make install    # create include and lib directories
+
+#+END_EXAMPLE
+
+Note that the benchmark can be configured to use any synchronization
+method implemented.
+
+
+
+** Compile the generated code
+
+#+BEGIN_EXAMPLE
+  cd generated_code_dir
+  cmake .        // Set the path to the reproMPIbenchmark code
+  make
+#+END_EXAMPLE
+
+Alternatively, the code can be compiled directly as follows:
+#+BEGIN_EXAMPLE
+  mpicc -o generatedTest -L $BENCHMARK_PATH/lib/ -lreproMPIbench  
+                         -I $BENCHMARK_PATH/include/ test.c 
+#+END_EXAMPLE
+
+
+** Running the generated code
+
+The code supports all the benchmark parameters that impact the
+synchronization method, output format and number of repetitions.
+
+#+BEGIN_EXAMPLE
+  mpirun -np 4 ./generatedTest -r 5
+
+  # print a summary of the measurements
+  mpirun -np 4 ./generatedTest -r 500 --summary=mean,max,min 
+
+  # print full output into a results file and a summary at stdout
+  mpirun -np 4 ./generatedTest -r 500 --summary=mean,max,min --output-file=results.dat
+
+#+END_EXAMPLE
+
+

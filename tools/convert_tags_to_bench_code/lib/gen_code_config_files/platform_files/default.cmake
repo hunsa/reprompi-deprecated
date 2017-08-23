@@ -1,0 +1,21 @@
+
+# default configuration 
+find_package(MPI REQUIRED)
+
+SET(CMAKE_C_COMPILER mpicc)
+SET(CMAKE_CXX_COMPILER mpicxx)
+SET(CMAKE_C_FLAGS "-O3 -Wall ") # -pedantic")
+
+SET(BUILD_SHARED_LIBS 1)
+
+
+SET(LIBRARY_SUFFIX "so")
+IF(APPLE)
+ SET(LIBRARY_SUFFIX "dylib")
+ENDIF(APPLE)
+
+IF(APPLE)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_DARWIN_C_SOURCE")
+ENDIF(APPLE)
+
+message(STATUS "Using default compiler: ${CMAKE_C_COMPILER}")
