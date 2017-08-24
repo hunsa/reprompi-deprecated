@@ -7,6 +7,8 @@ from codeParser import CodeParser
 from string import strip
 
 def generate_cmake_text(src_dir, sourcefiles_list):
+    binary_name = "reprompibench"
+    
     common_cmake_text = \
 """
 cmake_minimum_required(VERSION 2.6)
@@ -14,6 +16,8 @@ cmake_minimum_required(VERSION 2.6)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
 project(gen_code_reproMPIbench)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake" 
     CACHE STRING "Configure project to use a specific platform file")
@@ -37,15 +41,18 @@ set(REPRO_MPI_BENCHMARK_LIB ${REPRO_MPI_BENCHMARK_DIR}/lib)
 set(REPRO_MPI_BENCHMARK_INCLUDE ${REPRO_MPI_BENCHMARK_DIR}/include)
 
 SET(SRC_DIR %s)
-add_executable(benchGeneratedTests
+add_executable(%s
 %s
 )
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src ${REPRO_MPI_BENCHMARK_INCLUDE})
-TARGET_LINK_LIBRARIES(benchGeneratedTests ${REPRO_MPI_BENCHMARK_LIB}/libreproMPIbench.${LIBRARY_SUFFIX} ${MPI_LIBRARIES} ${GSL_LIBRARIES})
+TARGET_LINK_LIBRARIES(%s ${REPRO_MPI_BENCHMARK_LIB}/libreproMPIbench.${LIBRARY_SUFFIX} ${MPI_LIBRARIES} ${GSL_LIBRARIES})
 
 
-""" % (src_dir, "\n".join([ "${SRC_DIR}/%s" %f for f in sourcefiles_list]))
+""" % (src_dir, 
+       binary_name,
+       "\n".join([ "${SRC_DIR}/%s" %f for f in sourcefiles_list]), 
+       binary_name)
 
     return common_cmake_text
 
