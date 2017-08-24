@@ -1,7 +1,6 @@
 import sys
 import os
 import re
-import pprint
 import errno
 from __builtin__ import len
 from bench_functions_gen import *
@@ -126,11 +125,6 @@ class CodeParser:
             for annotation in annotation_list:
                 if annotation['keyword'] == "print_runtime_array":
 
-#                    print "\n\n>>>>>>>>>>>>>>>>>>>>"
-#                     print file_name
-#                    print annotation
-#                    print ">>>>>>>>>><<<<<<<<<<"
-
                     data = annotation['data']
                     output_config = {}
                     output_config["string_list"] = {}
@@ -192,7 +186,7 @@ class CodeParser:
                         self.output_config_list[file_name] = {}
 
                     self.output_config_list[file_name][annotation["line_no"]] = [ output_config ]
-                    print output_config
+                    #print output_config
 
 
 
@@ -277,22 +271,6 @@ class CodeParser:
 
                         elif current_annotation["keyword"] == "start_measurement_loop":
                             code = self.code_generators[current_annotation["keyword"]](current_annotation['indent'])
-#                             try:
-#                                 test_var = current_annotation["data"]["test_var"]
-#                                 if len(test_var) == 0:
-#                                     test_var = "\"test\""
-#                             except:
-#                                 print("Error: incorrect annotation - %s" % current_annotation["line"])
-#                                 exit(1)
-#
-#                             try:
-#                                 msize_var = current_annotation["data"]["msize_var"]
-#                                 if len(msize_var) == 0:
-#                                     msize_var = "0"
-#                             except:
-#                                 print("Error: incorrect annotation - %s" % current_annotation["line"])
-#                                 exit(1)
-#                            code = self.code_generators[current_annotation["keyword"]](test_Var, msize_var, current_annotation['indent'])
 
                         else:
                             code = self.code_generators[current_annotation["keyword"]](current_annotation['indent'])

@@ -69,27 +69,23 @@ class BenchmarkCodeGen:
         with open(sources_file, "r") as f:
             sfiles_list = f.readlines()
         sfiles_list = map(strip, sfiles_list)
-        print sfiles_list
-
+        
         self.cfiles = []
         self.cheaders = []
         for dirpath, dirs, files in os.walk(self.input_dir):
             for f in files:
                 rel_file_path = os.path.relpath(os.path.join(dirpath, f), self.input_dir)
-                print rel_file_path
                 if f.endswith(".c") and rel_file_path in sfiles_list:
                     self.cfiles.append(rel_file_path)
                 if f.endswith(".h") and rel_file_path in sfiles_list:
                     self.cheaders.append(rel_file_path)
-
+        
 
     def generate_cmakelists(self):
 
         filepath = os.path.join(os.path.dirname(self.output_dir), "CMakeLists.txt")
-        #text = "set(GEN_SRC_FILES %s )\n\n" % " ".join(self.cfiles)
 
         with open(filepath, "w") as f:
-            #f.write(text)
             f.write(generate_cmake_text(os.path.basename(self.output_dir), self.cfiles))
 
 
@@ -157,12 +153,14 @@ class BenchmarkCodeGen:
         self.copy_platform_files()
         self.copy_cmake_modules()
         
+        print "Parsing files..."
         for f in self.cfiles:
+            print f
             final_file_dir = os.path.join(self.output_dir, os.path.dirname(f))
             parser = CodeParser(os.path.join(self.input_dir, f), final_file_dir)
             parser.parse_file()
             parser.generate_output_file()
-
+        print "Done."
 
 
 
