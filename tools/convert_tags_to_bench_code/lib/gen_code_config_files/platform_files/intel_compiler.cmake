@@ -7,6 +7,8 @@ SET(CMAKE_C_FLAGS "-O3 -Wall ") # -pedantic")
 
 SET(BUILD_SHARED_LIBS 1)
 
+SET(LIBRARY_SUFFIX "so")
+
 message(STATUS "Using the Intel compiler: ${CMAKE_C_COMPILER}")
 
 
