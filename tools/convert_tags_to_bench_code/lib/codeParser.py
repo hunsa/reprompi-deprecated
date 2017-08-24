@@ -76,7 +76,7 @@ class CodeParser:
                 else:
                     info = None
             tag["data"] = data
-            print tag
+            #print tag
         return tag
 
 

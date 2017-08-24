@@ -91,6 +91,6 @@ void reprompib_initialize_job(int nrep, reprompib_job_t* job);
 void reprompib_cleanup_job(reprompib_job_t job);
 void reprompib_add_svar_to_job(char* name, char* s, reprompib_job_t* job_p);
 void reprompib_add_ivar_to_job(char* name, int v, reprompib_job_t* job_p);
-
+int reprompib_add_parameter_to_bench(const char* key, const char* val);
 
 #endif /* REPROMPI_BENCHMARK_H_ */

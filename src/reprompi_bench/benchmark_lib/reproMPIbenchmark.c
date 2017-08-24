@@ -214,6 +214,14 @@ void reprompib_add_ivar_to_job(char* name, int v, reprompib_job_t* job_p) {
     job_p->n_user_ivars++;
 }
 
+
+int reprompib_add_parameter_to_bench(const char* key, const char* val) {
+  int ret;
+  ret = reprompib_add_element_to_dict(&params_dict, key, val);
+  return ret;
+}
+
+
 void reprompib_cleanup_benchmark(reprompib_options_t opts) {
     reprompib_free_parameters(&opts);
     reprompib_cleanup_dictionary(&params_dict);

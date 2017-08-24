@@ -107,7 +107,6 @@ def generate_add_includes(indent):
     code = [ "#include <string.h>",
             "#include \"reprompi_bench/sync/synchronization.h\"",
             "#include \"reprompi_bench/benchmark_lib/reproMPIbenchmark.h\"",
-            "#include \"reprompi_bench/utils/keyvalue_store.h\""
             ]
     return format_code(code, indent)
 
@@ -129,10 +128,10 @@ def generate_cleanup_arrays(array, indent):
 
 def generate_init_job(svars, ivars, indent):
 
-    print "\n\n$$$$$$$$$$$$$$$$$$$$$$$$"
-    print "svars:", svars
-    print "ivars:", ivars
-    print "#########################"
+    #print "\n\n$$$$$$$$$$$$$$$$$$$$$$$$"
+    #print "svars:", svars
+    #print "ivars:", ivars
+    #print "#########################"
 
     job_config = [
             "reprompib_initialize_job(%s.n_rep, &%s);" % (PARSED_OPTS_VAR, JOB_VAR_NAME)
@@ -167,7 +166,7 @@ def generate_stop_measurement_loop(indent):
 
 def generate_add_to_dictionary(dict, indent):
     spaces = ' ' * indent
-    code = map((lambda t: "reprompib_add_element_to_dict(\"%s\", %s);" % (t, dict[t]) ), dict.keys())
+    code = map((lambda t: "reprompib_add_parameter_to_bench(\"%s\", %s);" % (t, dict[t]) ), dict.keys())
     return format_code(code, indent)
 
 
