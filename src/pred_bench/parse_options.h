@@ -24,19 +24,8 @@
 #ifndef PRED_PARSE_OPTIONS_H_
 #define PRED_PARSE_OPTIONS_H_
 
-#include "reprompi_bench/option_parser/parse_common_options.h"
-#include "collective_ops/collectives.h"
 #include "prediction_methods/prediction_data.h"
 
-typedef struct pred_opt {
-
-    reprompib_common_options_t options;
-    nrep_pred_params_t prediction_params; /* settings for predicting the number repetitions */
-
-} pred_options_t;
-
-void reprompib_free_parameters(pred_options_t* opts_p);
-
-reprompib_error_t reprompib_parse_options(pred_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict);
+void reprompib_parse_options(int argc, char** argv, nrep_pred_params_t* opts_p);
 
 #endif /* PRED_PARSE_OPTIONS_H_ */

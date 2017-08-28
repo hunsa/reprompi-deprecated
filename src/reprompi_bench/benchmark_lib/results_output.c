@@ -29,15 +29,14 @@
 #include "mpi.h"
 
 #include "reprompi_bench/sync/synchronization.h"
-#include "reprompi_bench/option_parser/parse_common_options.h"
-#include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "reproMPIbenchmark.h"
 #include "results_output.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_results_header_to_file(FILE* f, reprompib_options_t opts, reprompib_job_t job, int summary) {
+void print_results_header_to_file(FILE* f, const reprompib_lib_output_info_t* output_info_p,
+    const reprompib_job_t* job_p) {
     int my_rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -45,16 +44,16 @@ void print_results_header_to_file(FILE* f, reprompib_options_t opts, reprompib_j
     if (my_rank == OUTPUT_ROOT_PROC) {
         int i;
 
-        for (i=0; i<job.n_user_svars; i++) {
-            fprintf(f, "%30s ", job.user_svar_names[i]);
+        for (i=0; i<job_p->n_user_svars; i++) {
+            fprintf(f, "%30s ", job_p->user_svar_names[i]);
         }
-        for (i=0; i<job.n_user_ivars; i++) {
-            fprintf(f, "%10s ", job.user_ivar_names[i]);
+        for (i=0; i<job_p->n_user_ivars; i++) {
+            fprintf(f, "%10s ", job_p->user_ivar_names[i]);
         }
 
         fprintf(f, "%20s %4s", "measure_type", "proc");
 
-        if (opts.common_opt.verbose == 1 && summary == 0) {
+        if (output_info_p->verbose == 1 && output_info_p->n_summary_methods == 0) {
 #ifdef ENABLE_WINDOWSYNC
             fprintf(f, " %12s", "errorcode");
 #endif
@@ -67,12 +66,10 @@ void print_results_header_to_file(FILE* f, reprompib_options_t opts, reprompib_j
         } else {
 
             // print summary
-            if (summary >0) {
+            if (output_info_p->n_summary_methods >0) {
                 fprintf(f, " %8s %8s ", "total_nrep", "valid_nrep");
-                for (i = 0; i < N_SUMMARY_METHODS; i++) {
-                    if (opts.print_summary_methods[i] > 0) {
-                        fprintf(f, "%14s_sec ", get_summary_opts_list()[i]);
-                    }
+                for (i = 0; i < output_info_p->n_summary_methods; i++) {
+                    fprintf(f, "%14s_sec ", output_info_p->summary_methods_names[i]);
                 }
                 fprintf(f, "\n");
             }
@@ -88,7 +85,7 @@ void print_results_header_to_file(FILE* f, reprompib_options_t opts, reprompib_j
 
 }
 
-void print_results_header(reprompib_options_t opts, reprompib_job_t job) {
+void print_results_header(const reprompib_lib_output_info_t* output_info_p, const reprompib_job_t* job_p) {
     FILE* f = stdout;
     int my_rank;
     int summary = 0;
@@ -97,25 +94,24 @@ void print_results_header(reprompib_options_t opts, reprompib_job_t job) {
 
     // print results to file (if specified)
     if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
+        if (output_info_p->output_file != NULL) {
+            f = fopen(output_info_p->output_file, "a");
         }
     }
 
 
-    if (opts.n_print_summary_selected >0 &&
-            opts.common_opt.output_file == NULL) {
+    if (output_info_p->n_summary_methods >0 &&
+        output_info_p->output_file == NULL) {
         summary = 1;
     }
-    print_results_header_to_file(f, opts, job, summary);
+    print_results_header_to_file(f, output_info_p, job_p);
     if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
+        if (output_info_p->output_file != NULL) {
             fclose(f);
 
             // print summary to stdout
-            if (opts.n_print_summary_selected >0) {
-                summary = 1;
-                print_results_header_to_file(stdout, opts, job, summary);
+            if (output_info_p->n_summary_methods >0) {
+                print_results_header_to_file(stdout, output_info_p, job_p);
             }
         }
     }
@@ -124,7 +120,7 @@ void print_results_header(reprompib_options_t opts, reprompib_job_t job) {
 
 
 void compute_runtimes_local_clocks_with_reduction(
-        double* tstart_sec, double* tend_sec,
+        const double* tstart_sec, const double* tend_sec,
         long current_start_index, long current_nreps,
         double* maxRuntimes_sec, char* op) {
 
@@ -166,9 +162,8 @@ void compute_runtimes_local_clocks_with_reduction(
 
 
 
-void print_runtimes(FILE* f, reprompib_job_t job, double* tstart_sec, double* tend_sec,
-        sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        char* op, char* timername) {
+void print_runtimes(FILE* f, const reprompib_job_t* job_p,
+        sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time) {
 
     double* maxRuntimes_sec;
     int i;
@@ -181,11 +176,11 @@ void print_runtimes(FILE* f, reprompib_job_t job, double* tstart_sec, double* te
     maxRuntimes_sec = NULL;
     sync_errorcodes = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
-        maxRuntimes_sec = (double*) malloc(job.n_rep * sizeof(double));
+        maxRuntimes_sec = (double*) malloc(job_p->n_rep * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
-        sync_errorcodes = (int*) malloc(job.n_rep * sizeof(int));
-        for (i = 0; i < job.n_rep; i++) {
+        sync_errorcodes = (int*) malloc(job_p->n_rep * sizeof(int));
+        for (i = 0; i < job_p->n_rep; i++) {
             sync_errorcodes[i] = 0;
         }
 #endif
@@ -194,31 +189,31 @@ void print_runtimes(FILE* f, reprompib_job_t job, double* tstart_sec, double* te
     current_start_index = 0;
 
 #ifdef ENABLE_WINDOWSYNC
-    compute_runtimes_global_clocks(tstart_sec, tend_sec, current_start_index, job.n_rep, OUTPUT_ROOT_PROC,
+    compute_runtimes_global_clocks(job_p->tstart_sec, job_p->tend_sec, current_start_index, job_p->n_rep, OUTPUT_ROOT_PROC,
             get_errorcodes, get_global_time,
             maxRuntimes_sec, sync_errorcodes);
 #else
-    compute_runtimes_local_clocks_with_reduction(tstart_sec, tend_sec, current_start_index, job.n_rep,
-            maxRuntimes_sec, op);
+    compute_runtimes_local_clocks_with_reduction(job_p->tstart_sec, job_p->tend_sec, current_start_index, job_p->n_rep,
+            maxRuntimes_sec, job_p->op);
 #endif
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        for (i = 0; i < job.n_rep; i++) {
+        for (i = 0; i < job_p->n_rep; i++) {
             int j;
 
-            for (j=0; j<job.n_user_svars; j++) {
-                fprintf(f, "%30s ", job.user_svars[j]);
+            for (j=0; j<job_p->n_user_svars; j++) {
+                fprintf(f, "%30s ", job_p->user_svars[j]);
             }
-            for (j=0; j<job.n_user_ivars; j++) {
-                fprintf(f, "%10d ", job.user_ivars[j]);
+            for (j=0; j<job_p->n_user_ivars; j++) {
+                fprintf(f, "%10d ", job_p->user_ivars[j]);
             }
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
-            fprintf(f, "%20s %4s %12d %8d %16.10f\n", timername, "all",
+            fprintf(f, "%20s %4s %12d %8d %16.10f\n", job_p->timername, "all",
                     sync_errorcodes[i],i,
                     maxRuntimes_sec[i]);
 #else   // measurements with Barrier-based synchronization
-            fprintf(f, "%20s %4s %8d %16.10f\n", timername, "all",
+            fprintf(f, "%20s %4s %8d %16.10f\n", job_p->timername, "all",
                     i, maxRuntimes_sec[i]);
 #endif
         }
@@ -233,8 +228,9 @@ void print_runtimes(FILE* f, reprompib_job_t job, double* tstart_sec, double* te
 
 
 
-void print_runtimes_allprocs(FILE* f, reprompib_job_t job, double* global_start_sec, double* global_end_sec,
-        int* errorcodes, char* op, char* timername) {
+void print_runtimes_allprocs(FILE* f, const reprompib_job_t* job_p,
+    const double* global_start_sec, const double* global_end_sec,
+    int* errorcodes) {
 
     double* maxRuntimes_sec;
     int i;
@@ -247,33 +243,33 @@ void print_runtimes_allprocs(FILE* f, reprompib_job_t job, double* global_start_
 
     maxRuntimes_sec = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
-        maxRuntimes_sec = (double*) malloc(job.n_rep * np * sizeof(double));
+        maxRuntimes_sec = (double*) malloc(job_p->n_rep * np * sizeof(double));
 
         for (proc_id = 0; proc_id < np; proc_id++) {
-            for (i = 0; i < job.n_rep; i++) {
-                maxRuntimes_sec[proc_id * job.n_rep + i] = global_end_sec[proc_id * job.n_rep + i] -
-                        global_start_sec[proc_id * job.n_rep+ i];
+            for (i = 0; i < job_p->n_rep; i++) {
+                maxRuntimes_sec[proc_id * job_p->n_rep + i] = global_end_sec[proc_id * job_p->n_rep + i] -
+                        global_start_sec[proc_id * job_p->n_rep+ i];
             }
         }
 
         for (proc_id = 0; proc_id < np; proc_id++) {
-            for (i = 0; i < job.n_rep; i++) {
+            for (i = 0; i < job_p->n_rep; i++) {
                 int j;
 
-                for (j=0; j<job.n_user_svars; j++) {
-                    fprintf(f, "%30s ", job.user_svars[j]);
+                for (j=0; j<job_p->n_user_svars; j++) {
+                    fprintf(f, "%30s ", job_p->user_svars[j]);
                 }
-                for (j=0; j<job.n_user_ivars; j++) {
-                    fprintf(f, "%10d ", job.user_ivars[j]);
+                for (j=0; j<job_p->n_user_ivars; j++) {
+                    fprintf(f, "%10d ", job_p->user_ivars[j]);
                 }
 
 #if defined(ENABLE_WINDOWSYNC) && !defined(ENABLE_BARRIERSYNC)    // measurements with window-based synchronization
-                fprintf(f, "%20s %4d %12d %8d %16.10f\n", timername,
-                        proc_id, errorcodes[proc_id * job.n_rep + i], i,
-                        maxRuntimes_sec[proc_id * job.n_rep + i]);
+                fprintf(f, "%20s %4d %12d %8d %16.10f\n", job_p->timername,
+                        proc_id, errorcodes[proc_id * job_p->n_rep + i], i,
+                        maxRuntimes_sec[proc_id * job_p->n_rep + i]);
 #else   // measurements with Barrier-based synchronization
-                fprintf(f, "%20s %4d %8d %16.10f\n", timername,
-                        proc_id,i, maxRuntimes_sec[proc_id * job.n_rep + i]);
+                fprintf(f, "%20s %4d %8d %16.10f\n", job_p->timername,
+                        proc_id,i, maxRuntimes_sec[proc_id * job_p->n_rep + i]);
 #endif
             }
         }
@@ -283,10 +279,11 @@ void print_runtimes_allprocs(FILE* f, reprompib_job_t job, double* global_start_
 }
 
 
-void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
-        double* tend_sec, sync_errorcodes_t get_errorcodes,
-        sync_normtime_t get_global_time, int verbose, char* op,
-        char* timername, char* timertype) {
+void print_measurement_results(FILE* f,
+    const reprompib_lib_output_info_t* output_info_p,
+    const reprompib_job_t* job_p,
+    const sync_errorcodes_t get_errorcodes,
+    const sync_normtime_t get_global_time) {
 
     int i, proc_id;
     double* local_start_sec = NULL;
@@ -301,9 +298,8 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    if (verbose == 0 && strcmp(timertype, "all") != 0) {
-        print_runtimes(f, job, tstart_sec, tend_sec, get_errorcodes,
-                get_global_time, op, timername);
+    if (output_info_p->verbose == 0 && strcmp(job_p->timertype, "all") != 0) {
+        print_runtimes(f, job_p, get_errorcodes, get_global_time);
 
     }
     else {
@@ -311,8 +307,8 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
 #ifdef ENABLE_WINDOWSYNC
         if (my_rank == OUTPUT_ROOT_PROC)
         {
-            errorcodes = (int*)malloc(job.n_rep * np * sizeof(int));
-            for (i = 0; i < job.n_rep * np; i++) {
+            errorcodes = (int*)malloc(job_p->n_rep * np * sizeof(int));
+            for (i = 0; i < job_p->n_rep * np; i++) {
                 errorcodes[i] = 0;
             }
         }
@@ -321,8 +317,8 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
         {
             int* local_errorcodes = get_errorcodes();
 
-            MPI_Gather(local_errorcodes, job.n_rep, MPI_INT,
-                    errorcodes, job.n_rep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_Gather(local_errorcodes, job_p->n_rep, MPI_INT,
+                    errorcodes, job_p->n_rep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
         }
 #endif
 
@@ -330,73 +326,71 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
 
         if (my_rank == OUTPUT_ROOT_PROC) {
             local_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             local_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             global_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             global_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
         }
 
         // gather measurement results
-        MPI_Gather(tstart_sec, job.n_rep, MPI_DOUBLE, local_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(job_p->tstart_sec, job_p->n_rep, MPI_DOUBLE,
+            local_start_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
-        MPI_Gather(tend_sec, job.n_rep, MPI_DOUBLE, local_end_sec, job.n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(job_p->tend_sec, job_p->n_rep, MPI_DOUBLE,
+            local_end_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
         tmp_local_start_sec = (double*) malloc(
-                job.n_rep * np * sizeof(double));
+            job_p->n_rep * np * sizeof(double));
         tmp_local_end_sec = (double*) malloc(
-                job.n_rep * np * sizeof(double));
-        for (i = 0; i < job.n_rep; i++) {
-            tmp_local_start_sec[i] = get_global_time(tstart_sec[i]);
-            tmp_local_end_sec[i] = get_global_time(tend_sec[i]);
+            job_p->n_rep * np * sizeof(double));
+        for (i = 0; i < job_p->n_rep; i++) {
+            tmp_local_start_sec[i] = get_global_time(job_p->tstart_sec[i]);
+            tmp_local_end_sec[i] = get_global_time(job_p->tend_sec[i]);
         }
-        MPI_Gather(tmp_local_start_sec, job.n_rep, MPI_DOUBLE, global_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(tmp_local_start_sec, job_p->n_rep, MPI_DOUBLE,
+            global_start_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
-        MPI_Gather(tmp_local_end_sec, job.n_rep, MPI_DOUBLE, global_end_sec, job.n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(tmp_local_end_sec, job_p->n_rep, MPI_DOUBLE,
+            global_end_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
         free(tmp_local_start_sec);
         free(tmp_local_end_sec);
 
-        if (verbose == 0  && strcmp(timertype, "all") == 0) {
+        if (output_info_p->verbose == 0  && strcmp(job_p->timertype, "all") == 0) {
 
-            print_runtimes_allprocs(f, job, global_start_sec, global_end_sec, errorcodes,
-                    op, timername);
+            print_runtimes_allprocs(f, job_p, global_start_sec, global_end_sec, errorcodes);
         }
 
         else {      // verbose == 1
 
             if (my_rank == OUTPUT_ROOT_PROC) {
                 for (proc_id = 0; proc_id < np; proc_id++) {
-                    for (i = 0; i < job.n_rep; i++) {
+                    for (i = 0; i < job_p->n_rep; i++) {
                         int j;
-
-                        for (j=0; j<job.n_user_svars; j++) {
-                            fprintf(f, "%30s ", job.user_svars[j]);
+                        for (j=0; j< job_p->n_user_svars; j++) {
+                            fprintf(f, "%30s ", job_p->user_svars[j]);
                         }
-                        for (j=0; j<job.n_user_ivars; j++) {
-                            fprintf(f, "%10d ", job.user_ivars[j]);
+                        for (j=0; j<job_p->n_user_ivars; j++) {
+                            fprintf(f, "%10d ", job_p->user_ivars[j]);
                         }
 
 #ifdef ENABLE_WINDOWSYNC
                         fprintf(f, "%20s %4d %12d %8d %16.10f %16.10f %16.10f %16.10f\n",
-                                timername, proc_id,
-                                errorcodes[proc_id * job.n_rep + i], i,
-                                local_start_sec[proc_id * job.n_rep + i],
-                                local_end_sec[proc_id * job.n_rep + i],
-                                global_start_sec[proc_id * job.n_rep + i],
-                                global_end_sec[proc_id * job.n_rep + i]);
+                            job_p->timername, proc_id,
+                                errorcodes[proc_id * job_p->n_rep + i], i,
+                                local_start_sec[proc_id * job_p->n_rep + i],
+                                local_end_sec[proc_id * job_p->n_rep + i],
+                                global_start_sec[proc_id * job_p->n_rep + i],
+                                global_end_sec[proc_id * job_p->n_rep + i]);
 
 #else
-                        fprintf(f, "%20s %4d %8d %16.10f %16.10f\n", timername,
-                                proc_id,
-                                i, local_start_sec[proc_id * job.n_rep + i],
-                                local_end_sec[proc_id * job.n_rep + i]);
+                        fprintf(f, "%20s %4d %8d %16.10f %16.10f\n", job_p->timername,
+                                proc_id, i,
+                                local_start_sec[proc_id * job_p->n_rep + i],
+                                local_end_sec[proc_id * job_p->n_rep + i]);
 #endif
                     }
                 }
@@ -419,9 +413,11 @@ void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec,
 
 
 
-void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* tend_sec,
-        sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        char* op, char* timername, char* timertype, int summary_methods[]) {
+void print_summary(FILE* f,
+        const reprompib_lib_output_info_t* output_info_p,
+        const reprompib_job_t* job_p,
+        const sync_errorcodes_t get_errorcodes,
+        const sync_normtime_t get_global_time) {
 
     double* maxRuntimes_sec;
     int i, j;
@@ -436,11 +432,11 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
     maxRuntimes_sec = NULL;
     sync_errorcodes = NULL;
     if (my_rank == OUTPUT_ROOT_PROC) {
-        maxRuntimes_sec = (double*) malloc(job.n_rep * np * sizeof(double));
+        maxRuntimes_sec = (double*) malloc(job_p->n_rep * np * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
-        sync_errorcodes = (int*) malloc(job.n_rep * np * sizeof(int));
-        for (i = 0; i < job.n_rep * np; i++) {
+        sync_errorcodes = (int*) malloc(job_p->n_rep * np * sizeof(int));
+        for (i = 0; i < job_p->n_rep * np; i++) {
             sync_errorcodes[i] = 0;
         }
 #endif
@@ -448,15 +444,16 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
 
     current_start_index = 0;
 
-    if (strcmp(timertype, "all") !=0) { // one runtime for each nrep id (reduced over processes)
+    if (strcmp(job_p->timertype, "all") !=0) { // one runtime for each nrep id (reduced over processes)
 
 #ifdef ENABLE_WINDOWSYNC
-        compute_runtimes_global_clocks(tstart_sec, tend_sec, current_start_index, job.n_rep, OUTPUT_ROOT_PROC,
+        compute_runtimes_global_clocks(job_p->tstart_sec, job_p->tend_sec,
+                current_start_index, job_p->n_rep, OUTPUT_ROOT_PROC,
                 get_errorcodes, get_global_time,
                 maxRuntimes_sec, sync_errorcodes);
 #else
-        compute_runtimes_local_clocks_with_reduction(tstart_sec, tend_sec, current_start_index, job.n_rep,
-                maxRuntimes_sec, op);
+        compute_runtimes_local_clocks_with_reduction(job_p->tstart_sec, job_p->tend_sec, current_start_index, job_p->n_rep,
+                maxRuntimes_sec, job_p->op);
 #endif
         n_results = 1;
 
@@ -474,8 +471,8 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
         {
             int* local_errorcodes = get_errorcodes();
 
-            MPI_Gather(local_errorcodes, job.n_rep, MPI_INT,
-                    sync_errorcodes, job.n_rep, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_Gather(local_errorcodes, job_p->n_rep, MPI_INT,
+                    sync_errorcodes, job_p->n_rep, MPI_INT, 0, MPI_COMM_WORLD);
         }
 #endif
 
@@ -483,34 +480,34 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
 
         if (my_rank == OUTPUT_ROOT_PROC) {
             local_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             local_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             global_start_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
             global_end_sec = (double*) malloc(
-                    job.n_rep * np * sizeof(double));
+                job_p->n_rep * np * sizeof(double));
         }
 
         // gather measurement results
-        MPI_Gather(tstart_sec, job.n_rep, MPI_DOUBLE, local_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(job_p->tstart_sec, job_p->n_rep, MPI_DOUBLE, local_start_sec,
+            job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
-        MPI_Gather(tend_sec, job.n_rep, MPI_DOUBLE, local_end_sec, job.n_rep,
+        MPI_Gather(job_p->tend_sec, job_p->n_rep, MPI_DOUBLE, local_end_sec, job_p->n_rep,
                 MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
         tmp_local_start_sec = (double*) malloc(
-                job.n_rep * np * sizeof(double));
+            job_p->n_rep * np * sizeof(double));
         tmp_local_end_sec = (double*) malloc(
-                job.n_rep * np * sizeof(double));
-        for (i = 0; i < job.n_rep; i++) {
-            tmp_local_start_sec[i] = get_global_time(tstart_sec[i]);
-            tmp_local_end_sec[i] = get_global_time(tend_sec[i]);
+            job_p->n_rep * np * sizeof(double));
+        for (i = 0; i < job_p->n_rep; i++) {
+            tmp_local_start_sec[i] = get_global_time(job_p->tstart_sec[i]);
+            tmp_local_end_sec[i] = get_global_time(job_p->tend_sec[i]);
         }
-        MPI_Gather(tmp_local_start_sec, job.n_rep, MPI_DOUBLE, global_start_sec,
-                job.n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Gather(tmp_local_start_sec, job_p->n_rep, MPI_DOUBLE, global_start_sec,
+            job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
-        MPI_Gather(tmp_local_end_sec, job.n_rep, MPI_DOUBLE, global_end_sec, job.n_rep,
+        MPI_Gather(tmp_local_end_sec, job_p->n_rep, MPI_DOUBLE, global_end_sec, job_p->n_rep,
                 MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
 
         free(tmp_local_start_sec);
@@ -521,9 +518,9 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
             int proc_id;
 
             for (proc_id = 0; proc_id < np; proc_id++) {
-                for (i = 0; i < job.n_rep; i++) {
-                    maxRuntimes_sec[proc_id * job.n_rep + i] = global_end_sec[proc_id * job.n_rep + i] -
-                            global_start_sec[proc_id * job.n_rep+ i];
+                for (i = 0; i < job_p->n_rep; i++) {
+                    maxRuntimes_sec[proc_id * job_p->n_rep + i] = global_end_sec[proc_id * job_p->n_rep + i] -
+                            global_start_sec[proc_id * job_p->n_rep+ i];
                 }
             }
 
@@ -547,12 +544,12 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
 
             nreps = 0;
 
-            current_proc_runtimes = maxRuntimes_sec + (proc * job.n_rep);
-            current_error_codes = sync_errorcodes + (proc * job.n_rep);
+            current_proc_runtimes = maxRuntimes_sec + (proc * job_p->n_rep);
+            current_error_codes = sync_errorcodes + (proc * job_p->n_rep);
 
             // remove measurements with out-of-window errors
 #ifdef ENABLE_WINDOWSYNC
-            for (i = 0; i < job.n_rep; i++) {
+            for (i = 0; i < job_p->n_rep; i++) {
                 if (current_error_codes[i] == 0) {
                     if (nreps < i) {
                         current_proc_runtimes[nreps] = current_proc_runtimes[i];
@@ -561,58 +558,51 @@ void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* ten
                 }
             }
 #else
-            nreps = job.n_rep;
+            nreps = job_p->n_rep;
 #endif
 
             gsl_sort(current_proc_runtimes, 1, nreps);
 
-            for (j=0; j<job.n_user_svars; j++) {
-                fprintf(f, "%30s ", job.user_svars[j]);
+            for (j=0; j<job_p->n_user_svars; j++) {
+                fprintf(f, "%30s ", job_p->user_svars[j]);
             }
-            for (j=0; j<job.n_user_ivars; j++) {
-                fprintf(f, "%10d ", job.user_ivars[j]);
+            for (j=0; j<job_p->n_user_ivars; j++) {
+                fprintf(f, "%10d ", job_p->user_ivars[j]);
             }
 
-            if (strcmp(timertype, "all") != 0) {
-                fprintf(f, "%20s %4s %10ld %10ld ", timername, "all", job.n_rep, nreps);
+            if (strcmp(job_p->timertype, "all") != 0) {
+                fprintf(f, "%20s %4s %10ld %10ld ", job_p->timername, "all", job_p->n_rep, nreps);
             }
             else {
-                fprintf(f, "%20s %4d %10ld %10ld ", timername, proc, job.n_rep, nreps);
+                fprintf(f, "%20s %4d %10ld %10ld ", job_p->timername, proc, job_p->n_rep, nreps);
             }
-            for (i = 0; i < N_SUMMARY_METHODS; i++) {
-                if (summary_methods[i] > 0) {
-
-                    switch(i) {
-                    case PRINT_MEAN: {
+            for (i = 0; i < output_info_p->n_summary_methods; i++) {
+                    if (strcmp(output_info_p->summary_methods_names[i], "mean") == 0) {
                         double mean = gsl_stats_mean(current_proc_runtimes, 1, nreps);
                         fprintf(f, "  %16.10f ", mean);
-                        break;
                     }
-                    case PRINT_MEDIAN: {
+                    else if (strcmp(output_info_p->summary_methods_names[i], "median") == 0) {
                         double median;
                         median =  gsl_stats_quantile_from_sorted_data (current_proc_runtimes, 1, nreps, 0.5);
                         fprintf(f, "  %16.10f ", median);
-                        break;
                     }
-                    case PRINT_MIN: {
+                    else if (strcmp(output_info_p->summary_methods_names[i], "min") == 0) {
                         double min = 0;
                         if (nreps > 0) {
                             min = current_proc_runtimes[0];
                         }
                         fprintf(f, "  %16.10f ", min);
-                        break;
                     }
-                    case PRINT_MAX: {
+                    else  if (strcmp(output_info_p->summary_methods_names[i], "max") == 0) {
                         double max = 0;
                         if (nreps > 0) {
                             max = current_proc_runtimes[nreps-1];
                         }
                         fprintf(f, "  %16.10f ", max);
-                        break;
                     }
+                    else {
+                      fprintf (stderr, "ERROR: Unknown summary operation: %s" , output_info_p->summary_methods_names[i]);
                     }
-
-                }
             }
             fprintf(f, "\n");
         }

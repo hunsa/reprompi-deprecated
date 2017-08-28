@@ -24,6 +24,7 @@
 #ifndef PRED_BENCHMARK_JOB_H_
 #define PRED_BENCHMARK_JOB_H_
 
+#include "reprompi_bench/option_parser/parse_common_options.h"
 #include "parse_options.h"
 
 
@@ -44,7 +45,7 @@ typedef struct {
     nrep_pred_params_t prediction_params;
 } pred_job_list_t;
 
-void generate_pred_job_list(pred_options_t opts, pred_job_list_t* jlist);
+void generate_pred_job_list(const nrep_pred_params_t* opts_p, const reprompib_common_options_t* common_opts_p, pred_job_list_t* jlist);
 void cleanup_pred_job_list(pred_job_list_t jobs);
 
 #endif /* PRED_BENCHMARK_JOB_H_ */

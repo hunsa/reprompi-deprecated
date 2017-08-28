@@ -65,8 +65,13 @@
 #include "reprompi_bench/option_parser/option_parser_data.h"
 
 typedef struct {
-    char* testname;
     long n_rep;
+    const double* tstart_sec;
+    const double* tend_sec;
+
+    char* op;      // reduce method of timings over processes (min, max, mean)
+    char* timertype;
+    char* timername;
 
     char** user_svars;
     char** user_svar_names;
@@ -80,15 +85,17 @@ typedef struct {
 
 
 void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_functions_t* sync_f_p, reprompib_options_t* opts_p);
-void reprompib_cleanup_benchmark(reprompib_options_t opts);
+void reprompib_cleanup_benchmark(reprompib_options_t* opts_p);
 
-void reprompib_print_bench_output(reprompib_job_t job, double* tstart_sec, double* tend_sec,
-        reprompib_sync_functions_t sync_f,
-        reprompib_options_t opts, char* op, char* timername, char* timertype);
+void reprompib_print_bench_output(const reprompib_job_t* job_p,
+        const reprompib_sync_functions_t* sync_f,
+        const reprompib_options_t* opts);
 
 
-void reprompib_initialize_job(int nrep, reprompib_job_t* job);
-void reprompib_cleanup_job(reprompib_job_t job);
+void reprompib_initialize_job(const long nrep, const double* tstart, const double* tend,
+    const char* operation, const char* timername, const char* timertype,
+    reprompib_job_t* job_p);
+void reprompib_cleanup_job(reprompib_job_t* job_p);
 void reprompib_add_svar_to_job(char* name, char* s, reprompib_job_t* job_p);
 void reprompib_add_ivar_to_job(char* name, int v, reprompib_job_t* job_p);
 int reprompib_add_parameter_to_bench(const char* key, const char* val);

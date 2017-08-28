@@ -27,15 +27,30 @@
 #include "reproMPIbenchmark.h"
 #include "reprompi_bench/sync/synchronization.h"
 
-void print_results_header(reprompib_options_t opts, reprompib_job_t job);
 
-void print_measurement_results(FILE* f, reprompib_job_t job, double* tstart_sec, double* tend_sec,
-		sync_errorcodes_t get_errorcodes,
-		sync_normtime_t get_global_time,
-		int verbose, char* op, char* output_file, char* timertype);
+typedef struct {
+    char* output_file;
 
-void print_summary(FILE* f, reprompib_job_t job, double* tstart_sec, double* tend_sec,
-        sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        char* op, char* timername, char* timertype, int summary_methods[]);
+    int verbose;
+    char** summary_methods_names;
+    int n_summary_methods;
+} reprompib_lib_output_info_t;
+
+
+void print_results_header(const reprompib_lib_output_info_t* output_info_p, const reprompib_job_t* job_p);
+
+void print_measurement_results(FILE* f,
+    const reprompib_lib_output_info_t* output_info_p,
+    const reprompib_job_t* job_p,
+		const sync_errorcodes_t get_errorcodes,
+		const sync_normtime_t get_global_time
+		);
+
+void print_summary(FILE* f,
+    const reprompib_lib_output_info_t* output_info_p,
+    const reprompib_job_t* job_p,
+    const sync_errorcodes_t get_errorcodes,
+    const sync_normtime_t get_global_time
+    );
 
 #endif /* REPROMPIB_RESULTS_OUTPUT_H_ */

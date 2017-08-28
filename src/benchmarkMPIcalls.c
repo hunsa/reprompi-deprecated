@@ -31,8 +31,9 @@
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "benchmark_job.h"
-#include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/option_parser/option_parser_helpers.h"
+#include "reprompi_bench/option_parser/parse_options.h"
+#include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "reprompi_bench/output_management/results_output.h"
@@ -42,13 +43,13 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_initial_settings(const reprompib_options_t* opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
+void print_initial_settings(const reprompib_options_t* opts, const reprompib_common_options_t* common_opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    print_common_settings(&(opts->common_opt), print_sync_info, dict);
+    print_common_settings(common_opts, print_sync_info, dict);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE* f;
@@ -56,8 +57,8 @@ void print_initial_settings(const reprompib_options_t* opts, print_sync_info_t p
         f = stdout;
         if (opts->n_rep > 0) {
           fprintf(f, "#@nrep=%ld\n", opts->n_rep);
-          if (opts->common_opt.output_file != NULL) {
-            f = fopen(opts->common_opt.output_file, "a");
+          if (common_opts->output_file != NULL) {
+            f = fopen(common_opts->output_file, "a");
             fprintf(f, "#@nrep=%ld\n", opts->n_rep);
             fflush(f);
             fclose(f);
@@ -69,40 +70,69 @@ void print_initial_settings(const reprompib_options_t* opts, print_sync_info_t p
 
 void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_sec,
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        reprompib_options_t opts) {
+        const reprompib_options_t* opts, const reprompib_common_options_t* common_opts) {
     FILE* f = stdout;
     int my_rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
+        if (common_opts->output_file != NULL) {
+            f = fopen(common_opts->output_file, "a");
         }
     }
 
-    if (opts.n_print_summary_selected >0)  {
+    if (opts->n_print_summary_selected >0)  {
         print_summary(stdout, job, tstart_sec, tend_sec, get_errorcodes, get_global_time,
-                opts.print_summary_methods);
-        if (opts.common_opt.output_file != NULL) {
+                opts->print_summary_methods);
+        if (common_opts->output_file != NULL) {
             print_measurement_results(f, job, tstart_sec, tend_sec,
                     get_errorcodes, get_global_time,
-                    opts.common_opt.verbose);
+                    common_opts->verbose);
         }
 
     }
     else {
         print_measurement_results(f, job, tstart_sec, tend_sec,
                 get_errorcodes, get_global_time,
-                opts.common_opt.verbose);
+                common_opts->verbose);
     }
 
     if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
+        if (common_opts->output_file != NULL) {
             fflush(f);
             fclose(f);
         }
     }
 
+}
+
+
+void reprompib_parse_bench_options(int argc, char** argv) {
+    int c;
+    opterr = 0;
+
+    while (1) {
+
+        /* getopt_long stores the option index here. */
+        int option_index = 0;
+
+        c = getopt_long(argc, argv, "h", NULL, &option_index);
+
+        /* Detect the end of the options. */
+        if (c == -1)
+            break;
+
+        switch (c) {
+        case 'h': /* list of summary options */
+            reprompib_print_benchmark_help();
+            break;
+        case '?':
+            break;
+        }
+    }
+
+    optind = 1; // reset optind to enable option re-parsing
+    opterr = 1; // reset opterr to catch invalid options
 }
 
 
@@ -114,8 +144,8 @@ int main(int argc, char* argv[]) {
     double* tend_sec;
     reprompib_options_t opts;
     reprompib_sync_options_t sync_opts;
+    reprompib_common_options_t common_opts;
     job_list_t jlist;
-    reprompib_error_t ret;
     collective_params_t coll_params;
     basic_collective_params_t coll_basic_info;
     time_t start_time, end_time;
@@ -142,13 +172,19 @@ int main(int argc, char* argv[]) {
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
-    ret = reprompib_parse_options(&opts, argc, argv, &params_dict);
-    reprompib_validate_common_options_or_abort(ret, &(opts.common_opt), reprompib_print_benchmark_help);
+    // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
+    reprompib_parse_common_options(&common_opts, argc, argv, &params_dict);
 
+    // parse the benchmark-specific arguments (nreps, summary)
+    reprompib_parse_options(&opts, argc, argv);
+
+    // parse the arguments related to the synchronization and timing method
     sync_f.parse_sync_params( argc, argv, &sync_opts);
 
-    init_collective_basic_info(opts.common_opt, procs, &coll_basic_info);
-    generate_job_list(&(opts.common_opt), opts.n_rep, &jlist);
+    reprompib_parse_bench_options(argc, argv);  // only "-h" for help
+
+    init_collective_basic_info(common_opts, procs, &coll_basic_info);
+    generate_job_list(&common_opts, opts.n_rep, &jlist);
 
 
     // execute the benchmark jobs
@@ -163,8 +199,8 @@ int main(int argc, char* argv[]) {
         tend_sec = (double*) malloc(job.n_rep * sizeof(double));
 
         if (jindex == 0) {
-            print_initial_settings(&opts, sync_f.print_sync_info, &params_dict);
-            print_results_header(opts);
+            print_initial_settings(&opts, &common_opts, sync_f.print_sync_info, &params_dict);
+            print_results_header(&opts, common_opts.output_file, common_opts.verbose);
         }
 
         collective_calls[job.call_index].initialize_data(coll_basic_info, job.count, &coll_params);
@@ -186,7 +222,7 @@ int main(int argc, char* argv[]) {
 
         //print summarized data
         reprompib_print_bench_output(job, tstart_sec, tend_sec, sync_f.get_errorcodes,
-                sync_f.get_normalized_time, opts);
+                sync_f.get_normalized_time, &opts, &common_opts);
 
         free(tstart_sec);
         free(tend_sec);
@@ -198,11 +234,11 @@ int main(int argc, char* argv[]) {
 
 
     end_time = time(NULL);
-    print_final_info(&(opts.common_opt), start_time, end_time);
+    print_final_info(&common_opts, start_time, end_time);
 
     cleanup_job_list(jlist);
     reprompib_free_parameters(&opts);
-
+    reprompib_free_common_parameters(&common_opts);
     reprompib_cleanup_dictionary(&params_dict);
 
     /* shut down MPI */

@@ -35,7 +35,7 @@ enum {
     N_SUMMARY_METHODS
 };
 
-reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict);
+void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv);
 void reprompib_free_parameters(reprompib_options_t* opts_p);
 
 char* const* get_summary_opts_list(void);

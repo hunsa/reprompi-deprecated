@@ -65,16 +65,13 @@ static void init_parameters(reprompib_options_t* opts_p) {
 }
 
 void reprompib_free_parameters(reprompib_options_t* opts_p) {
-
-    reprompib_free_common_parameters(&(opts_p->common_opt));
     if (opts_p->print_summary_methods != NULL) {
         free(opts_p->print_summary_methods);
     }
 }
 
 
-static reprompib_error_t parse_summary_list(char* subopts, reprompib_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_summary_list(char* subopts, reprompib_options_t* opts_p) {
     char * value;
     int index;
 
@@ -87,7 +84,7 @@ static reprompib_error_t parse_summary_list(char* subopts, reprompib_options_t* 
                 opts_p->n_print_summary_selected++;
             }
             else {
-                ok |= ERROR_SUMMARY_METHOD;
+              reprompib_print_error_and_exit("Invalid list of summary methods (--summary=<list of comma-separated methods> [min, max, mean, median])");
             }
         }
     }
@@ -99,17 +96,13 @@ static reprompib_error_t parse_summary_list(char* subopts, reprompib_options_t* 
             opts_p->print_summary_methods[i] = 1;
         }
     }
-
-    return ok;
 }
 
-reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv, reprompib_dictionary_t* dict) {
-    int c;
-    reprompib_error_t ret = SUCCESS;
-    int printhelp = 0;
+void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv) {
+    int c, err;
+    long nreps;
 
     init_parameters(opts_p);
-    ret |= reprompib_parse_common_options(&opts_p->common_opt, argc, argv, dict);
     opterr = 0;
 
     while (1) {
@@ -127,38 +120,27 @@ reprompib_error_t reprompib_parse_options(reprompib_options_t* opts_p, int argc,
         switch (c) {
 
         case REPROMPI_ARGS_NREPS: /* total number of (correct) repetitions */
-            opts_p->n_rep = atol(optarg);
+            err = reprompib_str_to_long(optarg, &nreps);
+            if (err || nreps <= 0) {
+              reprompib_print_error_and_exit("Nreps value is negative or not correctly specified");
+            }
+            opts_p->n_rep = nreps;
             break;
 
         case REPROMPI_ARGS_SUMMARY: /* list of summary options */
-            ret |= parse_summary_list(optarg, opts_p);
+            parse_summary_list(optarg, opts_p);
             break;
-
-        case REPROMPI_ARGS_HELP:
-            reprompib_print_benchmark_help();
-            printhelp = 1;
-            break;
-
         case '?':
             break;
         }
     }
 
-    if (opts_p->common_opt.input_file == NULL) {
 
-        if (opts_p->n_rep <= 0) {
-            ret |= ERROR_NREP_NULL;
-        }
-    }
-
-    if (printhelp) {
-      MPI_Finalize();
-      exit(0);
+    if (opts_p->n_rep <= 0) {
+      reprompib_print_error_and_exit("Nreps value is negative or not correctly specified");
     }
 
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1;	// reset opterr to catch invalid options
-
-    return ret;
 }
 

@@ -26,31 +26,8 @@
 
 
 
-typedef struct reprompib_common_opt {
-    int verbose; /* -v */
-    int n_calls; /* number of MPI calls */
-    int* list_mpi_calls;
-
-    int n_msize; /* number of message sizes to measure */
-    size_t* msize_list; /* --msizes-list / --msize-interval */
-
-    int enable_job_shuffling;
-
-    MPI_Datatype datatype;
-    MPI_Op operation;
-    int root_proc;
-
-    char* input_file;
-    char* output_file;
-
-    // parameters relevant for ping-pong operations
-    int pingpong_ranks[2];
-} reprompib_common_options_t;
-
 
 typedef struct reprompib_opt {
-    reprompib_common_options_t common_opt;
-
     long n_rep; /* --repetitions */
 
     int* print_summary_methods; /* --summary */

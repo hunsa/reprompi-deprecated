@@ -31,7 +31,6 @@
 #include "benchmark_job.h"
 #include "benchmarkMPIcalls.h"
 #include "reprompi_bench/sync/synchronization.h"
-#include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
 #include "collective_ops/collectives.h"
 #include "runtimes_computation.h"
@@ -51,7 +50,7 @@ static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_MSIZE_BYTES;
 static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_COUNT;
 #endif
 
-void print_results_header(reprompib_options_t opts) {
+void print_results_header(const reprompib_options_t* opts, const char* output_file_path, int verbose) {
     int my_rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -69,10 +68,10 @@ void print_results_header(reprompib_options_t opts) {
 
         f = stdout;
         // print summary to stdout
-        if (opts.n_print_summary_selected >0) {
+        if (opts->n_print_summary_selected >0) {
             fprintf(f, "%50s %12s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
             for (i = 0; i < N_SUMMARY_METHODS; i++) {
-                if (opts.print_summary_methods[i] > 0) {
+                if (opts->print_summary_methods[i] > 0) {
                     fprintf(f, "%10s_sec ", get_summary_opts_list()[i]);
                 }
             }
@@ -81,12 +80,12 @@ void print_results_header(reprompib_options_t opts) {
 
 
         // print results to file (if specified)
-        if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
+        if (output_file_path != NULL) {
+            f = fopen(output_file_path, "a");
         }
 
-        if (opts.common_opt.output_file != NULL || opts.n_print_summary_selected == 0) {
-            if (opts.common_opt.verbose == 1) {    // print measurement times for each process
+        if (output_file_path != NULL || opts->n_print_summary_selected == 0) {
+            if (verbose == 1) {    // print measurement times for each process
                 fprintf(f, "process ");
             }
 
@@ -96,7 +95,7 @@ void print_results_header(reprompib_options_t opts) {
             fprintf(f, "%50s %10s %12s ", "test", "nrep", msize_str);
 #endif
 
-            if (opts.common_opt.verbose == 1) {
+            if (verbose == 1) {
 #ifdef ENABLE_WINDOWSYNC
                 fprintf(f, "%14s %14s %14s %14s \n", "loc_tstart_sec", "loc_tend_sec", "gl_tstart_sec", "gl_tend_sec");
 #else
@@ -107,7 +106,7 @@ void print_results_header(reprompib_options_t opts) {
             }
         }
 
-        if (opts.common_opt.output_file != NULL) {
+        if (output_file_path != NULL) {
             fflush(f);
             fclose(f);
         }

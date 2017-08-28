@@ -29,7 +29,7 @@
 #include "reprompi_bench/sync/synchronization.h"
 
 
-void compute_runtimes_local_clocks(double* tstart_sec, double* tend_sec,
+void compute_runtimes_local_clocks(const double* tstart_sec, const double* tend_sec,
         long current_start_index, long current_nreps, int root_proc,
         double* maxRuntimes_sec) {
 
@@ -55,7 +55,7 @@ void compute_runtimes_local_clocks(double* tstart_sec, double* tend_sec,
 
 
 
-void compute_runtimes_global_clocks(double* tstart_sec, double* tend_sec,
+void compute_runtimes_global_clocks(const double* tstart_sec, const double* tend_sec,
         long current_start_index, long current_nreps, int root_proc,
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
         double* maxRuntimes_sec, int* sync_errorcodes) {

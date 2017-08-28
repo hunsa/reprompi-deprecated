@@ -34,7 +34,6 @@
 #include <limits.h>
 #include <errno.h>
 #include <mpi.h>
-#include "option_parser_helpers.h"
 #include "option_parser_constants.h"
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
@@ -94,8 +93,7 @@ void reprompib_free_common_parameters(const reprompib_common_options_t* opts_p) 
 }
 
 
-static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_msize_interval(char* subopts, reprompib_common_options_t* opts_p) {
     char * value;
     long min = 0, max = 0, step = 1, i, index;
     int err;
@@ -103,44 +101,28 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
     while (*subopts != '\0') {
         switch (getsubopt(&subopts, msize_interval_opts, &value)) {
         case MIN:
-          if (value == NULL) {
-            ok = ERROR_MSIZE_MIN;
-            break;
-          }
           err = reprompib_str_to_long(value, &min);
           if (err || min <= 0) {
-            ok = ERROR_MSIZE_MIN;
+            reprompib_print_error_and_exit( "Min message size in interval is null or not correctly specified");
           }
           break;
         case MAX:
-          if (value == NULL) {
-            ok = ERROR_MSIZE_MAX;
-            break;
-          }
           err = reprompib_str_to_long(value, &max);
           if (err || max <= 0) {
-            ok = ERROR_MSIZE_MAX;
+            reprompib_print_error_and_exit( "Max message size in interval is null or not correctly specified");
           }
           break;
         case STEP:
-          if (value == NULL) {
-            ok = ERROR_MSIZE_STEP;
-            break;
-          }
           err = reprompib_str_to_long(value, &step);
           if (err || step <= 0) {
-            ok = ERROR_MSIZE_STEP;
+            reprompib_print_error_and_exit( "Message size step in interval is null or not correctly specified");
           }
           break;
         default:
             /* Unknown suboption. */
-            ok = ERROR_MSIZE_INTERVAL_UNKNOWN;
+            reprompib_print_error_and_exit("Unknown option");
             break;
         }
-    }
-
-    if (ok != SUCCESS) {
-      reprompib_print_error_and_exit("Invalid message sizes interval (--msize-interval min=<min>,max=<max>,step=<step>)");
     }
 
     if ((ssize_t)max - (ssize_t)min >= 0) /* the msize interval option has valid values  */
@@ -151,22 +133,17 @@ static reprompib_error_t parse_msize_interval(char* subopts, reprompib_common_op
             opts_p->msize_list[index] = 1 << i;
         }
 
-        /* return success */
-        ok = SUCCESS;
     } else {
-        ok = ERROR_MSIZE_INTERVAL_MINMAX;
         reprompib_print_error_and_exit("Invalid message sizes interval - min is larger than max (--msize-interval min=<min>,max=<max>,step=<step>)");
     }
 
-    return ok;
 }
 
-static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_msize_list(char* msizes, reprompib_common_options_t* opts_p) {
     char* msizes_tok;
     char* save_str;
     char* s;
-    int index;
+    int index = 0;
 
     save_str = (char*) malloc(STRING_SIZE * sizeof(char));
     s = save_str;
@@ -184,8 +161,7 @@ static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options
 
             err = reprompib_str_to_long(msizes_tok, &msize);
             if (err || msize <=0) {
-                ok = ERROR_MSIZE_LIST;
-                break;
+                reprompib_print_error_and_exit("Invalid list of message sizes (--msizes-list=<list of comma-separated positive integers>)");
             }
 
             opts_p->msize_list[index++] = msize;
@@ -199,26 +175,19 @@ static reprompib_error_t parse_msize_list(char* msizes, reprompib_common_options
         }
         opts_p->n_msize = index;
 
-        if (ok != SUCCESS) {
-          reprompib_print_error_and_exit("Invalid list of message sizes (--msizes-list=<list of comma-separated positive integers>)");
-        }
-
         // make sure we have valid message sizes to test
         if (index > 0) {
             opts_p->msize_list = (size_t*) realloc(opts_p->msize_list,
                     index * sizeof(size_t));
         } else {
-            ok = ERROR_MSIZE_LIST_EMPTY;
             reprompib_print_error_and_exit("List of message sizes is empty (--msizes-list=<list of comma-separated positive integers>)");
         }
     }
 
     free(s);
-    return ok;
 }
 
-static reprompib_error_t parse_call_list(char* subopts, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_call_list(char* subopts, reprompib_common_options_t* opts_p) {
     char * value;
     int mpicall_index, i;
 
@@ -238,8 +207,7 @@ static reprompib_error_t parse_call_list(char* subopts, reprompib_common_options
           }
         }
         else {
-            ok |= ERROR_MPI_CALL_LIST;
-            break;
+            reprompib_print_error_and_exit("List of MPI calls is incorrect (--calls-list=<list of comma-separated MPI calls>)");
         }
     }
 
@@ -249,19 +217,18 @@ static reprompib_error_t parse_call_list(char* subopts, reprompib_common_options
     } else {
         free(opts_p->list_mpi_calls);
         opts_p->list_mpi_calls = NULL;
-        ok |= ERROR_MPI_CALL_LIST_EMPTY;
+        reprompib_print_error_and_exit("List of MPI calls is empty (--calls-list=<list of comma-separated MPI calls>)");
     }
 
-    return ok;
 }
 
-static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_options_t* opts_p, reprompib_dictionary_t* dict) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_keyvalue_list(char* args, reprompib_dictionary_t* dict) {
     char* params_tok;
     char *save_str, *s, *keyvalue_list;
     char *kv_str, *kv_s;
     char* key;
     char* val;
+    int ok;
 
     save_str = (char*) malloc(STRING_SIZE * sizeof(char));
     kv_str = (char*) malloc(STRING_SIZE * sizeof(char));
@@ -280,16 +247,17 @@ static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_option
 
             if (key!=NULL && val!= NULL) {
                 if (!reprompib_dict_has_key(dict, key)) {
-                    ok |= reprompib_add_element_to_dict(dict, key, val);
+                    ok = reprompib_add_element_to_dict(dict, key, val);
+                    if (ok != 0) {
+                      reprompib_print_error_and_exit("Cannot add parameter to dictionary");
+                    }
                 }
                 else {
-                  ok |= ERROR_KEY_VAL_PARAM;
-                  break;
+                  reprompib_print_error_and_exit("Parameter already exists");
                 }
             }
             else {
-                ok |= ERROR_KEY_VAL_PARAM;
-                break;
+              reprompib_print_error_and_exit("Key-value parameters invalid");
             }
             params_tok = strtok_r(NULL, ",", &save_str);
         }
@@ -299,13 +267,10 @@ static reprompib_error_t parse_keyvalue_list(char* args, reprompib_common_option
 
     free(s);
     free(kv_s);
-    return ok;
 }
 
 
-static reprompib_error_t parse_operation(char* arg, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
-
+static void parse_operation(char* arg, reprompib_common_options_t* opts_p) {
     if (arg != NULL && strlen(arg) > 0) {
         if (strcmp("MPI_BOR", arg) == 0) {
             opts_p->operation = MPI_BOR;
@@ -332,18 +297,16 @@ static reprompib_error_t parse_operation(char* arg, reprompib_common_options_t* 
             opts_p->operation = MPI_PROD;
         }
         else {
-            ok = ERROR_MPI_OP;
+          reprompib_print_error_and_exit("Unknown MPI operation");
         }
     }
     else {
-        ok = ERROR_MPI_OP;
+      reprompib_print_error_and_exit("Invalid MPI operation");
     }
-    return ok;
 }
 
 
-static reprompib_error_t parse_datatype(char* arg, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_datatype(char* arg, reprompib_common_options_t* opts_p) {
     if (arg != NULL && strlen(arg) > 0) {
         if (strcmp("MPI_BYTE", arg) == 0) {
           opts_p->datatype = MPI_BYTE;
@@ -361,19 +324,16 @@ static reprompib_error_t parse_datatype(char* arg, reprompib_common_options_t* o
           opts_p->datatype = MPI_DOUBLE;
         }
         else {
-          ok = ERROR_DATATYPE;
+          reprompib_print_error_and_exit("Unknown MPI datatype");
         }
     }
     else {
-        ok = ERROR_DATATYPE;
+      reprompib_print_error_and_exit("Invalid MPI operation");
     }
-
-    return ok;
 }
 
 
-static reprompib_error_t parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_p) {
-    reprompib_error_t ok = SUCCESS;
+static void parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_p) {
     char* ranks_tok;
     char* save_str;
     char* s;
@@ -396,17 +356,14 @@ static reprompib_error_t parse_pingpong_ranks(char* optarg, reprompib_common_opt
       rank = strtol(ranks_tok, &endptr, 10);
 
       if (errno != 0 || endptr == ranks_tok)  {
-        ok = ERROR_UNKNOWN_OPTION;
-        break;
+        reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
       }
       if (rank < 0 || rank >= nprocs) {
-        ok = ERROR_UNKNOWN_OPTION;
-        break;
+        reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
       } else {
 
         if (index >= 2) { // cannot have more than two pingpong ranks
-          ok = ERROR_UNKNOWN_OPTION;
-          break;
+          reprompib_print_error_and_exit("Cannot have more than two ping-pong ranks");
         }
         opts_p->pingpong_ranks[index++] = rank;
         ranks_tok = strtok_r(NULL, ",", &save_str);
@@ -416,27 +373,16 @@ static reprompib_error_t parse_pingpong_ranks(char* optarg, reprompib_common_opt
     free(s);
 
     if (index != 2) { // we need two ranks for the pingpong
-      ok = ERROR_UNKNOWN_OPTION;
+      reprompib_print_error_and_exit("Invalid ping-pong ranks (only two different positive integers that are smaller than the total number of processes are accepted)");
     }
 
     if (opts_p->pingpong_ranks[0] == opts_p->pingpong_ranks[1]) { // the pingpong ranks should be different
-      ok = ERROR_UNKNOWN_OPTION;
+      reprompib_print_error_and_exit("Invalid ping-pong ranks (only two different positive integers that are smaller than the total number of processes are accepted)");
     }
-
-    if (ok != SUCCESS) {
-      if (my_rank == OUTPUT_ROOT_PROC) {
-        fprintf(stderr, "\nERROR: Invalid ping-pong ranks (only two different positive integers that are smaller than the total number of processes are accepted)\n");
-      }
-      MPI_Finalize();
-      exit(0);
-    }
-    return ok;
 }
 
-reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv, reprompib_dictionary_t* dict) {
+void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv, reprompib_dictionary_t* dict) {
     int c;
-    reprompib_error_t ret = SUCCESS;
-    int printhelp = 0;
     int nprocs, my_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -467,29 +413,28 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
             break;
 
         case REPROMPI_ARGS_CALLS_LIST: /* list of calls */
-
-            ret |= parse_call_list(optarg, opts_p);
+            parse_call_list(optarg, opts_p);
             break;
 
         case REPROMPI_ARGS_MSIZES_LIST: /* list of message sizes */
-            ret |= parse_msize_list(optarg, opts_p);
+            parse_msize_list(optarg, opts_p);
             break;
 
         case REPROMPI_ARGS_MSIZES_INTERVAL:
             /* Interval of power of 2 message sizes */
-            ret |= parse_msize_interval(optarg, opts_p);
+            parse_msize_interval(optarg, opts_p);
             break;
         case REPROMPI_ARGS_PARAMS: /* list of key-value parameters */
-            ret |= parse_keyvalue_list(optarg, opts_p, dict);
+            parse_keyvalue_list(optarg, dict);
             break;
         case REPROMPI_ARGS_ROOT_PROC: /* set root node for collective function */
             opts_p->root_proc = atoi(optarg);
             break;
         case REPROMPI_ARGS_OPERATION: /* set operation for collective function */
-            ret |= parse_operation(optarg, opts_p);
+            parse_operation(optarg, opts_p);
             break;
         case REPROMPI_ARGS_DATATYPE: /* set operation for collective function */
-            ret |= parse_datatype(optarg, opts_p);
+            parse_datatype(optarg, opts_p);
             break;
         case REPROMPI_ARGS_SHUFFLE_JOBS: /* enable job shuffling */
             opts_p->enable_job_shuffling = 1;
@@ -506,23 +451,13 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
         }
     }
 
-    if (opts_p->input_file == NULL) {
-
-        if (opts_p->n_calls <= 0) {
-            ret |= ERROR_MPI_CALL_LIST_EMPTY;
-        }
-
-        if (opts_p->n_msize <= 0) {
-            ret |= ERROR_MSIZE_LIST_EMPTY;
-        }
-    }
-
+    // check for errors
     if (opts_p->root_proc < 0 || opts_p->root_proc > nprocs - 1) {
-        ret |= ERROR_ROOT_PROC;
+      reprompib_print_error_and_exit("Invalid root process (should be >= 0 and smaller than the total number of processes)");
     }
 
     if (opts_p->output_file != NULL) {
-        long output_file_error = SUCCESS;
+        long output_file_error = 0;
         if (my_rank == OUTPUT_ROOT_PROC) {
             FILE *f;
             f = fopen(opts_p->output_file, "w");
@@ -530,56 +465,21 @@ reprompib_error_t reprompib_parse_common_options(reprompib_common_options_t* opt
                 fclose (f);
             }
             else {
-                output_file_error = ERROR_OUTPUT_FILE_UNAVAILABLE;
+              output_file_error = 1;
             }
         }
 
         MPI_Bcast(&output_file_error, 1, MPI_LONG, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
-
-        if (output_file_error != SUCCESS) {
+        if (output_file_error != 0) {
             opts_p->output_file = NULL;
-            ret |= output_file_error;
+            reprompib_print_error_and_exit("Cannot open output file");
         }
-    }
-
-
-    if (printhelp) {
-        ret = SUCCESS;
     }
 
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1;	// reset opterr to catch invalid options
-    return ret;
 }
 
-void reprompib_validate_common_options_or_abort(const reprompib_error_t errorcodes, const reprompib_common_options_t* opts_p, const print_help_t help_func) {
-    reprompib_error_t e = errorcodes;
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        reprompib_error_t error_id = 1ULL;
-
-        if (e | 0ULL) {
-            help_func();
-        }
-        while (e | 0ULL) {
-            if (e & 1ULL) {
-                printf(">>>>>>>>>>>>>>>> Error: %s\n", get_error_message(error_id));
-            }
-            e = e >> 1;
-            error_id = error_id << 1;
-        }
-
-    }
-
-    if (errorcodes != SUCCESS) {
-        reprompib_free_common_parameters(opts_p);
-
-        /* shut down MPI */
-        MPI_Finalize();
-        exit(0);
-    }
-}
 

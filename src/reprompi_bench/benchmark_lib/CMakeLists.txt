@@ -22,12 +22,28 @@ SET_TARGET_PROPERTIES(reproMPIbench PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS
 
 install(TARGETS reproMPIbench DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
-install(DIRECTORY ${SRC_DIR}/ 
+install(DIRECTORY ${SRC_DIR}/
         DESTINATION ${CMAKE_INSTALL_PREFIX}/include
         FILES_MATCHING PATTERN "*.h"
         PATTERN "CMakeFiles" EXCLUDE
-        PATTERN "sanity_check" EXCLUDE
+        PATTERN "buf_manager*" EXCLUDE
+        PATTERN "collective_ops*" EXCLUDE
+        PATTERN "nrep_prediction*" EXCLUDE
+        PATTERN "pred_bench*" EXCLUDE
+        PATTERN "sanity_check*" EXCLUDE
+        PATTERN "tools*" EXCLUDE
+        PATTERN "version*" EXCLUDE
         PATTERN "test*" EXCLUDE
         PATTERN "benchmark_job*" EXCLUDE
         PATTERN "benchmarkMPIcalls*" EXCLUDE
         )
+
+#install(DIRECTORY ${SRC_DIR}/ 
+#        DESTINATION ${CMAKE_INSTALL_PREFIX}/include
+#        FILES_MATCHING PATTERN "*.h"
+#        PATTERN "CMakeFiles" EXCLUDE
+#        PATTERN "sanity_check" EXCLUDE
+#        PATTERN "test*" EXCLUDE
+#        PATTERN "benchmark_job*" EXCLUDE
+#        PATTERN "benchmarkMPIcalls*" EXCLUDE
+#        )

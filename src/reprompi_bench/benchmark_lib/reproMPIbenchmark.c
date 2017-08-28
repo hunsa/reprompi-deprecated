@@ -1,24 +1,24 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
-    Research Group for Parallel Computing
-    Faculty of Informatics
-    Vienna University of Technology, Austria
+ Research Group for Parallel Computing
+ Faculty of Informatics
+ Vienna University of Technology, Austria
 
-<license>
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 2 of the License, or
-    (at your option) any later version.
+ <license>
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 2 of the License, or
+ (at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-</license>
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ </license>
  */
 
 #include <stdio.h>
@@ -27,7 +27,6 @@
 #include <time.h>
 #include "mpi.h"
 
-#include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/option_parser/parse_options.h"
@@ -44,175 +43,217 @@ static const int N_USER_VARS = 4;
 static int first_print_call = 1;
 
 static reprompib_dictionary_t params_dict;
+static reprompib_common_options_t common_opts;
 
+void print_initial_settings(long nrep, print_sync_info_t print_sync_info) {
+  int my_rank, np;
+  FILE* f = stdout;
 
-void print_initial_settings(reprompib_options_t opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
-    int my_rank, np;
-    FILE* f = stdout;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &np);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+  if (my_rank == OUTPUT_ROOT_PROC) {
+    print_common_settings_to_file(f, &common_opts, print_sync_info, &params_dict);
+    fprintf(f, "#@nrep=%ld\n", nrep);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        print_common_settings_to_file(f, &(opts.common_opt), print_sync_info, dict);
-        fprintf(f, "#@nrep=%ld\n", opts.n_rep);
-
-        if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
-            print_common_settings_to_file(f, &(opts.common_opt), print_sync_info, dict);
-            fprintf(f, "#@nrep=%ld\n", opts.n_rep);
-            fflush(f);
-            fclose(f);
-        }
+    if (common_opts.output_file != NULL) {
+      f = fopen(common_opts.output_file, "a");
+      print_common_settings_to_file(f, &common_opts, print_sync_info, &params_dict);
+      fprintf(f, "#@nrep=%ld\n", nrep);
+      fflush(f);
+      fclose(f);
     }
+  }
 
 }
 
+void reprompib_print_bench_output(const reprompib_job_t* job_p,
+    const reprompib_sync_functions_t* sync_f, const reprompib_options_t* opts) {
+  FILE* f = stdout;
+  reprompib_lib_output_info_t output_info;
+  int i, index;
+  int my_rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-void reprompib_print_bench_output(reprompib_job_t job, double* tstart_sec, double* tend_sec,
-        reprompib_sync_functions_t sync_f,
-        reprompib_options_t opts,
-        char* op, char* timername, char* timertype) {
-    FILE* f = stdout;
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  if (my_rank == OUTPUT_ROOT_PROC) {
+    if (common_opts.output_file != NULL) {
+      f = fopen(common_opts.output_file, "a");
+    }
+  }
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
-            f = fopen(opts.common_opt.output_file, "a");
-        }
+
+  output_info.output_file = NULL;
+  if (common_opts.output_file != NULL) {
+    output_info.output_file = strdup(common_opts.output_file);
+  }
+  output_info.verbose = common_opts.verbose;
+  output_info.summary_methods_names = (char**) calloc(opts->n_print_summary_selected, sizeof(char*));
+  index = 0;
+  for (i = 0; i < N_SUMMARY_METHODS; i++) {
+    if (opts->print_summary_methods[i] > 0) {
+      switch (i) {
+      case PRINT_MEAN: {
+        output_info.summary_methods_names[index++] = strdup("mean");
+        break;
+      }
+      case PRINT_MEDIAN: {
+        output_info.summary_methods_names[index++] = strdup("median");
+        break;
+      }
+      case PRINT_MIN: {
+        output_info.summary_methods_names[index++] = strdup("min");
+        break;
+      }
+      case PRINT_MAX: {
+        output_info.summary_methods_names[index++] = strdup("max");
+        break;
+      }
+      }
+    }
+  }
+  output_info.n_summary_methods = index;
+
+  if (first_print_call) {
+    print_initial_settings(opts->n_rep, sync_f->print_sync_info);
+    print_results_header(&output_info, job_p);
+    first_print_call = 0;
+  }
+
+  if (opts->n_print_summary_selected > 0) {
+    print_summary(stdout, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
+
+    if (common_opts.output_file != NULL) {
+      print_measurement_results(f, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
     }
 
-    if (first_print_call) {
-        print_initial_settings(opts, sync_f.print_sync_info, &params_dict);
-        print_results_header(opts, job);
-        first_print_call = 0;
+  } else {
+    print_measurement_results(f, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
+  }
+
+  if (output_info.n_summary_methods > 0 && output_info.summary_methods_names != NULL) {
+    for (i = 0; i < output_info.n_summary_methods; i++) {
+      free(output_info.summary_methods_names[i]);
     }
 
-    if (opts.n_print_summary_selected >0)  {
-        print_summary(stdout, job, tstart_sec, tend_sec, sync_f.get_errorcodes,  sync_f.get_normalized_time,
-                op, timername, timertype, opts.print_summary_methods);
+    free(output_info.summary_methods_names);
+  }
 
-        if (opts.common_opt.output_file != NULL) {
-            print_measurement_results(f, job, tstart_sec, tend_sec,
-                    sync_f.get_errorcodes,  sync_f.get_normalized_time,
-                    opts.common_opt.verbose, op, timername, timertype);
-        }
-
-    }
-    else {
-        print_measurement_results(f, job, tstart_sec, tend_sec,
-                sync_f.get_errorcodes,  sync_f.get_normalized_time,
-                opts.common_opt.verbose, op, timername, timertype);
+  if (output_info.output_file != NULL) {
+      free(output_info.output_file);
     }
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        if (opts.common_opt.output_file != NULL) {
-            fflush(f);
-            fclose(f);
-        }
+  if (my_rank == OUTPUT_ROOT_PROC) {
+    if (common_opts.output_file != NULL) {
+      fflush(f);
+      fclose(f);
     }
+  }
 
 }
 
+void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_functions_t* sync_f_p,
+    reprompib_options_t *opts_p) {
+  int my_rank;
+  reprompib_sync_options_t sync_opts;
 
-void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_functions_t* sync_f_p, reprompib_options_t *opts_p) {
-    reprompib_error_t ret;
-    int my_rank;
-    reprompib_sync_options_t sync_opts;
+  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+  // initialize time measurement functions
+  init_timer();
 
-    // initialize time measurement functions
-    init_timer();
+  //initialize dictionary
+  reprompib_init_dictionary(&params_dict);
 
-    //initialize dictionary
-    reprompib_init_dictionary(&params_dict);
+  // parse arguments and set-up benchmarking jobs
+  print_command_line_args(argc, argv);
 
-    // parse arguments and set-up benchmarking jobs
-    print_command_line_args(argc, argv);
+  // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
+  reprompib_parse_common_options(&common_opts, argc, argv, &params_dict);
 
-    ret = reprompib_parse_options(opts_p, argc, argv, &params_dict);
-    ret = ret & (~ERROR_MPI_CALL_LIST_EMPTY) & (~ERROR_MSIZE_LIST_EMPTY);   // ignore these options
-    reprompib_validate_common_options_or_abort(ret, &(opts_p->common_opt), reprompib_print_benchmark_help);
+  // parse the benchmark-specific arguments (nreps, summary)
+  reprompib_parse_options(opts_p, argc, argv);
 
-    // initialize synchronization functions according to the configured synchronization method
-    initialize_sync_implementation(sync_f_p);
+  // initialize synchronization functions according to the configured synchronization method
+  initialize_sync_implementation(sync_f_p);
 
-    sync_f_p->parse_sync_params(argc, argv, &sync_opts);
+  sync_f_p->parse_sync_params(argc, argv, &sync_opts);
 
-    // start synchronization module
-    sync_f_p->init_sync_module(sync_opts, opts_p->n_rep);
-
-    if (ret != 0) {
-        reprompib_print_benchmark_help();
-        MPI_Finalize();
-        exit(1);
-    }
+  // start synchronization module
+  sync_f_p->init_sync_module(sync_opts, opts_p->n_rep);
 }
 
+void reprompib_initialize_job(const long nrep,
+    const double* tstart, const double* tend,
+    const char* operation, const char* timername, const char* timertype,
+    reprompib_job_t* job_p) {
+  job_p->n_rep = nrep;
+  job_p->tstart_sec = tstart;
+  job_p->tend_sec = tend;
 
-void reprompib_initialize_job(int nrep, reprompib_job_t* job) {
-    job->n_rep = nrep;
+  job_p->timername = strdup(timername);
+  job_p->timertype = strdup(timertype);
+  job_p->op = strdup(operation);    // reduce method of timings over processes
 
-    job->testname = NULL;
-    job->n_user_ivars = 0;
-    job->n_user_svars = 0;
-    job->user_ivars = NULL;
-    job->user_svars = NULL;
-    job->user_svar_names = NULL;
-    job->user_ivar_names = NULL;
+  job_p->n_user_ivars = 0;
+  job_p->n_user_svars = 0;
+  job_p->user_ivars = NULL;
+  job_p->user_svars = NULL;
+  job_p->user_svar_names = NULL;
+  job_p->user_ivar_names = NULL;
 
 }
 
-void reprompib_cleanup_job(reprompib_job_t job) {
-    if (job.testname != NULL) {
-        free(job.testname);
+void reprompib_cleanup_job(reprompib_job_t* job_p) {
+  if (job_p->user_svars != NULL) {
+    int i;
+    for (i = 0; i < job_p->n_user_svars; i++) {
+      free(job_p->user_svars[i]);
+      free(job_p->user_svar_names[i]);
     }
-    if (job.user_svars != NULL) {
-        int i;
-        for (i=0; i<job.n_user_svars; i++) {
-            free(job.user_svars[i]);
-            free(job.user_svar_names[i]);
-        }
-        free(job.user_svars);
-        job.user_svars = NULL;
-        job.n_user_svars = 0;
+    free(job_p->user_svars);
+    job_p->user_svars = NULL;
+    job_p->n_user_svars = 0;
+  }
+  if (job_p->user_ivars != NULL) {
+    int i;
+    for (i = 0; i < job_p->n_user_ivars; i++) {
+      free(job_p->user_ivar_names[i]);
     }
-    if (job.user_ivars != NULL) {
-        int i;
-        for (i=0; i<job.n_user_ivars; i++) {
-            free(job.user_ivar_names[i]);
-        }
-        free(job.user_ivars);
-        job.user_ivars = NULL;
-        job.n_user_ivars = 0;
-    }
-}
+    free(job_p->user_ivars);
+    job_p->user_ivars = NULL;
+    job_p->n_user_ivars = 0;
+  }
 
+  free(job_p->timername);
+  free(job_p->timertype);
+  free(job_p->op);
+
+}
 
 void reprompib_add_svar_to_job(char* name, char* s, reprompib_job_t* job_p) {
-    if (job_p->n_user_svars % N_USER_VARS == 0) {
-        job_p->user_svars = (char**) realloc(job_p->user_svars, (job_p->n_user_svars + N_USER_VARS) * sizeof(char*));
-        job_p->user_svar_names = (char**) realloc(job_p->user_svar_names, (job_p->n_user_svars + N_USER_VARS) * sizeof(char*));
-    }
+  if (job_p->n_user_svars % N_USER_VARS == 0) {
+    job_p->user_svars = (char**) realloc(job_p->user_svars, (job_p->n_user_svars + N_USER_VARS) * sizeof(char*));
+    job_p->user_svar_names = (char**) realloc(job_p->user_svar_names,
+        (job_p->n_user_svars + N_USER_VARS) * sizeof(char*));
+  }
 
-    job_p->user_svars[job_p->n_user_svars] = strdup(s);
-    job_p->user_svar_names[job_p->n_user_svars] = strdup(name);
-    job_p->n_user_svars++;
+  job_p->user_svars[job_p->n_user_svars] = strdup(s);
+  job_p->user_svar_names[job_p->n_user_svars] = strdup(name);
+  job_p->n_user_svars++;
 
 }
-
 
 void reprompib_add_ivar_to_job(char* name, int v, reprompib_job_t* job_p) {
-    if (job_p->n_user_ivars % N_USER_VARS == 0) {
-        job_p->user_ivars = (int*) realloc(job_p->user_ivars, (job_p->n_user_ivars + N_USER_VARS) * sizeof(int));
-        job_p->user_ivar_names = (char**) realloc(job_p->user_ivar_names, (job_p->n_user_ivars + N_USER_VARS) * sizeof(char*));
-    }
-    job_p->user_ivars[job_p->n_user_ivars] = v;
-    job_p->user_ivar_names[job_p->n_user_ivars] = strdup(name);
-    job_p->n_user_ivars++;
+  if (job_p->n_user_ivars % N_USER_VARS == 0) {
+    job_p->user_ivars = (int*) realloc(job_p->user_ivars, (job_p->n_user_ivars + N_USER_VARS) * sizeof(int));
+    job_p->user_ivar_names = (char**) realloc(job_p->user_ivar_names,
+        (job_p->n_user_ivars + N_USER_VARS) * sizeof(char*));
+  }
+  job_p->user_ivars[job_p->n_user_ivars] = v;
+  job_p->user_ivar_names[job_p->n_user_ivars] = strdup(name);
+  job_p->n_user_ivars++;
 }
+
 
 
 int reprompib_add_parameter_to_bench(const char* key, const char* val) {
@@ -221,9 +262,9 @@ int reprompib_add_parameter_to_bench(const char* key, const char* val) {
   return ret;
 }
 
-
-void reprompib_cleanup_benchmark(reprompib_options_t opts) {
-    reprompib_free_parameters(&opts);
-    reprompib_cleanup_dictionary(&params_dict);
+void reprompib_cleanup_benchmark(reprompib_options_t* opts_p) {
+  reprompib_free_parameters(opts_p);
+  reprompib_free_common_parameters(&common_opts);
+  reprompib_cleanup_dictionary(&params_dict);
 }
 

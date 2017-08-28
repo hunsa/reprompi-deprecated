@@ -32,7 +32,6 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
 
-#include "reprompi_bench/misc.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
@@ -166,7 +165,6 @@ int main(int argc, char* argv[]) {
   double* tstart_sec;
   double* tend_sec;
   double* maxRuntimes_sec = NULL;
-  reprompib_error_t ret;
   collective_params_t coll_params;
   int stop_meas;
   basic_collective_params_t coll_basic_info;
@@ -182,6 +180,7 @@ int main(int argc, char* argv[]) {
   long estimated_nreps;
   double* round_maxRuntimes_sec;
   long round_start_index;
+  int ret;
 
   /* start up MPI
    * */
@@ -199,13 +198,8 @@ int main(int argc, char* argv[]) {
 
   // parse arguments and set-up benchmarking jobs
   // print_command_line_args(argc, argv);
-  ret = reprompib_parse_common_options(&opts, argc, argv, &params_dict);
-  reprompib_validate_common_options_or_abort(ret, &opts, reprompib_print_benchmark_help);
-  if (ret != SUCCESS) {
-    fprintf(stderr, "ERROR: parsing command line arguments\n");
-    MPI_Finalize();
-    exit(0);
-  }
+  reprompib_parse_common_options(&opts, argc, argv, &params_dict);
+
   // start synchronization module
   sync_f.parse_sync_params(argc, argv, &sync_opts);
   sync_f.init_sync_module(sync_opts, pred_params.max_nrep);
