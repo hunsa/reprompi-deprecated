@@ -39,13 +39,12 @@ def generate_measure_timestamp(ts, indent):
 
 
 def generate_print_output(output_config, indent):
-    code = [ "reprompib_print_bench_output(%s, %s, %s, "   % (JOB_VAR_NAME, output_config["start_time"], output_config["end_time"]),
-             "        %s, %s,"                   % (SYNCF_VAR_NAME, PARSED_OPTS_VAR),
-             "        \"%s\", \"%s\", \"%s\");"  % (output_config["op"], output_config["name"], output_config["type"])
+    code = [
+            "\treprompib_print_bench_output(&%s, &%s, &%s); "   % (JOB_VAR_NAME, SYNCF_VAR_NAME, PARSED_OPTS_VAR)
             ]
 
-    return generate_init_job(output_config["string_list"], output_config["int_list"], indent) + \
-            format_code(code, indent) + generate_cleanup_job(indent) + "\n"
+    return format_code("{", indent) + generate_init_job(output_config, indent) + \
+            format_code(code, indent) + generate_cleanup_job(indent) + format_code("}", indent) +"\n"
 
 
 def generate_cleanup_sync(indent):
@@ -64,7 +63,7 @@ def generate_cleanup_variables(ts_array, strings_array, indent):
 def generate_cleanup_bench(indent):
     cleanup_sync_code = generate_cleanup_sync(indent)
 
-    code = [ "reprompib_cleanup_benchmark(%s);" % (PARSED_OPTS_VAR) ]
+    code = [ "reprompib_cleanup_benchmark(&%s);" % (PARSED_OPTS_VAR) ]
 
     return cleanup_sync_code + format_code(code, indent)
 
@@ -93,8 +92,8 @@ def generate_declare_variables(main_file, ts_arrays, strings_array, indent):
 
     code = [ "extern reprompib_sync_functions_t %s;" % (SYNCF_VAR_NAME),
              "extern reprompib_options_t %s;" % (PARSED_OPTS_VAR),
-             "reprompib_job_t %s;" % (JOB_VAR_NAME),
-             "int %s;" % (NREP_INDEX_VAR_NAME)
+             #"reprompib_job_t %s;" % (JOB_VAR_NAME),
+             "long %s;" % (NREP_INDEX_VAR_NAME)
              ]
     code.extend(additional_vars1)
     code.extend(additional_vars2)
@@ -126,7 +125,9 @@ def generate_cleanup_arrays(array, indent):
 
 
 
-def generate_init_job(svars, ivars, indent):
+def generate_init_job(output_config, indent):
+    svars = output_config["string_list"]
+    ivars = output_config["int_list"]
 
     #print "\n\n$$$$$$$$$$$$$$$$$$$$$$$$"
     #print "svars:", svars
@@ -134,15 +135,18 @@ def generate_init_job(svars, ivars, indent):
     #print "#########################"
 
     job_config = [
-            "reprompib_initialize_job(%s.n_rep, &%s);" % (PARSED_OPTS_VAR, JOB_VAR_NAME)
+            "\treprompib_job_t %s;" % (JOB_VAR_NAME),
+            "\treprompib_initialize_job(%s.n_rep, %s, %s, " % (PARSED_OPTS_VAR, output_config["start_time"], output_config["end_time"]),
+             "\t        \"%s\", \"%s\", \"%s\", &%s);"  % (output_config["op"], output_config["name"], output_config["type"], JOB_VAR_NAME)
             ]
-    job_config.extend( map((lambda (key, val): "reprompib_add_svar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), svars.iteritems()))
-    job_config.extend( map((lambda  (key, val): "reprompib_add_ivar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), ivars.iteritems()))
+    job_config.extend( map((lambda (key, val): "\treprompib_add_svar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), svars.iteritems()))
+    job_config.extend( map((lambda  (key, val): "\treprompib_add_ivar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), ivars.iteritems()))
 
     return format_code(job_config, indent)
 
 def generate_cleanup_job(indent):
-    code = [ "reprompib_cleanup_job(%s);" % (JOB_VAR_NAME) ]
+    code = [ "\treprompib_cleanup_job(&%s);" % (JOB_VAR_NAME)
+            ]
     return format_code(code, indent)
 
 
