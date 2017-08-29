@@ -172,6 +172,8 @@ int main(int argc, char* argv[]) {
     // parse arguments and set-up benchmarking jobs
     print_command_line_args(argc, argv);
 
+    reprompib_parse_bench_options(argc, argv);  // only "-h" for help
+
     // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
     reprompib_parse_common_options(&common_opts, argc, argv, &params_dict);
 
@@ -180,8 +182,6 @@ int main(int argc, char* argv[]) {
 
     // parse the arguments related to the synchronization and timing method
     sync_f.parse_sync_params( argc, argv, &sync_opts);
-
-    reprompib_parse_bench_options(argc, argv);  // only "-h" for help
 
     init_collective_basic_info(common_opts, procs, &coll_basic_info);
     generate_job_list(&common_opts, opts.n_rep, &jlist);

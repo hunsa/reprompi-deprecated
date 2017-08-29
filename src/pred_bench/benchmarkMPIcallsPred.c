@@ -245,11 +245,11 @@ int main(int argc, char* argv[]) {
   // parse arguments and set-up benchmarking jobs
   print_command_line_args(argc, argv);
 
-  // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
-  reprompib_parse_common_options(&common_opt, argc, argv, &params_dict);
-
   // parse the benchmark-specific arguments (prediction methods)
   reprompib_parse_options(argc, argv, &pred_opts);
+
+  // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
+  reprompib_parse_common_options(&common_opt, argc, argv, &params_dict);
 
   sync_f.parse_sync_params(argc, argv, &sync_opts);
 
