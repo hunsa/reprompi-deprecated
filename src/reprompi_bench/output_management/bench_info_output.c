@@ -68,8 +68,7 @@ void print_command_line_args(int argc, char* argv[]) {
 }
 
 
-void print_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts,
-    const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
+void print_common_settings_to_file(FILE* f, const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -80,10 +79,6 @@ void print_common_settings_to_file(FILE* f, const reprompib_common_options_t* op
 
         fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
         fprintf(f, "#@nprocs=%d\n", np);
-
-        if (opts->enable_job_shuffling > 0) {
-            fprintf(f, "#@job_shuffling_enabled=%d\n", opts->enable_job_shuffling);
-        }
 #ifdef ENABLE_GLOBAL_TIMES
         fprintf(f, "#@clocktype=global\n");
 #ifdef ENABLE_LOGP_SYNC
@@ -132,11 +127,14 @@ void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_opt
         fprintf(f, "#@datatype_extent_bytes=%zu\n", extent);
         fprintf(f, "#@datatype_size_bytes=%d\n", datatypesize);
         fprintf(f, "#@root_proc=%d\n", opts->root_proc);
+        if (opts->enable_job_shuffling > 0) {
+            fprintf(f, "#@job_shuffling_enabled=%d\n", opts->enable_job_shuffling);
+        }
 
         if (opts->pingpong_ranks[0] >=0 && opts->pingpong_ranks[1] >=0) {
           fprintf(f, "#@pingpong_ranks=%d,%d\n", opts->pingpong_ranks[0], opts->pingpong_ranks[1]);
         }
-        print_common_settings_to_file(f, opts, print_sync_info, dict);
+        print_common_settings_to_file(f, print_sync_info, dict);
     }
 }
 
