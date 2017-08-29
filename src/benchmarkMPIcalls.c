@@ -111,12 +111,17 @@ void reprompib_parse_bench_options(int argc, char** argv) {
     int c;
     opterr = 0;
 
+    const struct option bench_long_options[] = {
+        { "help", required_argument, 0, 'h' },
+        { 0, 0, 0, 0 }
+    };
+
     while (1) {
 
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, "h", NULL, &option_index);
+        c = getopt_long(argc, argv, "h", bench_long_options, &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)

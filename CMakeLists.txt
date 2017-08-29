@@ -152,7 +152,6 @@ ${BUF_MANAGER_SRC_FILES}
 
 
 set(COMMON_OPTION_PARSER_SRC_FILES
-${SRC_DIR}/reprompi_bench/option_parser/option_parser_constants.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_common_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 )
@@ -267,6 +266,7 @@ endif()
 if (COMPILE_BENCH_LIBRARY)
     ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 endif()
+
 
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")

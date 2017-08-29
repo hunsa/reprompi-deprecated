@@ -39,18 +39,21 @@ static const int NPRED_ROUNDS = 2;
 static const int NREP_PER_PRED_ROUNDS = 5;
 
 enum nrep_pred_getopt_ids {
+  HELP_MSG = 'h',
   MAXNREP = 1000,
   MINNREP,
   THRESHOLD,
   NREP_PER_PRED_ROUND,
   TIME_LIMIT
 };
+
 static const struct option pred_long_options[] = {
     { "max-nrep", required_argument, 0, MAXNREP },
     { "min-nrep", required_argument, 0, MINNREP },
     { "threshold", required_argument, 0, THRESHOLD },
     { "nrep-per-pred-round", required_argument, 0, NREP_PER_PRED_ROUND },
     { "time-limit", required_argument, 0, TIME_LIMIT },
+    { "help", required_argument, 0, HELP_MSG },
     { 0, 0, 0, 0 }
 };
 static const char pred_opts_str[] = "h";
@@ -148,7 +151,7 @@ void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) 
       opts_p->time_limit_s = atof(optarg);
       break;
 
-    case 'h':
+    case HELP_MSG:
       reprompib_nrep_pred_print_help();
       printhelp = 1;
       break;
@@ -180,11 +183,17 @@ void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) 
 
   optind = 1;	// reset optind to enable option re-parsing
   opterr = 1;	// reset opterr to catch invalid options
+
+  if (printhelp) {
+    MPI_Finalize();
+    exit(0);
+  }
 }
 
 void nrep_pred_free_params(nrep_pred_options_t* opts_p) {
   free(opts_p->nrep_per_pred_round);
 }
+
 
 void nrep_pred_print_cli_args_to_file(const char* filename, const nrep_pred_options_t* opts) {
   int my_rank;

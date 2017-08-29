@@ -33,7 +33,7 @@
 
 static const struct option default_long_options[] = {
         { "repetitions", required_argument, 0, 'r' },
-        { "help", no_argument, 0, 0 },
+        { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 }
 };
 

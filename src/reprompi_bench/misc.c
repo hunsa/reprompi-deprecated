@@ -34,51 +34,6 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-static char * const error_messages[] =
-        { "Call list contains invalid MPI calls",
-                "Call list is empty",
-                "Message sizes list contains invalid elements",
-                "Message sizes list is empty",
-                "Number of repetitions null or not specified",
-                "Min message size in interval is null or not correctly specified",
-                "Max message size in interval is null or not correctly specified",
-                "Message size step in interval is null or not correctly specified",
-                "Message size interval contains unknown suboptions",
-                "Message size interval min value is not smaller than the max value",
-                "Unknown option",
-                "Window size is invalid",
-                "Number of fitpoints is invalid",
-                "Number of exchanges is invalid",
-                "Batch size is invalid or not smaller than the total number of repetitions specified with the -r option",
-                "Min number of repetitions in interval is null or not correctly specified",
-                "Max number of repetitions in interval is null or not correctly specified",
-                "Number of repetitions step in interval is null or not correctly specified",
-                "Number of repetitions interval contains unknown suboptions",
-                "Number of repetitions interval min value is not smaller than the max value",
-                "Prediction methods list contains unknown or too many methods",
-                "Prediction methods list is empty",
-                "Prediction method threshold list contains invalid or not the same number of values as the specified number of methods",
-                "Prediction method threshold list is empty",
-                "Prediction method window list contains invalid or not the same number of values as the specified number of methods",
-                "Prediction method window list is empty",
-                "Data summary list contains invalid functions",
-                "Data summary list is empty",
-                "Key-value parameters invalid",
-                "Output file cannot be opened by process 0",
-                "Datatype is invalid",
-                "MPI operation is invalid",
-                "Root process is invalid"
-                                };
-static const int N_ERRORS = sizeof(error_messages) / sizeof(error_messages[0]);
-
-char* get_error_message(reprompib_error_t error) {
-    int index = (int)(log(error)/log(2));
-    if (index < 0 || index >= N_ERRORS) {
-        return "";
-    }
-
-    return error_messages[index];
-}
 
 double repro_min(double a, double b) {
     if (a < b)
@@ -146,7 +101,7 @@ void reprompib_print_error_and_exit(const char* error_str) {
     fprintf(stderr, "\nERROR: %s\n\n", error_str);
   }
   MPI_Finalize();
-  exit(0);
+  exit(1);
 }
 
 

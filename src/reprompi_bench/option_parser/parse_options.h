@@ -24,9 +24,6 @@
 #ifndef REPROMPIB_PARSE_OPTIONS_H_
 #define REPROMPIB_PARSE_OPTIONS_H_
 
-#include "parse_common_options.h"
-#include "option_parser_data.h"
-
 enum {
     PRINT_MEAN = 0,
     PRINT_MEDIAN,
@@ -35,8 +32,19 @@ enum {
     N_SUMMARY_METHODS
 };
 
+
+typedef struct reprompib_opt {
+    long n_rep; /* --repetitions */
+
+    int* print_summary_methods; /* --summary */
+    int n_print_summary_selected;
+
+} reprompib_options_t;
+
 void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv);
 void reprompib_free_parameters(reprompib_options_t* opts_p);
+
+void reprompib_print_benchmark_help(void);
 
 char* const* get_summary_opts_list(void);
 

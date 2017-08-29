@@ -34,7 +34,6 @@
 #include <limits.h>
 #include <errno.h>
 #include <mpi.h>
-#include "option_parser_constants.h"
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
 #include "reprompi_bench/misc.h"
@@ -56,6 +55,40 @@ static char * const msize_interval_opts[] = {
         [STEP] = "step",
         NULL
 };
+
+
+enum {
+  REPROMPI_ARGS_VERBOSE = 'v',
+  REPROMPI_ARGS_CALLS_LIST = 300,
+  REPROMPI_ARGS_MSIZES_LIST,
+  REPROMPI_ARGS_MSIZES_INTERVAL,
+  REPROMPI_ARGS_INPUT_FILE,
+  REPROMPI_ARGS_OUTPUT_FILE,
+  REPROMPI_ARGS_ROOT_PROC,
+  REPROMPI_ARGS_OPERATION,
+  REPROMPI_ARGS_DATATYPE,
+  REPROMPI_ARGS_PINGPONG_RANKS,
+  REPROMPI_ARGS_SHUFFLE_JOBS,
+  REPROMPI_ARGS_PARAMS
+};
+
+
+static const struct option reprompi_common_long_options[] = {
+        { "calls-list",required_argument, 0, REPROMPI_ARGS_CALLS_LIST },
+        { "msizes-list", required_argument, 0, REPROMPI_ARGS_MSIZES_LIST },
+        { "msize-interval", required_argument, 0, REPROMPI_ARGS_MSIZES_INTERVAL },
+        { "input-file", required_argument, 0, REPROMPI_ARGS_INPUT_FILE },
+        { "output-file", required_argument, 0, REPROMPI_ARGS_OUTPUT_FILE },
+        {"root-proc", required_argument, 0, REPROMPI_ARGS_ROOT_PROC},
+        {"operation", required_argument, 0, REPROMPI_ARGS_OPERATION},
+        {"datatype", required_argument, 0, REPROMPI_ARGS_DATATYPE},
+        {"pingpong-ranks", required_argument, 0, REPROMPI_ARGS_PINGPONG_RANKS},
+        {"shuffle-jobs", no_argument, 0, REPROMPI_ARGS_SHUFFLE_JOBS},
+        {"params", optional_argument, 0, REPROMPI_ARGS_PARAMS},
+        { "verbose", no_argument, 0, REPROMPI_ARGS_VERBOSE },
+        { 0, 0, 0, 0 }
+};
+static const char reprompi_common_opts_str[] = "v";
 
 
 static void init_parameters(reprompib_common_options_t* opts_p) {
@@ -394,13 +427,12 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
         /* getopt_long stores the option index here. */
         int option_index = 0;
 
-        c = getopt_long(argc, argv, reprompi_default_opts_str, reprompi_default_long_options,
+        c = getopt_long(argc, argv, reprompi_common_opts_str, reprompi_common_long_options,
                 &option_index);
 
         /* Detect the end of the options. */
         if (c == -1)
             break;
-
         switch (c) {
 
         case REPROMPI_ARGS_VERBOSE: /* verbose flag */

@@ -93,33 +93,3 @@ void reprompib_print_common_help(void) {
 }
 
 
-void reprompib_print_benchmark_help(void) {
-    int my_rank;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        printf("\nUSAGE: mpibenchmark [options]\n");
-        printf("options:\n");
-    }
-
-    reprompib_print_common_help();
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        printf("\nSpecific options for the benchmark execution:\n");
-        printf("%-40s %-40s\n", "-r | --repetitions=<nrep>",
-                "set number of experiment repetitions");
-        printf("%-40s %-40s\n %50s%s\n", "--summary=<args>",
-                "list of comma-separated data summarizing methods (mean, median, min, max)", "",
-                "e.g., --summary=mean,max");
-
-        printf("\nEXAMPLES: mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 --nrep=5 --summary=mean,max,min\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 --nrep=5\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msize-interval=min=1,max=8,step=1 --nrep=5\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 --nrep=5 --fitpoints=10 --exchanges=20\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 --nrep=5 --params=p1:1,p2:aaa,p3:34\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=Sendrecv --msizes-list=10 --pingpong-ranks=0,3 --nrep=5 --summary \n");
-
-        printf("\n\n");
-    }
-}
-

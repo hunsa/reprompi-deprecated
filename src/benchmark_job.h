@@ -24,7 +24,7 @@
 #ifndef BENCHMARK_JOB_H_
 #define BENCHMARK_JOB_H_
 
-#include "reprompi_bench/option_parser/parse_options.h"
+#include "reprompi_bench/option_parser/parse_common_options.h"
 
 typedef struct {
     int call_index;

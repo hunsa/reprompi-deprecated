@@ -25,9 +25,7 @@
 #ifndef REPROMPIB_OPTION_PARSER_HELPERS_H_
 #define REPROMPIB_OPTION_PARSER_HELPERS_H_
 
-typedef void (*print_help_t)(void);
 
 void reprompib_print_common_help(void);
-void reprompib_print_benchmark_help(void);
 
 #endif /* REPROMPIB_OPTION_PARSER_HELPERS_H_ */

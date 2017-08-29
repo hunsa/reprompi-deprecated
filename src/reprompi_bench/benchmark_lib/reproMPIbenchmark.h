@@ -62,7 +62,7 @@
 #endif
 #endif
 
-#include "reprompi_bench/option_parser/option_parser_data.h"
+#include "reprompi_bench/option_parser/parse_options.h"
 
 typedef struct {
     long n_rep;

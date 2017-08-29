@@ -21,50 +21,10 @@
 </license>
 */
 
-#ifndef MISC_H__
-#define MISC_H__
+#ifndef REPROMPI_MISC_H__
+#define REPROMPI_MISC_H__
 #include <stdint.h>
 
-#define SUCCESS 0ULL
-#define ERROR	1ULL
-
-enum {
-    ERROR_MPI_CALL_LIST = 1ULL << 0,
-    ERROR_MPI_CALL_LIST_EMPTY = 1ULL << 1,
-    ERROR_MSIZE_LIST = 1ULL << 2,
-    ERROR_MSIZE_LIST_EMPTY = 1ULL << 3,
-    ERROR_NREP_NULL = 1ULL << 4,
-    ERROR_MSIZE_MIN = 1ULL << 5,
-    ERROR_MSIZE_MAX = 1ULL << 6,
-    ERROR_MSIZE_STEP = 1ULL << 7,
-    ERROR_MSIZE_INTERVAL_UNKNOWN = 1ULL << 8,
-    ERROR_MSIZE_INTERVAL_MINMAX = 1ULL << 9,
-    ERROR_UNKNOWN_OPTION = 1ULL << 10,
-    ERROR_BATCH = 1ULL << 14,
-    ERROR_NREPS_MIN = 1ULL << 15,
-    ERROR_NREPS_MAX = 1ULL << 16,
-    ERROR_NREPS_STEP = 1ULL << 17,
-    ERROR_NREPS_INTERVAL_UNKNOWN = 1ULL << 18,
-    ERROR_NREPS_INTERVAL_MINMAX = 1ULL << 19,
-    ERROR_PRED_METHODS_LIST = 1ULL << 20,
-    ERROR_PRED_METHODS_LIST_EMPTY = 1ULL <<21,
-    ERROR_THRES_LIST = 1ULL << 22,
-    ERROR_THRES_LIST_EMPTY = 1ULL << 23,
-    ERROR_PRED_WIN_LIST = 1ULL << 24,
-    ERROR_PRED_WIN_LIST_EMPTY = 1ULL << 25,
-    ERROR_SUMMARY_METHOD = 1ULL << 26,
-    ERROR_SUMMARY_METHODS_EMPTY = 1ULL << 27,
-    ERROR_KEY_VAL_PARAM = 1ULL << 28,
-    ERROR_OUTPUT_FILE_UNAVAILABLE = 1ULL <<29,
-    ERROR_DATATYPE = 1ULL << 30,
-    ERROR_MPI_OP = 1ULL << 31,
-    ERROR_ROOT_PROC = 1ULL << 32
-} bench_error_t;
-
-
-typedef uint64_t reprompib_error_t;
-
-char* get_error_message(reprompib_error_t error);
 
 double repro_min(double a, double b);
 double repro_max(double a, double b);
@@ -73,4 +33,4 @@ void shuffle(int *array, size_t n);
 int reprompib_str_to_long(const char *str, long* result);
 void reprompib_print_error_and_exit(const char* error_str);
 
-#endif /* MISC_H__ */
+#endif /* REPROMPI_MISC_H__ */
