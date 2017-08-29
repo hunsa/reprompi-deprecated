@@ -31,8 +31,8 @@
 #include "mpi.h"
 
 #include "reprompi_bench/misc.h"
-#include "option_parser_constants.h"
-#include "parse_common_options.h"
+//#include "option_parser_constants.h"
+//#include "parse_common_options.h"
 #include "parse_options.h"
 
 
@@ -43,6 +43,20 @@ static char* const summary_opts[] = {
         [PRINT_MAX] = "max",
         NULL
 };
+
+
+typedef enum reprompi_common_getopt_ids {
+  REPROMPI_ARGS_NREPS = 500,
+  REPROMPI_ARGS_SUMMARY
+} reprompi_common_getopt_ids_t;
+
+static const struct option reprompi_default_long_options[] = {
+        { "nrep", required_argument, 0, REPROMPI_ARGS_NREPS },
+        {"summary", optional_argument, 0, REPROMPI_ARGS_SUMMARY},
+        { 0, 0, 0, 0 }
+};
+static const char reprompi_default_opts_str[] = "";
+
 
 
 char* const* get_summary_opts_list(void) {

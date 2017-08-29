@@ -53,7 +53,7 @@ following example.
 
 #+BEGIN_EXAMPLE
 mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast,MPI_Allgather 
-             --msizes-list=8,1024,2048  -r 10
+             --msizes-list=8,1024,2048  --nrep=10
 #+END_EXAMPLE
 
 ** Estimating the number of measurement iterations
@@ -71,7 +71,7 @@ This is an example of how to perform such an estimation:
 
 #+BEGIN_EXAMPLE
 mpirun -np 4 ./bin/mpibenchmarkPredNreps --calls-list=MPI_Bcast,MPI_Allgather 
-              --msizes-list=8,1024,2048 --rep-prediction min=1,max=200,step=5
+              --msizes-list=8,1024,2048 --rep-prediction=min=1,max=200,step=5
 #+END_EXAMPLE
 
 
@@ -83,10 +83,10 @@ mpirun -np 4 ./bin/mpibenchmarkPredNreps --calls-list=MPI_Bcast,MPI_Allgather
   - =-v= print run-times measured for each process
   - =--msizes-list=<values>= list of comma-separated message sizes in
     Bytes, e.g., =--msizes-list=10,1024=
-  - =--msize-interval min=<min>,max=<max>,step=<step>= list of power
+  - =--msize-interval=min=<min>,max=<max>,step=<step>= list of power
     of 2 message sizes as an interval between 2^min and 2^max,
-    with step distance between values, e.g., 
-    =--msize-interval min=1,max=4,step=1=
+    with 2^step distance between values, e.g., 
+    =--msize-interval=min=1,max=4,step=1=
   - =--calls-list=<args>= list of comma-separated MPI calls to be
     benchmarked, e.g., =--calls-list=MPI_Bcast,MPI_Allgather=
   - =--root-proc=<process_id>= root node for collective operations     
@@ -117,16 +117,16 @@ Specific options for synchronization methods based on a linear model of the cloc
 
 *** Specific Options for the ReproMPI Benchmark
 
-  - =-r | --repetitions=<nrep>= set number of experiment repetitions
+  - =--nrep=<nrep>= set number of experiment repetitions
   - =--summary=<args>= list of comma-separated data summarizing
     methods (mean, median, min, max), e.g., =--summary=mean,max=
 
 *** Specific Options for Estimating the Number of Repetitions
-  - =--rep-prediction min=<min>,max=<max>,step=<step>= set the total
+  - =--rep-prediction=min=<min>,max=<max>,step=<step>= set the total
     number of repetitions to be estimated between =<min>= and =<max>=,
     so that at each iteration i, the number of measurements (=nrep=)
     is either =nrep(0) = <min>=, or =nrep(i) = nrep(i-1) + <step> *
-    2^(i-1)=, e.g., =--rep-prediction min=1,max=4,step=1=
+    2^(i-1)=, e.g., =--rep-prediction=min=1,max=4,step=1=
   - =--pred-method=m1,m2= comma-separated list of prediction
     methods, i.e., rse, cov_mean, cov_median (default: rse)
   - =--var-thres=thres1,thres2= comma-separated list of thresholds

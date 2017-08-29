@@ -44,9 +44,9 @@ void reprompib_print_common_help(void) {
                 "list of comma-separated message sizes in Bytes,", "",
                 "e.g., --msizes-list=10,1024");
         printf("%-40s %-40s\n %50s%s\n %50s%s\n",
-                "--msize-interval min=<min>,max=<max>,step=<step>",
+                "--msize-interval=min=<min>,max=<max>,step=<step>",
                 "list of power of 2 message sizes as an interval between 2^<min> and 2^<max>,",
-                "", "with <step> distance between values, ", "",
+                "", "with 2^<step> distance between values, ", "",
                 "e.g., --msize-interval min=1,max=4,step=1");
         printf("%-40s %-40s\n", "--pingpong-ranks=<rank1,rank2>",
                 "two comma-separated ranks to be used for the ping-pong operations");
@@ -112,12 +112,12 @@ void reprompib_print_benchmark_help(void) {
                 "list of comma-separated data summarizing methods (mean, median, min, max)", "",
                 "e.g., --summary=mean,max");
 
-        printf("\nEXAMPLES: mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 -r 5 --summary=mean,max,min\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 -r 5\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msize-interval min=1,max=8,step=1 -r 5\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 -r 5 --fitpoints=10 --exchanges=20\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 -r 5 --params=p1:1,p2:aaa,p3:34\n");
-        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=Sendrecv --msizes-list=10 --pingpong-ranks=0,3 -r 5 --summary \n");
+        printf("\nEXAMPLES: mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 --nrep=5 --summary=mean,max,min\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=MPI_Bcast --msizes-list=8,512,1024 --nrep=5\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msize-interval=min=1,max=8,step=1 --nrep=5\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 --nrep=5 --fitpoints=10 --exchanges=20\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --window-size=100 --calls-list=MPI_Bcast --msizes-list=1024 --nrep=5 --params=p1:1,p2:aaa,p3:34\n");
+        printf("\n          mpirun -np 4 ./bin/mpibenchmark --calls-list=Sendrecv --msizes-list=10 --pingpong-ranks=0,3 --nrep=5 --summary \n");
 
         printf("\n\n");
     }
