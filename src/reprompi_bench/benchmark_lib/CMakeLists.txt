@@ -3,6 +3,7 @@ set(BENCH_LIB_FILES
 ${SRC_DIR}/reprompi_bench/benchmark_lib/reproMPIbenchmark.c
 ${SRC_DIR}/reprompi_bench/benchmark_lib/results_output.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
+${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
 )
@@ -11,7 +12,6 @@ add_library(reproMPIbench
 ${BENCH_LIB_FILES}
 ${SYNC_SRC_FILES}
 ${COMMON_OUTPUT_MAN_SRC_FILES}
-${COMMON_OPTION_PARSER_SRC_FILES}
 ${COLL_OPS_SRC_FILES}
 )
 

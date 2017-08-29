@@ -35,8 +35,9 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_results_header_to_file(FILE* f, const reprompib_lib_output_info_t* output_info_p,
+void print_results_header(const reprompib_lib_output_info_t* output_info_p,
     const reprompib_job_t* job_p) {
+    FILE* f = stdout;
     int my_rank;
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -81,39 +82,6 @@ void print_results_header_to_file(FILE* f, const reprompib_lib_output_info_t* ou
             }
         }
 
-    }
-
-}
-
-void print_results_header(const reprompib_lib_output_info_t* output_info_p, const reprompib_job_t* job_p) {
-    FILE* f = stdout;
-    int my_rank;
-    int summary = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    // print results to file (if specified)
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        if (output_info_p->output_file != NULL) {
-            f = fopen(output_info_p->output_file, "a");
-        }
-    }
-
-
-    if (output_info_p->n_summary_methods >0 &&
-        output_info_p->output_file == NULL) {
-        summary = 1;
-    }
-    print_results_header_to_file(f, output_info_p, job_p);
-    if (my_rank == OUTPUT_ROOT_PROC) {
-        if (output_info_p->output_file != NULL) {
-            fclose(f);
-
-            // print summary to stdout
-            if (output_info_p->n_summary_methods >0) {
-                print_results_header_to_file(stdout, output_info_p, job_p);
-            }
-        }
     }
 
 }

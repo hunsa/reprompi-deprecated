@@ -30,8 +30,6 @@
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/option_parser/parse_options.h"
-#include "reprompi_bench/option_parser/parse_common_options.h"
-#include "reprompi_bench/option_parser/option_parser_helpers.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
 #include "results_output.h"
@@ -43,7 +41,6 @@ static const int N_USER_VARS = 4;
 static int first_print_call = 1;
 
 static reprompib_dictionary_t params_dict;
-static reprompib_common_options_t common_opts;
 
 void print_initial_settings(long nrep, print_sync_info_t print_sync_info) {
   int my_rank, np;
@@ -53,18 +50,9 @@ void print_initial_settings(long nrep, print_sync_info_t print_sync_info) {
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
   if (my_rank == OUTPUT_ROOT_PROC) {
-    print_common_settings_to_file(f, &common_opts, print_sync_info, &params_dict);
     fprintf(f, "#@nrep=%ld\n", nrep);
-
-    if (common_opts.output_file != NULL) {
-      f = fopen(common_opts.output_file, "a");
-      print_common_settings_to_file(f, &common_opts, print_sync_info, &params_dict);
-      fprintf(f, "#@nrep=%ld\n", nrep);
-      fflush(f);
-      fclose(f);
-    }
+    print_common_settings_to_file(f, print_sync_info, &params_dict);
   }
-
 }
 
 void reprompib_print_bench_output(const reprompib_job_t* job_p,
@@ -75,17 +63,6 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-  if (my_rank == OUTPUT_ROOT_PROC) {
-    if (common_opts.output_file != NULL) {
-      f = fopen(common_opts.output_file, "a");
-    }
-  }
-
-
-  output_info.output_file = NULL;
-  if (common_opts.output_file != NULL) {
-    output_info.output_file = strdup(common_opts.output_file);
-  }
   output_info.verbose = opts->verbose;
   output_info.summary_methods_names = (char**) calloc(opts->n_print_summary_selected, sizeof(char*));
   index = 0;
@@ -121,11 +98,6 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
 
   if (opts->n_print_summary_selected > 0) {
     print_summary(stdout, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
-
-    if (common_opts.output_file != NULL) {
-      print_measurement_results(f, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
-    }
-
   } else {
     print_measurement_results(f, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
   }
@@ -136,17 +108,6 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
     }
 
     free(output_info.summary_methods_names);
-  }
-
-  if (output_info.output_file != NULL) {
-      free(output_info.output_file);
-    }
-
-  if (my_rank == OUTPUT_ROOT_PROC) {
-    if (common_opts.output_file != NULL) {
-      fflush(f);
-      fclose(f);
-    }
   }
 
 }
@@ -166,9 +127,6 @@ void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_funct
 
   // parse arguments and set-up benchmarking jobs
   print_command_line_args(argc, argv);
-
-  // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
-  reprompib_parse_common_options(&common_opts, argc, argv, &params_dict);
 
   // parse the benchmark-specific arguments (nreps, summary)
   reprompib_parse_options(opts_p, argc, argv);
@@ -264,7 +222,6 @@ int reprompib_add_parameter_to_bench(const char* key, const char* val) {
 
 void reprompib_cleanup_benchmark(reprompib_options_t* opts_p) {
   reprompib_free_parameters(opts_p);
-  reprompib_free_common_parameters(&common_opts);
   reprompib_cleanup_dictionary(&params_dict);
 }
 
