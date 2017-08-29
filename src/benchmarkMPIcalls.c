@@ -87,14 +87,14 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
         if (common_opts->output_file != NULL) {
             print_measurement_results(f, job, tstart_sec, tend_sec,
                     get_errorcodes, get_global_time,
-                    common_opts->verbose);
+                    opts->verbose);
         }
 
     }
     else {
         print_measurement_results(f, job, tstart_sec, tend_sec,
                 get_errorcodes, get_global_time,
-                common_opts->verbose);
+                opts->verbose);
     }
 
     if (my_rank == OUTPUT_ROOT_PROC) {
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
 
         if (jindex == 0) {
             print_initial_settings(&opts, &common_opts, sync_f.print_sync_info, &params_dict);
-            print_results_header(&opts, common_opts.output_file, common_opts.verbose);
+            print_results_header(&opts, common_opts.output_file, opts.verbose);
         }
 
         collective_calls[job.call_index].initialize_data(coll_basic_info, job.count, &coll_params);

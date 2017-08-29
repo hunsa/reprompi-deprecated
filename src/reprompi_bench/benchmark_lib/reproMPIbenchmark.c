@@ -86,7 +86,7 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
   if (common_opts.output_file != NULL) {
     output_info.output_file = strdup(common_opts.output_file);
   }
-  output_info.verbose = common_opts.verbose;
+  output_info.verbose = opts->verbose;
   output_info.summary_methods_names = (char**) calloc(opts->n_print_summary_selected, sizeof(char*));
   index = 0;
   for (i = 0; i < N_SUMMARY_METHODS; i++) {

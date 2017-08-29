@@ -34,7 +34,8 @@ enum {
 
 
 typedef struct reprompib_opt {
-    long n_rep; /* --repetitions */
+    long n_rep; /* --nrep */
+    int verbose; /* -v */
 
     int* print_summary_methods; /* --summary */
     int n_print_summary_selected;

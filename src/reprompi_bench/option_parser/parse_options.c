@@ -46,16 +46,19 @@ static char* const summary_opts[] = {
 
 
 typedef enum reprompi_common_getopt_ids {
+  REPROMPI_ARGS_VERBOSE = 'v',
   REPROMPI_ARGS_NREPS = 500,
   REPROMPI_ARGS_SUMMARY
 } reprompi_common_getopt_ids_t;
 
 static const struct option reprompi_default_long_options[] = {
+        {"verbose", optional_argument, 0, REPROMPI_ARGS_VERBOSE},
         { "nrep", required_argument, 0, REPROMPI_ARGS_NREPS },
         {"summary", optional_argument, 0, REPROMPI_ARGS_SUMMARY},
+
         { 0, 0, 0, 0 }
 };
-static const char reprompi_default_opts_str[] = "";
+static const char reprompi_default_opts_str[] = "v";
 
 
 
@@ -67,7 +70,7 @@ char* const* get_summary_opts_list(void) {
 
 static void init_parameters(reprompib_options_t* opts_p) {
     int i;
-
+    opts_p->verbose = 0;
     opts_p->n_rep = 0;
 
     opts_p->n_print_summary_selected = 0;
@@ -143,6 +146,11 @@ void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv)
 
         case REPROMPI_ARGS_SUMMARY: /* list of summary options */
             parse_summary_list(optarg, opts_p);
+            break;
+
+
+        case REPROMPI_ARGS_VERBOSE: /* verbose flag */
+            opts_p->verbose = 1;
             break;
         case '?':
             break;

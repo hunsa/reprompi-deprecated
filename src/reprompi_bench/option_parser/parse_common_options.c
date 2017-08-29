@@ -58,7 +58,6 @@ static char * const msize_interval_opts[] = {
 
 
 enum {
-  REPROMPI_ARGS_VERBOSE = 'v',
   REPROMPI_ARGS_CALLS_LIST = 300,
   REPROMPI_ARGS_MSIZES_LIST,
   REPROMPI_ARGS_MSIZES_INTERVAL,
@@ -85,14 +84,12 @@ static const struct option reprompi_common_long_options[] = {
         {"pingpong-ranks", required_argument, 0, REPROMPI_ARGS_PINGPONG_RANKS},
         {"shuffle-jobs", no_argument, 0, REPROMPI_ARGS_SHUFFLE_JOBS},
         {"params", optional_argument, 0, REPROMPI_ARGS_PARAMS},
-        { "verbose", no_argument, 0, REPROMPI_ARGS_VERBOSE },
         { 0, 0, 0, 0 }
 };
-static const char reprompi_common_opts_str[] = "v";
+static const char reprompi_common_opts_str[] = "";
 
 
 static void init_parameters(reprompib_common_options_t* opts_p) {
-    opts_p->verbose = 0;
     opts_p->n_msize = 0;
     opts_p->n_calls = 0;
     opts_p->root_proc = 0;
@@ -434,10 +431,6 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
         if (c == -1)
             break;
         switch (c) {
-
-        case REPROMPI_ARGS_VERBOSE: /* verbose flag */
-            opts_p->verbose = 1;
-            break;
 
         case REPROMPI_ARGS_INPUT_FILE: /* input file */
             opts_p->input_file = (char*)malloc((strlen(optarg)+1) * sizeof(char));

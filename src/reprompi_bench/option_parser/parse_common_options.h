@@ -27,7 +27,6 @@
 #include "reprompi_bench/utils/keyvalue_store.h"
 
 typedef struct reprompib_common_opt {
-    int verbose; /* -v */
     int n_calls; /* number of MPI calls */
     int* list_mpi_calls;
 

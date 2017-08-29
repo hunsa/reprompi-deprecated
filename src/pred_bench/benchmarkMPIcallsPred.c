@@ -99,7 +99,7 @@ void print_measurement_results_prediction(const job_t* job_p, const reprompib_co
 }
 
 void print_initial_settings_prediction_to_file(FILE* f, const nrep_pred_params_t* pred_params_p,
-    print_sync_info_t print_sync_info, int verbose) {
+    print_sync_info_t print_sync_info) {
   int my_rank;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -114,9 +114,6 @@ void print_initial_settings_prediction_to_file(FILE* f, const nrep_pred_params_t
           pred_params_p->info[i].method_thres, pred_params_p->info[i].method_win);
     }
     fprintf(f, "#\n");
-    if (verbose == 1) {
-      fprintf(f, "process ");
-    }
   }
 
 }
@@ -132,12 +129,12 @@ void print_initial_settings_prediction(const reprompib_common_options_t* common_
 
   print_common_settings(common_opts_p, print_sync_info, dict);
 
-  print_initial_settings_prediction_to_file(stdout, pred_params_p, print_sync_info, common_opts_p->verbose);
+  print_initial_settings_prediction_to_file(stdout, pred_params_p, print_sync_info);
 
   if (my_rank == OUTPUT_ROOT_PROC) {
     if (common_opts_p->output_file != NULL) {
       f = fopen(common_opts_p->output_file, "a");
-      print_initial_settings_prediction_to_file(f, pred_params_p, print_sync_info, common_opts_p->verbose);
+      print_initial_settings_prediction_to_file(f, pred_params_p, print_sync_info);
       fprintf(f, "%s\n", header);
       fclose(f);
     } else {
