@@ -47,7 +47,7 @@ void reprompib_print_common_help(void) {
                 "--msize-interval=min=<min>,max=<max>,step=<step>",
                 "list of power of 2 message sizes as an interval between 2^<min> and 2^<max>,",
                 "", "with 2^<step> distance between values, ", "",
-                "e.g., --msize-interval min=1,max=4,step=1");
+                "e.g., --msize-interval=min=1,max=4,step=1");
         printf("%-40s %-40s\n", "--pingpong-ranks=<rank1,rank2>",
                 "two comma-separated ranks to be used for the ping-pong operations");
         printf("%-40s %-40s\n", "--root-proc=<process_id>",
