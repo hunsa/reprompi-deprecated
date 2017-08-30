@@ -182,7 +182,7 @@ void reprompib_print_benchmark_help(void) {
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         printf("\nSpecific options for the benchmark execution:\n");
-        printf("%-40s %-40s\n", "-r | --repetitions=<nrep>",
+        printf("%-40s %-40s\n", "--nrep=<nrep>",
                 "set number of experiment repetitions");
         printf("%-40s %-40s\n %50s%s\n", "--summary=<args>",
                 "list of comma-separated data summarizing methods (mean, median, min, max)", "",
