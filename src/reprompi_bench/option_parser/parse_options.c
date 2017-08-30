@@ -45,8 +45,8 @@ enum reprompi_summary_opts {
 };
 static const int N_SUMMARY_METHODS = 4;
 
-static char* const summary_opts[] = { "mean", "median", "min", "max"};
-static summary_method_info_t summary_methods[N_SUMMARY_METHODS] = {
+static char* const summary_opts[] = { "mean", "median", "min", "max", NULL};
+static summary_method_info_t summary_methods[] = {
     { MASK_PRINT_MEAN, "mean" },
     { MASK_PRINT_MEDIAN, "median" },
     { MASK_PRINT_MIN, "min" },
