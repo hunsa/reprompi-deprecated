@@ -29,11 +29,8 @@
 
 
 typedef struct {
-    char* output_file;
-
     int verbose;
-    char** summary_methods_names;
-    int n_summary_methods;
+    int print_summary_methods;
 } reprompib_lib_output_info_t;
 
 

@@ -36,6 +36,6 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
 
 void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        int summary_methods[]);
+        const int print_summary_methods);
 
 #endif /* RESULTS_OUTPUT_H_ */

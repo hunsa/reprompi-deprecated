@@ -36,20 +36,29 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-static char* const summary_opts[] = {
-        [PRINT_MEAN] = "mean",
-        [PRINT_MEDIAN] = "median",
-        [PRINT_MIN] = "min",
-        [PRINT_MAX] = "max",
-        NULL
+
+enum reprompi_summary_opts {
+    MASK_PRINT_MEAN = 0x01,
+    MASK_PRINT_MEDIAN = 0x02,
+    MASK_PRINT_MIN = 0x04,
+    MASK_PRINT_MAX = 0x08
+};
+static const int N_SUMMARY_METHODS = 4;
+
+static char* const summary_opts[] = { "mean", "median", "min", "max"};
+static summary_method_info_t summary_methods[N_SUMMARY_METHODS] = {
+    { MASK_PRINT_MEAN, "mean" },
+    { MASK_PRINT_MEDIAN, "median" },
+    { MASK_PRINT_MIN, "min" },
+    { MASK_PRINT_MAX, "max" }
 };
 
 
-typedef enum reprompi_common_getopt_ids {
+enum reprompi_common_getopt_ids {
   REPROMPI_ARGS_VERBOSE = 'v',
   REPROMPI_ARGS_NREPS = 500,
   REPROMPI_ARGS_SUMMARY
-} reprompi_common_getopt_ids_t;
+};
 
 static const struct option reprompi_default_long_options[] = {
         {"verbose", optional_argument, 0, REPROMPI_ARGS_VERBOSE},
@@ -62,29 +71,26 @@ static const char reprompi_default_opts_str[] = "v";
 
 
 
-char* const* get_summary_opts_list(void) {
+summary_method_info_t* reprompib_get_summary_method(int index) {
+   if (index <0 || index >= N_SUMMARY_METHODS) {
+     reprompib_print_error_and_exit("Incorrect index for the summary methods (it has to be an integer between 0 and 3)");
+   }
 
-    return &(summary_opts[0]);
+   return &(summary_methods[index]);
+}
+
+int reprompib_get_number_summary_methods(void) {
+  return N_SUMMARY_METHODS;
 }
 
 
 static void init_parameters(reprompib_options_t* opts_p) {
-    int i;
     opts_p->verbose = 0;
     opts_p->n_rep = 0;
-
-    opts_p->n_print_summary_selected = 0;
-    opts_p->print_summary_methods = (int*)malloc(N_SUMMARY_METHODS *sizeof(int));
-    for (i=0; i < N_SUMMARY_METHODS; i++) {
-        opts_p->print_summary_methods[i] = 0;
-    }
-
+    opts_p->print_summary_methods = 0;
 }
 
 void reprompib_free_parameters(reprompib_options_t* opts_p) {
-    if (opts_p->print_summary_methods != NULL) {
-        free(opts_p->print_summary_methods);
-    }
 }
 
 
@@ -96,21 +102,17 @@ static void parse_summary_list(char* subopts, reprompib_options_t* opts_p) {
         while (*subopts != '\0') {
             index = getsubopt(&subopts, summary_opts, &value);
 
-            if (index >=0 && index < N_SUMMARY_METHODS) {
-                opts_p->print_summary_methods[index] = 1;
-                opts_p->n_print_summary_selected++;
+            if (index >=0 && index < reprompib_get_number_summary_methods()) {
+                opts_p->print_summary_methods |= reprompib_get_summary_method(index)->mask;
             }
             else {
               reprompib_print_error_and_exit("Invalid list of summary methods (--summary=<list of comma-separated methods> [min, max, mean, median])");
             }
         }
     }
-    if (opts_p->n_print_summary_selected <= 0) {
-        int i;
-
-        opts_p->n_print_summary_selected = N_SUMMARY_METHODS;
-        for (i=0; i < N_SUMMARY_METHODS; i++) {
-            opts_p->print_summary_methods[i] = 1;
+    if (opts_p->print_summary_methods == 0) {  // no method specified - use all of them
+        for (index=0; index < reprompib_get_number_summary_methods(); index++) {
+          opts_p->print_summary_methods |= reprompib_get_summary_method(index)->mask;
         }
     }
 }

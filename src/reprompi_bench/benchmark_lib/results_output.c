@@ -29,6 +29,7 @@
 #include "mpi.h"
 
 #include "reprompi_bench/sync/synchronization.h"
+#include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "reproMPIbenchmark.h"
 #include "results_output.h"
@@ -54,7 +55,7 @@ void print_results_header(const reprompib_lib_output_info_t* output_info_p,
 
         fprintf(f, "%20s %4s", "measure_type", "proc");
 
-        if (output_info_p->verbose == 1 && output_info_p->n_summary_methods == 0) {
+        if (output_info_p->verbose == 1 && output_info_p->print_summary_methods == 0) {
 #ifdef ENABLE_WINDOWSYNC
             fprintf(f, " %12s", "errorcode");
 #endif
@@ -67,12 +68,16 @@ void print_results_header(const reprompib_lib_output_info_t* output_info_p,
         } else {
 
             // print summary
-            if (output_info_p->n_summary_methods >0) {
-                fprintf(f, " %8s %8s ", "total_nrep", "valid_nrep");
-                for (i = 0; i < output_info_p->n_summary_methods; i++) {
-                    fprintf(f, "%14s_sec ", output_info_p->summary_methods_names[i]);
+            if (output_info_p->print_summary_methods >0) {
+              fprintf(f, " %8s %8s ", "total_nrep", "valid_nrep");
+
+              for (i=0; i<reprompib_get_number_summary_methods(); i++) {
+                summary_method_info_t* s = reprompib_get_summary_method(i);
+                if (output_info_p->print_summary_methods & s->mask) {
+                  fprintf(f, "%10s_sec ", s->name);
                 }
-                fprintf(f, "\n");
+              }
+              fprintf(f, "\n");
             }
             else {
 #ifdef ENABLE_WINDOWSYNC
@@ -83,7 +88,6 @@ void print_results_header(const reprompib_lib_output_info_t* output_info_p,
         }
 
     }
-
 }
 
 
@@ -544,33 +548,34 @@ void print_summary(FILE* f,
             else {
                 fprintf(f, "%20s %4d %10ld %10ld ", job_p->timername, proc, job_p->n_rep, nreps);
             }
-            for (i = 0; i < output_info_p->n_summary_methods; i++) {
-                    if (strcmp(output_info_p->summary_methods_names[i], "mean") == 0) {
-                        double mean = gsl_stats_mean(current_proc_runtimes, 1, nreps);
-                        fprintf(f, "  %16.10f ", mean);
+
+            if (output_info_p->print_summary_methods > 0) {
+              int i;
+              for (i=0; i<reprompib_get_number_summary_methods(); i++) {
+                summary_method_info_t* s = reprompib_get_summary_method(i);
+
+                if (output_info_p->print_summary_methods & s->mask) {
+                  double value = 0;
+
+                  if (strcmp(s->name, "mean") == 0) {
+                    value = gsl_stats_mean(maxRuntimes_sec, 1, nreps);
+                  }
+                  else if (strcmp(s->name, "median") == 0) {
+                    value = gsl_stats_quantile_from_sorted_data (maxRuntimes_sec, 1, nreps, 0.5);
+                  }
+                  else if (strcmp(s->name, "min") == 0) {
+                    if (nreps > 0) {
+                      value = maxRuntimes_sec[0];
                     }
-                    else if (strcmp(output_info_p->summary_methods_names[i], "median") == 0) {
-                        double median;
-                        median =  gsl_stats_quantile_from_sorted_data (current_proc_runtimes, 1, nreps, 0.5);
-                        fprintf(f, "  %16.10f ", median);
+                  }
+                  else if (strcmp(s->name, "max") == 0) {
+                    if (nreps > 0) {
+                      value = maxRuntimes_sec[nreps-1];
                     }
-                    else if (strcmp(output_info_p->summary_methods_names[i], "min") == 0) {
-                        double min = 0;
-                        if (nreps > 0) {
-                            min = current_proc_runtimes[0];
-                        }
-                        fprintf(f, "  %16.10f ", min);
-                    }
-                    else  if (strcmp(output_info_p->summary_methods_names[i], "max") == 0) {
-                        double max = 0;
-                        if (nreps > 0) {
-                            max = current_proc_runtimes[nreps-1];
-                        }
-                        fprintf(f, "  %16.10f ", max);
-                    }
-                    else {
-                      fprintf (stderr, "ERROR: Unknown summary operation: %s" , output_info_p->summary_methods_names[i]);
-                    }
+                  }
+                  fprintf(f, "  %.10f ", value);
+                }
+              }
             }
             fprintf(f, "\n");
         }

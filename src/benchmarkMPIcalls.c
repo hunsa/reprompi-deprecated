@@ -81,7 +81,7 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
         }
     }
 
-    if (opts->n_print_summary_selected >0)  {
+    if (opts->print_summary_methods >0)  {
         print_summary(stdout, job, tstart_sec, tend_sec, get_errorcodes, get_global_time,
                 opts->print_summary_methods);
         if (common_opts->output_file != NULL) {
@@ -242,8 +242,8 @@ int main(int argc, char* argv[]) {
     print_final_info(&common_opts, start_time, end_time);
 
     cleanup_job_list(jlist);
-    reprompib_free_parameters(&opts);
     reprompib_free_common_parameters(&common_opts);
+    reprompib_free_parameters(&opts);
     reprompib_cleanup_dictionary(&params_dict);
 
     /* shut down MPI */

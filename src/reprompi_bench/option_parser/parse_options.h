@@ -24,29 +24,24 @@
 #ifndef REPROMPIB_PARSE_OPTIONS_H_
 #define REPROMPIB_PARSE_OPTIONS_H_
 
-enum {
-    PRINT_MEAN = 0,
-    PRINT_MEDIAN,
-    PRINT_MIN,
-    PRINT_MAX,
-    N_SUMMARY_METHODS
-};
-
-
 typedef struct reprompib_opt {
     long n_rep; /* --nrep */
     int verbose; /* -v */
-
-    int* print_summary_methods; /* --summary */
-    int n_print_summary_selected;
-
+    int print_summary_methods; /* --summary */
 } reprompib_options_t;
 
+
 void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv);
+void reprompib_print_benchmark_help(void);
 void reprompib_free_parameters(reprompib_options_t* opts_p);
 
-void reprompib_print_benchmark_help(void);
 
-char* const* get_summary_opts_list(void);
+typedef struct {
+  int mask;
+  char *name;
+} summary_method_info_t;
+
+summary_method_info_t* reprompib_get_summary_method(int index);
+int reprompib_get_number_summary_methods(void);
 
 #endif /* REPROMPIB_PARSE_OPTIONS_H_ */

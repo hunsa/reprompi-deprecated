@@ -59,36 +59,11 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
     const reprompib_sync_functions_t* sync_f, const reprompib_options_t* opts) {
   FILE* f = stdout;
   reprompib_lib_output_info_t output_info;
-  int i, index;
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   output_info.verbose = opts->verbose;
-  output_info.summary_methods_names = (char**) calloc(opts->n_print_summary_selected, sizeof(char*));
-  index = 0;
-  for (i = 0; i < N_SUMMARY_METHODS; i++) {
-    if (opts->print_summary_methods[i] > 0) {
-      switch (i) {
-      case PRINT_MEAN: {
-        output_info.summary_methods_names[index++] = strdup("mean");
-        break;
-      }
-      case PRINT_MEDIAN: {
-        output_info.summary_methods_names[index++] = strdup("median");
-        break;
-      }
-      case PRINT_MIN: {
-        output_info.summary_methods_names[index++] = strdup("min");
-        break;
-      }
-      case PRINT_MAX: {
-        output_info.summary_methods_names[index++] = strdup("max");
-        break;
-      }
-      }
-    }
-  }
-  output_info.n_summary_methods = index;
+  output_info.print_summary_methods = opts->print_summary_methods;
 
   if (first_print_call) {
     print_initial_settings(opts->n_rep, sync_f->print_sync_info);
@@ -96,18 +71,10 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
     first_print_call = 0;
   }
 
-  if (opts->n_print_summary_selected > 0) {
+  if (opts->print_summary_methods > 0) {
     print_summary(stdout, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
   } else {
     print_measurement_results(f, &output_info, job_p, sync_f->get_errorcodes, sync_f->get_normalized_time);
-  }
-
-  if (output_info.n_summary_methods > 0 && output_info.summary_methods_names != NULL) {
-    for (i = 0; i < output_info.n_summary_methods; i++) {
-      free(output_info.summary_methods_names[i]);
-    }
-
-    free(output_info.summary_methods_names);
   }
 
 }

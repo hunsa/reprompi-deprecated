@@ -57,7 +57,6 @@ void print_results_header(const reprompib_options_t* opts, const char* output_fi
 
     if (my_rank == OUTPUT_ROOT_PROC) {
         FILE * f;
-        int i;
         char msize_str[16];
 
         if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
@@ -68,14 +67,17 @@ void print_results_header(const reprompib_options_t* opts, const char* output_fi
 
         f = stdout;
         // print summary to stdout
-        if (opts->n_print_summary_selected >0) {
-            fprintf(f, "%50s %12s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
-            for (i = 0; i < N_SUMMARY_METHODS; i++) {
-                if (opts->print_summary_methods[i] > 0) {
-                    fprintf(f, "%10s_sec ", get_summary_opts_list()[i]);
-                }
+        if (opts->print_summary_methods >0) {
+          int i;
+          fprintf(f, "%50s %12s %10s %10s ", "test", msize_str, "total_nrep", "valid_nrep");
+
+          for (i=0; i<reprompib_get_number_summary_methods(); i++) {
+            summary_method_info_t* s = reprompib_get_summary_method(i);
+            if (opts->print_summary_methods & s->mask) {
+              fprintf(f, "%10s_sec ", s->name);
             }
-            fprintf(f, "\n");
+          }
+          fprintf(f, "\n");
         }
 
 
@@ -84,7 +86,7 @@ void print_results_header(const reprompib_options_t* opts, const char* output_fi
             f = fopen(output_file_path, "a");
         }
 
-        if (output_file_path != NULL || opts->n_print_summary_selected == 0) {
+        if (output_file_path != NULL || opts->print_summary_methods == 0) {
             if (verbose == 1) {    // print measurement times for each process
                 fprintf(f, "process ");
             }
@@ -201,6 +203,9 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
     int chunk_id, nchunks;
     int current_rep_id, chunk_nrep = 0;
     size_t msize_value;
+#ifdef ENABLE_WINDOWSYNC
+    int* errorcodes = NULL;
+#endif
 
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &np);
@@ -232,16 +237,13 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
             }
 
 #ifdef ENABLE_WINDOWSYNC
-            int* errorcodes = NULL;
-
             if (my_rank == OUTPUT_ROOT_PROC)
             {
-                errorcodes = (int*)malloc(chunk_nrep * np * sizeof(int));
-                for (i = 0; i < chunk_nrep * np; i++) {
-                    errorcodes[i] = 0;
-                }
+              errorcodes = (int*)malloc(chunk_nrep * np * sizeof(int));
+              for (i = 0; i < chunk_nrep * np; i++) {
+                errorcodes[i] = 0;
+              }
             }
-
 #ifndef ENABLE_BARRIERSYNC	// gather measurement results
             {
                 int* local_errorcodes = get_errorcodes();
@@ -322,14 +324,14 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
 
 void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
-        int summary_methods[]) {
+        const int print_summary_methods) {
 
     double* maxRuntimes_sec;
-    int i;
     int my_rank;
     long current_start_index;
     size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
+    int i;
     int* sync_errorcodes = NULL;
 #endif
 
@@ -386,40 +388,34 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 
         gsl_sort(maxRuntimes_sec, 1, nreps);
         fprintf(f, "%50s %12ld %10ld %10ld ", get_call_from_index(job.call_index), msize_value, job.n_rep, nreps);
-        for (i = 0; i < N_SUMMARY_METHODS; i++) {
-            if (summary_methods[i] > 0) {
 
-                switch(i) {
-                case PRINT_MEAN: {
-                    double mean = gsl_stats_mean(maxRuntimes_sec, 1, nreps);
-                    fprintf(f, "  %.10f ", mean);
-                    break;
-                }
-                case PRINT_MEDIAN: {
-                    double median;
-                    median =  gsl_stats_quantile_from_sorted_data (maxRuntimes_sec, 1, nreps, 0.5);
-                    fprintf(f, "  %.10f ", median);
-                    break;
-                }
-                case PRINT_MIN: {
-                    double min = 0;
-                    if (nreps > 0) {
-                        min = maxRuntimes_sec[0];
-                    }
-                    fprintf(f, "  %.10f ", min);
-                    break;
-                }
-                case PRINT_MAX: {
-                    double max = 0;
-                    if (nreps > 0) {
-                        max = maxRuntimes_sec[nreps-1];
-                    }
-                    fprintf(f, "  %.10f ", max);
-                    break;
-                }
-                }
+        if (print_summary_methods > 0) {
+          int i;
+          for (i=0; i<reprompib_get_number_summary_methods(); i++) {
+            summary_method_info_t* s = reprompib_get_summary_method(i);
 
+            if (print_summary_methods & s->mask) {
+              double value = 0;
+
+              if (strcmp(s->name, "mean") == 0) {
+                value = gsl_stats_mean(maxRuntimes_sec, 1, nreps);
+              }
+              else if (strcmp(s->name, "median") == 0) {
+                value = gsl_stats_quantile_from_sorted_data (maxRuntimes_sec, 1, nreps, 0.5);
+              }
+              else if (strcmp(s->name, "min") == 0) {
+                if (nreps > 0) {
+                  value = maxRuntimes_sec[0];
+                }
+              }
+              else if (strcmp(s->name, "max") == 0) {
+                if (nreps > 0) {
+                  value = maxRuntimes_sec[nreps-1];
+                }
+              }
+              fprintf(f, "  %.10f ", value);
             }
+          }
         }
         fprintf(f, "\n");
 
