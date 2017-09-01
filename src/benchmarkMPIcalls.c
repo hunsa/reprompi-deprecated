@@ -42,6 +42,7 @@
 #include "benchmarkMPIcalls.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
+static const int HASHTABLE_SIZE=100;
 
 void print_initial_settings(const reprompib_options_t* opts, const reprompib_common_options_t* common_opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
     int my_rank, np;
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
     start_time = time(NULL);
 
     //initialize dictionary
-    reprompib_init_dictionary(&params_dict);
+    reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
 
     // initialize synchronization functions according to the configured synchronization method
     initialize_sync_implementation(&sync_f);

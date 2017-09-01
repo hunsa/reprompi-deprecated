@@ -46,6 +46,7 @@
 #include "benchmarkMPIcallsPred.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
+static const int HASHTABLE_SIZE=100;
 
 static int cmpfunc(const void * a, const void * b) {
   if (*(double*) a > *(double*) b) {
@@ -234,7 +235,7 @@ int main(int argc, char* argv[]) {
   start_time = time(NULL);
 
   // initialize global dictionary
-  reprompib_init_dictionary(&params_dict);
+  reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
 
   // initialize synchronization functions according to the configured synchronization method
   initialize_sync_implementation(&sync_f);

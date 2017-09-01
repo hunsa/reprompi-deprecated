@@ -37,6 +37,7 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 static const int N_USER_VARS = 4;
+static const int HASHTABLE_SIZE=100;
 
 static int first_print_call = 1;
 
@@ -90,7 +91,7 @@ void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_funct
   init_timer();
 
   //initialize dictionary
-  reprompib_init_dictionary(&params_dict);
+  reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
 
   // parse arguments and set-up benchmarking jobs
   print_command_line_args(argc, argv);
