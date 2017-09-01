@@ -53,7 +53,7 @@ static const struct option pred_long_options[] = {
     { "threshold", required_argument, 0, THRESHOLD },
     { "nrep-per-pred-round", required_argument, 0, NREP_PER_PRED_ROUND },
     { "time-limit", required_argument, 0, TIME_LIMIT },
-    { "help", required_argument, 0, HELP_MSG },
+    { "help", no_argument, 0, HELP_MSG },
     { 0, 0, 0, 0 }
 };
 static const char pred_opts_str[] = "h";

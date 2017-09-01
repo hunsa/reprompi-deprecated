@@ -194,6 +194,9 @@ int main(int argc, char* argv[]) {
   // initialize global dictionary
   reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
 
+  // parse command-line arguments for the prediction module
+  nrep_pred_parse_params(argc, argv, &pred_params);
+
   // initialize synchronization functions according to the configured synchronization method
   initialize_sync_implementation(&sync_f);
 
@@ -205,8 +208,6 @@ int main(int argc, char* argv[]) {
   sync_f.parse_sync_params(argc, argv, &sync_opts);
   sync_f.init_sync_module(sync_opts, pred_params.max_nrep);
 
-  // parse command-line arguments for the prediction module
-  nrep_pred_parse_params(argc, argv, &pred_params);
   max_nreps = 0;
   for (i = 0; i < pred_params.n_pred_rounds; i++) {
     max_nreps += pred_params.nrep_per_pred_round[i];
