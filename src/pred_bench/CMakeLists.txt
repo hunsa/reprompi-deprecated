@@ -45,8 +45,6 @@ if (ENABLE_PGMPI)
         )
         TARGET_LINK_LIBRARIES(mpibenchPredNreps_pgmpituned ${PGMPI_TUNED_LIBRARIES} ${COMMON_LIBRARIES} )
         SET_TARGET_PROPERTIES(mpibenchPredNreps_pgmpituned PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
-    else(PGMPI_FOUND)
-        message(STATUS "PGMPI not found. Cannot generate PGMPI-linked binaries for NREP prediction." )
     endif(PGMPI_FOUND)
 endif (ENABLE_PGMPI)
 

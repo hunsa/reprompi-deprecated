@@ -62,6 +62,10 @@ option(ENABLE_PGMPI "Use PGMPI" on)
 
 if (ENABLE_PGMPI)
     find_package(PGMPI)
+    
+    if(NOT PGMPI_FOUND)
+        message(STATUS "PGMPI not found. Skipping the generation of PGMPI-linked benchmark binaries." )
+    endif(NOT PGMPI_FOUND)
 endif(ENABLE_PGMPI)
 ####################################
 
@@ -240,8 +244,6 @@ if (ENABLE_PGMPI)
         )
         TARGET_LINK_LIBRARIES(mpibenchmark_pgmpituned ${PGMPI_TUNED_LIBRARIES} ${COMMON_LIBRARIES} )
         SET_TARGET_PROPERTIES(mpibenchmark_pgmpituned PROPERTIES COMPILE_FLAGS "${MY_COMPILE_FLAGS}")
-    else(PGMPI_FOUND)
-        message(STATUS "PGMPI not found. Cannot generate PGMPI-linked benchmark binaries." )
     endif(PGMPI_FOUND)
 endif (ENABLE_PGMPI)
     
