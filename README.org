@@ -231,15 +231,6 @@ in O(p) steps) or HCA2 (which requires only O(log p) rounds).
 ENABLE_WINDOWSYNC_SK
 #+END_EXAMPLE
 
-
-  - *NetGauge synchronization*: it implements the NetGauge clock
-    synchronization algorithm. To enable it, set the following flag
-    before compilation.
-#+BEGIN_EXAMPLE
-ENABLE_WINDOWSYNC_NG
-#+END_EXAMPLE
-
-
   - *Jones and Koenig synchronization*: it implements the clock
     synchronization algorithm introduced by Jones and Koenig~[]. To
     enable it, set the following flag before compilation.
@@ -316,7 +307,6 @@ all the previously detailed configuration parameters.
  ENABLE_RDTSCP                    OFF           
  ENABLE_WINDOWSYNC_HCA            OFF            
  ENABLE_WINDOWSYNC_JK             OFF        
- ENABLE_WINDOWSYNC_NG             OFF       
  ENABLE_WINDOWSYNC_SK             OFF      
  FREQUENCY_MHZ                    2300    
 #+END_EXAMPLE
