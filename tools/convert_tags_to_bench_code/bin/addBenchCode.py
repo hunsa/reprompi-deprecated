@@ -44,18 +44,15 @@ if __name__ == "__main__":
         input_dir = os.path.abspath(options.input_dir)
         
     if options.sources_file == None:
-        print  "List of source files not specified.\n"
-        sys.exit(1)
+        sys.exit("List of source files not specified.\n")
     else:
         sources_file = os.path.abspath(options.sources_file)
         if not os.path.exists(sources_file):
-            print  "List of source files does not exist in %s.\n" % sources_file
-            sys.exit(1)
+            sys.exit("List of source files does not exist in %s.\n" % sources_file)
             
         
     if options.output_dir == None:
-        print  "Output directory not specified or does not exist.\n"
-        sys.exit(1)
+        sys.exit("Output directory not specified or does not exist.\n")
         
     if not (os.path.exists(options.output_dir) and os.path.isdir(options.output_dir)):
         print "Creating output directory: %s" % (options.output_dir)
@@ -67,5 +64,4 @@ if __name__ == "__main__":
     
     print "Done.\nGenerated code can be found here: %s" % options.output_dir
     
-    
-    
+        

@@ -154,23 +154,19 @@ class CodeParser:
                     try:
                         output_config["start_time"]
                     except KeyError:
-                        print("Incorrect \"print_runtime_array\" specification (missing start_time)")
-                        exit(1)
+                        sys.exit("Incorrect \"print_runtime_array\" specification (missing start_time)")
                     try:
                         output_config["end_time"]
                     except KeyError:
-                        print("Incorrect \"print_runtime_array\" specification (missing end_time)")
-                        exit(1)
+                        sys.exit("Incorrect \"print_runtime_array\" specification (missing end_time)")
                     try:
                         output_config["name"]
                     except KeyError:
-                        print("Incorrect \"print_runtime_array\" specification (missing name)")
-                        exit(1)
+                        sys.exit("Incorrect \"print_runtime_array\" specification (missing name)")
                     try:
                         output_config["type"]
                     except KeyError:
-                        print("Incorrect \"print_runtime_array\" specification (missing type)")
-                        exit(1)
+                        sys.exit("Incorrect \"print_runtime_array\" specification (missing type)")
 
                     if output_config["type"] == "reduce":
                         try:
@@ -240,8 +236,7 @@ class CodeParser:
                                 code = self.code_generators[current_annotation["keyword"]](ts_name,
                                                                                            current_annotation['indent'])
                             else:
-                                print("Error: incorrect annotation - %s" % current_annotation["line"])
-                                exit(1)
+                                sys.exit("Error: incorrect annotation - %s" % current_annotation["line"])
 
                         elif current_annotation["keyword"] == "stop_measurement_loop":
                             code = self.code_generators[current_annotation["keyword"]](current_annotation['indent'])

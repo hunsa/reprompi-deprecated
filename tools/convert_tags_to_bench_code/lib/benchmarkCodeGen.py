@@ -99,16 +99,14 @@ class BenchmarkCodeGen:
                 pass
             else:
                 print("Error: cannot create platform files directory in %s" % (output_platform_dir))
-                print(e)
-                exit(1)  
+                sys.exit(e) 
         try:
             for f in os.listdir(platform_files_dir):
                 if os.path.isfile(os.path.join(platform_files_dir, f)):
                     shutil.copy(os.path.join(platform_files_dir, f), output_platform_dir)
         except Exception as e:
             print("Error: cannot copy platform files from %s to %s" % (platform_files_dir, self.output_basedir))
-            print (e)
-            exit(1)
+            sys.exit(e)
 
 
     def copy_cmake_modules(self):
@@ -121,16 +119,14 @@ class BenchmarkCodeGen:
                 pass
             else:
                 print("Error: cannot create cmake module directory in %s" % (output_cmake_dir))
-                print(e)
-                exit(1)      
+                sys.exit(e)      
         try:
             for f in os.listdir(cmake_modules_dir):
                 if os.path.isfile(os.path.join(cmake_modules_dir, f)):
                     shutil.copy(os.path.join(cmake_modules_dir, f), output_cmake_dir)
         except Exception as e:
             print("Error: cannot copy cmake module files from %s to %s" % (cmake_modules_dir, self.output_basedir))
-            print(e)
-            exit(1)          
+            sys.exit(e)       
 
 
     def copy_headers(self):
