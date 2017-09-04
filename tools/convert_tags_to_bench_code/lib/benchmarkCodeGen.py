@@ -33,7 +33,7 @@ find_package(GSL REQUIRED)
 if (GSL_INCLUDE_DIR)
 message (STATUS "GSL INCLUDES: ${GSL_INCLUDE_DIR}")
 else(GSL_INCLUDE_DIR)
-message (STATUS "GSL includes not found. Compiling without GSL support.")
+message (FATAL_ERROR "GSL libraries not found.")
 endif(GSL_INCLUDE_DIR)
 
 
