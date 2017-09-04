@@ -34,6 +34,7 @@
 #include "reprompi_bench/option_parser/option_parser_helpers.h"
 #include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
+#include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
 #include "reprompi_bench/output_management/results_output.h"
@@ -180,7 +181,10 @@ int main(int argc, char* argv[]) {
     reprompib_parse_bench_options(argc, argv);  // only "-h" for help
 
     // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
-    reprompib_parse_common_options(&common_opts, argc, argv, &params_dict);
+    reprompib_parse_common_options(&common_opts, argc, argv);
+
+    // parse extra parameters into the global dictionary
+    reprompib_parse_extra_key_value_options(&params_dict, argc, argv);
 
     // parse the benchmark-specific arguments (nreps, summary)
     reprompib_parse_options(&opts, argc, argv);

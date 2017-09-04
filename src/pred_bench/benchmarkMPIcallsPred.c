@@ -33,6 +33,7 @@
 #include "reprompi_bench/sync/time_measurement.h"
 #include "pred_benchmark_job.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
+#include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "parse_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
@@ -245,7 +246,10 @@ int main(int argc, char* argv[]) {
   reprompib_parse_options(argc, argv, &pred_opts);
 
   // parse common arguments (e.g., msizes list, MPI calls to benchmark, input file)
-  reprompib_parse_common_options(&common_opt, argc, argv, &params_dict);
+  reprompib_parse_common_options(&common_opt, argc, argv);
+
+  // parse extra parameters into the global dictionary
+  reprompib_parse_extra_key_value_options(&params_dict, argc, argv);
 
   sync_f.parse_sync_params(argc, argv, &sync_opts);
 

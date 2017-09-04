@@ -35,7 +35,6 @@
 #include <errno.h>
 #include <mpi.h>
 #include "collective_ops/collectives.h"
-#include "reprompi_bench/utils/keyvalue_store.h"
 #include "reprompi_bench/misc.h"
 #include "parse_common_options.h"
 
@@ -67,8 +66,7 @@ enum {
   REPROMPI_ARGS_OPERATION,
   REPROMPI_ARGS_DATATYPE,
   REPROMPI_ARGS_PINGPONG_RANKS,
-  REPROMPI_ARGS_SHUFFLE_JOBS,
-  REPROMPI_ARGS_PARAMS
+  REPROMPI_ARGS_SHUFFLE_JOBS
 };
 
 
@@ -83,7 +81,6 @@ static const struct option reprompi_common_long_options[] = {
         {"datatype", required_argument, 0, REPROMPI_ARGS_DATATYPE},
         {"pingpong-ranks", required_argument, 0, REPROMPI_ARGS_PINGPONG_RANKS},
         {"shuffle-jobs", no_argument, 0, REPROMPI_ARGS_SHUFFLE_JOBS},
-        {"params", optional_argument, 0, REPROMPI_ARGS_PARAMS},
         { 0, 0, 0, 0 }
 };
 static const char reprompi_common_opts_str[] = "";
@@ -252,54 +249,6 @@ static void parse_call_list(char* subopts, reprompib_common_options_t* opts_p) {
 
 }
 
-static void parse_keyvalue_list(char* args, reprompib_dictionary_t* dict) {
-    char* params_tok;
-    char *save_str, *s, *keyvalue_list;
-    char *kv_str, *kv_s;
-    char* key;
-    char* val;
-    int ok;
-
-    save_str = (char*) malloc(STRING_SIZE * sizeof(char));
-    kv_str = (char*) malloc(STRING_SIZE * sizeof(char));
-    s = save_str;
-    kv_s = kv_str;
-
-
-    /* Parse the list of message sizes */
-    if (args != NULL) {
-
-        keyvalue_list = strdup(args);
-        params_tok = strtok_r(keyvalue_list, ",", &save_str);
-        while (params_tok != NULL) {
-            key = strtok_r(params_tok, ":", &kv_str);
-            val = strtok_r(NULL, ":", &kv_str);
-
-            if (key!=NULL && val!= NULL) {
-                if (!reprompib_dict_has_key(dict, key)) {
-                    ok = reprompib_add_element_to_dict(dict, key, val);
-                    if (ok != 0) {
-                      reprompib_print_error_and_exit("Cannot add parameter to dictionary");
-                    }
-                }
-                else {
-                  reprompib_print_error_and_exit("Parameter already exists");
-                }
-            }
-            else {
-              reprompib_print_error_and_exit("Key-value parameters invalid");
-            }
-            params_tok = strtok_r(NULL, ",", &save_str);
-        }
-
-        free(keyvalue_list);
-    }
-
-    free(s);
-    free(kv_s);
-}
-
-
 static void parse_operation(char* arg, reprompib_common_options_t* opts_p) {
     if (arg != NULL && strlen(arg) > 0) {
         if (strcmp("MPI_BOR", arg) == 0) {
@@ -411,7 +360,7 @@ static void parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_
     }
 }
 
-void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv, reprompib_dictionary_t* dict) {
+void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv) {
     int c;
     int nprocs, my_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -448,9 +397,6 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
         case REPROMPI_ARGS_MSIZES_INTERVAL:
             /* Interval of power of 2 message sizes */
             parse_msize_interval(optarg, opts_p);
-            break;
-        case REPROMPI_ARGS_PARAMS: /* list of key-value parameters */
-            parse_keyvalue_list(optarg, dict);
             break;
         case REPROMPI_ARGS_ROOT_PROC: /* set root node for collective function */
             opts_p->root_proc = atoi(optarg);

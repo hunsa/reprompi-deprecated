@@ -30,6 +30,7 @@
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/option_parser/parse_options.h"
+#include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
 #include "results_output.h"
@@ -95,6 +96,9 @@ void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_funct
 
   // parse arguments and set-up benchmarking jobs
   print_command_line_args(argc, argv);
+
+  // parse extra parameters into the global dictionary
+  reprompib_parse_extra_key_value_options(&params_dict, argc, argv);
 
   // parse the benchmark-specific arguments (nreps, summary)
   reprompib_parse_options(opts_p, argc, argv);

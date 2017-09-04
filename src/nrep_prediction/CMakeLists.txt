@@ -12,6 +12,7 @@ ${COMMON_OPTION_PARSER_SRC_FILES}
 ${SRC_DIR}/reprompi_bench/output_management/bench_info_output.c
 ${SRC_DIR}/reprompi_bench/output_management/runtimes_computation.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
+${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c
 )
 
 

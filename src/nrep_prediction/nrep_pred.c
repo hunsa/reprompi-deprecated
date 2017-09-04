@@ -33,6 +33,7 @@
 #include <gsl/gsl_sort.h>
 
 #include "reprompi_bench/option_parser/parse_common_options.h"
+#include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/output_management/runtimes_computation.h"
@@ -204,12 +205,14 @@ int main(int argc, char* argv[]) {
   // parse command-line arguments for the prediction module
   nrep_pred_parse_params(argc, argv, &pred_params);
 
+  // parse arguments and set-up benchmarking jobs
+  reprompib_parse_common_options(&opts, argc, argv);
+
+  // parse extra parameters into the global dictionary
+  reprompib_parse_extra_key_value_options(&params_dict, argc, argv);
+
   // initialize synchronization functions according to the configured synchronization method
   initialize_sync_implementation(&sync_f);
-
-  // parse arguments and set-up benchmarking jobs
-  // print_command_line_args(argc, argv);
-  reprompib_parse_common_options(&opts, argc, argv, &params_dict);
 
   // start synchronization module
   sync_f.parse_sync_params(argc, argv, &sync_opts);
