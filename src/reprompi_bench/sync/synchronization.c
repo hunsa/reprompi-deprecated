@@ -34,10 +34,6 @@
 #include "skampi_sync/sk_sync.h"
 #include "skampi_sync/sk_parse_options.h"
 
-#elif  ENABLE_WINDOWSYNC_NG
-#include "netgauge_sync/ng_sync.h"
-#include "netgauge_sync/ng_parse_options.h"
-
 #elif  ENABLE_WINDOWSYNC_JK
 #include "joneskoenig_sync/jk_sync.h"
 #include "joneskoenig_sync/jk_parse_options.h"
@@ -79,22 +75,6 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->print_sync_info = sk_print_sync_parameters;
     sync_f->get_time = get_time;
     sync_f->parse_sync_params = sk_parse_options;
-}
-
-#elif ENABLE_WINDOWSYNC_NG
-void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
-{
-    sync_f->init_sync_module = ng_init_synchronization_module;
-    sync_f->init_sync = ng_init_synchronization;
-    sync_f->sync_clocks = ng_sync_clocks;
-    sync_f->start_sync = ng_start_synchronization;
-    sync_f->stop_sync = ng_stop_synchronization;
-    sync_f->clean_sync_module = ng_cleanup_synchronization_module;
-    sync_f->get_normalized_time = ng_get_normalized_time;
-    sync_f->get_errorcodes = ng_get_local_sync_errorcodes;
-    sync_f->print_sync_info = ng_print_sync_parameters;
-    sync_f->get_time = get_time;
-    sync_f->parse_sync_params = ng_parse_options;
 }
 
 #elif ENABLE_WINDOWSYNC_JK

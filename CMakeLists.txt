@@ -18,7 +18,7 @@ find_package(GSL REQUIRED)
 if (GSL_INCLUDE_DIR)
 message (STATUS "GSL INCLUDES: ${GSL_INCLUDE_DIR}")
 else(GSL_INCLUDE_DIR)
-message (STATUS "GSL includes not found. Compiling without GSL support.")
+message (FATAL_ERROR "GSL libraries not found.")
 endif(GSL_INCLUDE_DIR)
 
 
@@ -26,15 +26,10 @@ INCLUDE_DIRECTORIES(${GSL_INCLUDE_DIR} "src")
 set(COMMON_LIBRARIES ${GSL_LIBRARIES} )
 
 option(ENABLE_WINDOWSYNC_SK "SKaMPI window-based synchronization [default: MPI_Barrier() synchronization]" off)
-option(ENABLE_WINDOWSYNC_JK "Window-based synchronization with linear model of the clock skew [default: MPI_Barrier() synchronization]" off)
 option(ENABLE_BENCHMARK_BARRIER "MPI_Barrier implementation [default: MPI_Barrier() synchronization]" off)
-
-if (GSL_INCLUDE_DIR)
-    option(ENABLE_WINDOWSYNC_HCA "Window-based synchronization with a hierarchical linear model of the clock skew [default: MPI_Barrier() synchronization]" off)
-    option(ENABLE_GLOBAL_TIMES "MPI_Barrier synchronization with HCA-global times [default: local times]" off)
-    option(ENABLE_LOGP_SYNC "Enable O(log(p)) clock synchronization for the HCA algorithm [default: disabled]" off)
-endif(GSL_INCLUDE_DIR)
-
+option(ENABLE_WINDOWSYNC_HCA "Window-based synchronization with a hierarchical linear model of the clock skew [default: MPI_Barrier() synchronization]" off)
+option(ENABLE_GLOBAL_TIMES "MPI_Barrier synchronization with HCA-global times [default: local times]" off)
+option(ENABLE_LOGP_SYNC "Enable O(log(p)) clock synchronization for the HCA algorithm [default: disabled]" off)
 option(RDTSC_CALIBRATION "Calibrate the frequency of RTDSC [default: off (uses FREQUENCY_MHZ)]" off)
 
 option(ENABLE_RDTSC "Use RDTSC for time measurements [default: MPI_Wtime()]" off)
@@ -42,21 +37,18 @@ option(ENABLE_RDTSCP "Use RDTSCP for time measurements [default: MPI_Wtime()]" o
 option(ENABLE_DOUBLE_BARRIER "Call barrier twice for synchronization [default: disabled]" off)
 set(FREQUENCY_MHZ 2300 CACHE STRING "CPU Frequency (needed for RDTSCP-based time measurements)")
 
-option(COMPILE_PRED_BENCHMARK "Enable benchmark with repetitions prediction [default: enabled]" on)
+option(COMPILE_PRED_BENCHMARK "Enable the NREP prediction benchmarks [default: enabled]" on)
 option(COMPILE_BENCH_LIBRARY "Compile ReproMPI library [default: disabled]" off)
 option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
-
-#if(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
-#    option(ENABLE_WINDOWSYNC_NG "NetGauge window-based synchronization [default: MPI_Barrier() synchronization]" off)
-#endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
 
 option(COMPILE_SANITY_CHECK_TESTS "Enable sanity check tests" off)
 option(COMPILE_SANITY_CHECK_CLOCK "Enable clock sanity checks" on)
 set(OPTION_BUFFER_ALIGNMENT "" CACHE STRING "Alignment to use for buffer allocation [default: no alignment(allocation with calloc)]")
 option(OPTION_PRINT_MSIZES_BYTES "Print message sizes in the output instead of MPI call counts [default: counts]" off)
 
-
+####################################
 ############ PGtune support ########
+####################################
 set(PGMPI_LIBRARY_DEFAULT_PATH "" CACHE STRING  "Specify the path of the PGMPI library")
 option(ENABLE_PGMPI "Use PGMPI" on)
 
@@ -69,8 +61,12 @@ if (ENABLE_PGMPI)
 endif(ENABLE_PGMPI)
 ####################################
 
+
 SET(MY_COMPILE_FLAGS "")
 
+######################################
+############ Set timing flags ########
+######################################
 if(RDTSC_CALIBRATION)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DRDTSC_CALIBRATION")
 endif()
@@ -87,13 +83,25 @@ if(FREQUENCY_MHZ)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DFREQUENCY_MHZ=${FREQUENCY_MHZ}")
 endif()
 
+
+###############################################
+############ Set synchronization flags ########
+###############################################
+if(ENABLE_WINDOWSYNC_HCA)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_WINDOWSYNC_HCA")
+endif()
+
+if(ENABLE_GLOBAL_TIMES)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_GLOBAL_TIMES")
+endif()
+
+if(ENABLE_LOGP_SYNC)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_LOGP_SYNC")
+endif()
+
 if(ENABLE_WINDOWSYNC_SK)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_WINDOWSYNC_SK")
 endif()
-
-#if(ENABLE_WINDOWSYNC_NG)
-#    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_WINDOWSYNC_NG")
-#endif()
 
 if(ENABLE_WINDOWSYNC_JK)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_WINDOWSYNC_JK")
@@ -107,6 +115,10 @@ if(ENABLE_DOUBLE_BARRIER)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_DOUBLE_BARRIER")
 endif()
 
+
+#################################
+############ Other flags ########
+#################################
 if(OPTION_BUFFER_ALIGNMENT)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DOPTION_BUFFER_ALIGNMENT=${OPTION_BUFFER_ALIGNMENT}")
 endif()
@@ -115,23 +127,6 @@ if(OPTION_PRINT_MSIZES_BYTES)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DOPTION_PRINT_MSIZES_BYTES=${OPTION_PRINT_MSIZES_BYTES}")
 endif()
 
-if (GSL_INCLUDE_DIR)
-    SET(HCA_FILES
-                    "${SRC_DIR}/reprompi_bench/sync/hca_sync/hca_parse_options.c"
-                    "${SRC_DIR}/reprompi_bench/sync/hca_sync/hca_sync.c"
-                    )
-
-    if(ENABLE_WINDOWSYNC_HCA)
-        SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_WINDOWSYNC_HCA")
-    endif()
-    if(ENABLE_GLOBAL_TIMES)
-        SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_GLOBAL_TIMES")
-    endif()
-
-    if(ENABLE_LOGP_SYNC)
-        SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_LOGP_SYNC")
-    endif()
-endif(GSL_INCLUDE_DIR)
 
 
 set(BUF_MANAGER_SRC_FILES
@@ -160,12 +155,11 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_common_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 )
 
-if(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
-    SET(NG_FILES
-        ${SRC_DIR}/reprompi_bench/sync/netgauge_sync/ng_parse_options.c
-        ${SRC_DIR}/reprompi_bench/sync/netgauge_sync/ng_sync.c
-        )
-endif(EXISTS ${SRC_DIR}/reprompi_bench/sync/netgauge_sync)
+
+SET(HCA_FILES
+    "${SRC_DIR}/reprompi_bench/sync/hca_sync/hca_parse_options.c"
+    "${SRC_DIR}/reprompi_bench/sync/hca_sync/hca_sync.c"
+)
 
 set(SYNC_SRC_FILES
 ${SRC_DIR}/reprompi_bench/sync/time_measurement.c
@@ -178,7 +172,6 @@ ${SRC_DIR}/reprompi_bench/sync/joneskoenig_sync/jk_sync.c
 ${SRC_DIR}/reprompi_bench/sync/mpibarrier_sync/barrier_sync.c
 ${SRC_DIR}/reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.c
 ${HCA_FILES}
-${NG_FILES}
 )
 
 
@@ -189,12 +182,12 @@ if(GIT_FOUND)
     execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --verify HEAD RESULT_VARIABLE res_var OUTPUT_VARIABLE GIT_COM_ID )
     if( NOT ${res_var} EQUAL 0 )
         set(GIT_COM_ID "unknown")
-        message(STATUS "Git failed (not a repo). Build will not contain git revision info." )
+        message(STATUS "Current directory is not a git repository. Build will not contain git revision info." )
     endif()
     string( REPLACE "\n" "" GIT_COMMIT_ID ${GIT_COM_ID} )
 else()
     set(GIT_COMMIT_ID "unknown_git_not_found")
-    message(STATUS "Git not found. Build will not contain git revision info." )
+    message(STATUS "Git command not found. Build will not contain git revision info." )
 endif()
 configure_file("${SRC_DIR}/version.h.in" "${SRC_DIR}/version.h" @ONLY)
 
