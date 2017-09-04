@@ -49,6 +49,7 @@
 #elif ENABLE_GLOBAL_TIMES
 #include "hca_sync/hca_sync.h"
 #include "hca_sync/hca_parse_options.h"
+#include "mpibarrier_sync/barrier_sync.h"
 #endif
 
 #ifdef ENABLE_BENCHMARK_BARRIER

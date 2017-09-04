@@ -39,7 +39,6 @@
 #include "reprompi_bench/output_management/results_output.h"
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
-#include "benchmarkMPIcalls.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;

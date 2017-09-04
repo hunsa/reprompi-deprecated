@@ -26,6 +26,45 @@
 
 #include "reprompi_bench/sync/sync_info.h"
 
+
+#if defined (ENABLE_WINDOWSYNC_SK)
+#define ENABLE_WINDOWSYNC
+#undef ENABLE_WINDOWSYNC_NG
+#undef ENABLE_WINDOWSYNC_JK
+#undef ENABLE_WINDOWSYNC_HCA
+#undef ENABLE_GLOBAL_TIMES
+
+#elif defined (ENABLE_WINDOWSYNC_NG)
+#define ENABLE_WINDOWSYNC
+#undef ENABLE_WINDOWSYNC_SK
+#undef ENABLE_WINDOWSYNC_JK
+#undef ENABLE_WINDOWSYNC_HCA
+#undef ENABLE_GLOBAL_TIMES
+
+#elif defined (ENABLE_WINDOWSYNC_JK)
+#define ENABLE_WINDOWSYNC
+#undef ENABLE_WINDOWSYNC_NG
+#undef ENABLE_WINDOWSYNC_SK
+#undef ENABLE_WINDOWSYNC_HCA
+#undef ENABLE_GLOBAL_TIMES
+
+#elif defined (ENABLE_WINDOWSYNC_HCA)
+#define ENABLE_WINDOWSYNC
+#undef ENABLE_WINDOWSYNC_NG
+#undef ENABLE_WINDOWSYNC_JK
+#undef ENABLE_WINDOWSYNC_SK
+#undef ENABLE_GLOBAL_TIMES
+
+#else
+#undef ENABLE_WINDOWSYNC
+#endif
+
+#ifdef ENABLE_GLOBAL_TIMES
+#ifndef ENABLE_WINDOWSYNC
+#define ENABLE_WINDOWSYNC
+#endif
+#endif
+
 typedef void (*init_sync_module_t)(const reprompib_sync_options_t parsed_opts, const long nrep);
 typedef void (*sync_clocks_t)(void);
 typedef void (*init_sync_t)(void);

@@ -40,6 +40,8 @@
 #include "benchmark_job.h"
 #include "parse_nrep_pred_options.h"
 
+#ifndef ENABLE_WINDOWSYNC
+
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
 
@@ -54,6 +56,7 @@ typedef struct summary {
   double min;
   double max;
 } array_summary_t;
+
 
 // can only be done at the root
 static nrep_pred_state_t check_prediction_ready(const double* maxRuntimes_sec, const long measured_nreps,
@@ -159,8 +162,11 @@ void nrep_pred_print_results_header(const char* filename) {
     }
   }
 }
+#endif
 
 int main(int argc, char* argv[]) {
+
+#ifndef ENABLE_WINDOWSYNC
   int my_rank, procs;
   long i, jindex, current_index;
   double* tstart_sec;
@@ -188,6 +194,7 @@ int main(int argc, char* argv[]) {
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &procs);
+
 
   start_time = time(NULL);
 
@@ -325,6 +332,11 @@ int main(int argc, char* argv[]) {
 
   /* shut down MPI */
   MPI_Finalize();
+
+#else
+  printf("ERROR: Cannot use this NREP prediction module with window-based synchronization. \n");
+  printf("Please disable the HCA, SKaMPI or JK synchronization compile flags and use either the MPI_Barrier (default) or the dissemination barrier (ENABLE_BENCHMARK_BARRIER flag) for process synchronization.\n");
+#endif
 
   return 0;
 }

@@ -29,7 +29,6 @@
 #include "mpi.h"
 
 #include "benchmark_job.h"
-#include "benchmarkMPIcalls.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/option_parser/parse_options.h"
 #include "collective_ops/collectives.h"
