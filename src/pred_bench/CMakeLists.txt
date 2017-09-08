@@ -13,7 +13,7 @@ ${SRC_DIR}/pred_bench/nrep_estimation.c
 set(MPIBENCH_PREDNREPS_FILES
 benchmarkMPIcallsPred.c
 parse_options.c
-pred_benchmark_job.c
+${SRC_DIR}/benchmark_job.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c

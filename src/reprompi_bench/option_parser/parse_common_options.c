@@ -427,11 +427,13 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
       reprompib_print_error_and_exit("Invalid root process (should be >= 0 and smaller than the total number of processes)");
     }
 
-    if (opts_p->n_msize <= 0) {
-      reprompib_print_error_and_exit("List of message sizes is empty (--msizes-list=<list of comma-separated positive integers>)");
-    }
-    if (opts_p->n_calls <= 0) {
-      reprompib_print_error_and_exit("List of MPI calls is empty (--calls-list=<list of comma-separated MPI calls>)");
+    if (opts_p->input_file == NULL) {
+      if (opts_p->n_msize <= 0) {
+        reprompib_print_error_and_exit("List of message sizes is empty (--msizes-list=<list of comma-separated positive integers>)");
+      }
+      if (opts_p->n_calls <= 0) {
+        reprompib_print_error_and_exit("List of MPI calls is empty (--calls-list=<list of comma-separated MPI calls>)");
+      }
     }
 
     if (opts_p->output_file != NULL) {

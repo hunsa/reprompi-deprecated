@@ -160,9 +160,9 @@ void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv)
     }
 
 
-    if (opts_p->n_rep <= 0) {
-      reprompib_print_error_and_exit("Nreps value is negative or not correctly specified");
-    }
+//    if (opts_p->n_rep < 0) {
+//      reprompib_print_error_and_exit("Nreps value is negative or not correctly specified");
+///    }
 
     optind = 1;	// reset optind to enable option re-parsing
     opterr = 1;	// reset opterr to catch invalid options

@@ -192,10 +192,13 @@ int main(int argc, char* argv[]) {
     // parse the arguments related to the synchronization and timing method
     sync_f.parse_sync_params( argc, argv, &sync_opts);
 
-    init_collective_basic_info(common_opts, procs, &coll_basic_info);
+    if (common_opts.input_file == NULL && opts.n_rep <=0) { // make sure nrep is specified when there is no input file
+      reprompib_print_error_and_exit("The number of repetitions is not defined (specify the \"--nrep\" command-line argument or provide an input file)\n");
+    }
     generate_job_list(&common_opts, opts.n_rep, &jlist);
 
 
+    init_collective_basic_info(common_opts, procs, &coll_basic_info);
     // execute the benchmark jobs
     for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
         job_t job;

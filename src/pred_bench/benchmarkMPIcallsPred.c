@@ -31,7 +31,7 @@
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "pred_benchmark_job.h"
+#include "benchmark_job.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "parse_options.h"
@@ -208,7 +208,8 @@ int main(int argc, char* argv[]) {
   double* tstart_sec;
   double* tend_sec;
   double* maxRuntimes_sec = NULL;
-  pred_job_list_t jlist;
+  //pred_job_list_t jlist;
+  job_list_t jlist;
   collective_params_t coll_params;
   long nrep, stride;
   int stop_meas;
@@ -254,35 +255,28 @@ int main(int argc, char* argv[]) {
   sync_f.parse_sync_params(argc, argv, &sync_opts);
 
   init_collective_basic_info(common_opt, procs, &coll_basic_info);
-  generate_pred_job_list(&pred_opts, &common_opt, &jlist);
+  //generate_pred_job_list(&pred_opts, &common_opt, &jlist);
+  generate_job_list(&common_opt, 0, &jlist);
 
   // execute the benchmark jobs
   for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
     job_t job;
     job = jlist.jobs[jlist.job_indices[jindex]];
 
-    if (jlist.prediction_params.n_rep_max == 0) {
-      jlist.prediction_params.n_rep_max = job.n_rep;
-    }
-
-    if (jlist.prediction_params.n_rep_max < jlist.prediction_params.n_rep_min) {
-      jlist.prediction_params.n_rep_max = jlist.prediction_params.n_rep_min;
-    }
-
     // start synchronization module
-    sync_f.init_sync_module(sync_opts, jlist.prediction_params.n_rep_max);
+    sync_f.init_sync_module(sync_opts, pred_opts.n_rep_max);
 
     if (jindex == 0) {
-      print_initial_settings_prediction(&common_opt, &(jlist.prediction_params), &params_dict, sync_f.print_sync_info);
+      print_initial_settings_prediction(&common_opt, &pred_opts, &params_dict, sync_f.print_sync_info);
     }
 
-    tstart_sec = (double*) malloc(jlist.prediction_params.n_rep_max * sizeof(double));
-    tend_sec = (double*) malloc(jlist.prediction_params.n_rep_max * sizeof(double));
+    tstart_sec = (double*) malloc(pred_opts.n_rep_max * sizeof(double));
+    tend_sec = (double*) malloc(pred_opts.n_rep_max * sizeof(double));
 
-    maxRuntimes_sec = (double*) malloc(jlist.prediction_params.n_rep_max * sizeof(double));
+    maxRuntimes_sec = (double*) malloc(pred_opts.n_rep_max * sizeof(double));
 
-    nrep = jlist.prediction_params.n_rep_min;
-    stride = jlist.prediction_params.n_rep_stride;
+    nrep = pred_opts.n_rep_min;
+    stride = pred_opts.n_rep_stride;
 
     // compute clock drift models relative to the root node
     sync_f.sync_clocks();
@@ -318,8 +312,8 @@ int main(int argc, char* argv[]) {
       runtimes_index = (runtimes_index - nrep) + updated_batch_nreps;
 
       stop_meas = 0;
-      set_prediction_conditions(runtimes_index, maxRuntimes_sec, jlist.prediction_params, &pred_coefs);
-      stop_meas = check_prediction_conditions(jlist.prediction_params, pred_coefs);
+      set_prediction_conditions(runtimes_index, maxRuntimes_sec, pred_opts, &pred_coefs);
+      stop_meas = check_prediction_conditions(pred_opts, pred_coefs);
 
       /*if (my_rank==0) {
        fprintf(stdout, "runt_index=%ld updated_nrep=%ld \n",
@@ -339,10 +333,10 @@ int main(int argc, char* argv[]) {
         stride = stride * 2;
       }
 
-      if (current_index + nrep > jlist.prediction_params.n_rep_max) {
-        nrep = jlist.prediction_params.n_rep_max - current_index;
+      if (current_index + nrep > pred_opts.n_rep_max) {
+        nrep = pred_opts.n_rep_max - current_index;
       }
-      if (current_index >= jlist.prediction_params.n_rep_max) {
+      if (current_index >= pred_opts.n_rep_max) {
         break;
       }
     }
@@ -350,7 +344,7 @@ int main(int argc, char* argv[]) {
     job.n_rep = runtimes_index;
     // print_results
     print_measurement_results_prediction(&job, &common_opt, maxRuntimes_sec,
-        &jlist.prediction_params, &pred_coefs);
+        &pred_opts, &pred_coefs);
 
     free(tstart_sec);
     free(tend_sec);
@@ -363,7 +357,7 @@ int main(int argc, char* argv[]) {
   end_time = time(NULL);
   print_final_info(&common_opt, start_time, end_time);
 
-  cleanup_pred_job_list(jlist);
+  cleanup_job_list(jlist);
   reprompib_free_common_parameters(&common_opt);
   reprompib_cleanup_dictionary(&params_dict);
 
