@@ -23,6 +23,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include "mpi.h"
 
 #include "collective_ops/collectives.h"
@@ -185,6 +186,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
   // are multiples of the datatype size
   MPI_Type_size(opts->datatype, &datatypesize);
   for (i = 0; i < jlist->n_jobs; i++) {
+    assert(datatypesize > 0);
     jlist->jobs[i].count = jlist->jobs[i].msize / datatypesize;
 
     if (jlist->jobs[i].count * datatypesize != jlist->jobs[i].msize) {
