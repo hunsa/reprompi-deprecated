@@ -24,13 +24,11 @@
 #ifndef BENCH_INFO_OUTPUT_H_
 #define BENCH_INFO_OUTPUT_H_
 
+#include <time.h>
 #include "reprompi_bench/utils/keyvalue_store.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/sync/synchronization.h"
 
-#ifndef time_t
-    typedef long int time_t;
-#endif
 
 void print_command_line_args(int argc, char* argv[]);
 void print_common_settings(const reprompib_common_options_t* opts, const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict);

@@ -167,12 +167,12 @@ void print_final_info(const reprompib_common_options_t* opts, const time_t start
         FILE* f;
         f = stdout;
         fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
-        fprintf (f, "# Execution time: %lds\n", end_time-start_time);
+        fprintf (f, "# Execution time: %lds\n", (long int)(end_time-start_time));
 
         if (opts->output_file != NULL) {
             f = fopen(opts->output_file, "a");
             fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
-            fprintf (f, "# Execution time: %lds\n", end_time-start_time);
+            fprintf (f, "# Execution time: %lds\n", (long int)(end_time-start_time));
             fflush(f);
             fclose(f);
         }
