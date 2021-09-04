@@ -4,14 +4,13 @@ import shutil
 import errno
 
 from codeParser import CodeParser
-from string import strip
 
 def generate_cmake_text(src_dir, sourcefiles_list):
     binary_name = "reprompibench"
     
     common_cmake_text = \
 """
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6...3.20.5)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
 
@@ -68,7 +67,7 @@ class BenchmarkCodeGen:
 
         with open(sources_file, "r") as f:
             sfiles_list = f.readlines()
-        sfiles_list = map(strip, sfiles_list)
+        sfiles_list = list(map(self.strip, sfiles_list))
         
         self.cfiles = []
         self.cheaders = []
@@ -79,7 +78,9 @@ class BenchmarkCodeGen:
                     self.cfiles.append(rel_file_path)
                 if f.endswith(".h") and rel_file_path in sfiles_list:
                     self.cheaders.append(rel_file_path)
-        
+
+    def strip (self, unstripped):
+	    return unstripped.strip()
 
     def generate_cmakelists(self):
 
@@ -98,14 +99,14 @@ class BenchmarkCodeGen:
             if e.errno == errno.EEXIST and os.path.isdir(output_platform_dir):
                 pass
             else:
-                print("Error: cannot create platform files directory in %s" % (output_platform_dir))
+                print(("Error: cannot create platform files directory in %s" % (output_platform_dir)))
                 sys.exit(e) 
         try:
             for f in os.listdir(platform_files_dir):
                 if os.path.isfile(os.path.join(platform_files_dir, f)):
                     shutil.copy(os.path.join(platform_files_dir, f), output_platform_dir)
         except Exception as e:
-            print("Error: cannot copy platform files from %s to %s" % (platform_files_dir, self.output_basedir))
+            print(("Error: cannot copy platform files from %s to %s" % (platform_files_dir, self.output_basedir)))
             sys.exit(e)
 
 
@@ -118,14 +119,14 @@ class BenchmarkCodeGen:
             if e.errno == errno.EEXIST and os.path.isdir(output_cmake_dir):
                 pass
             else:
-                print("Error: cannot create cmake module directory in %s" % (output_cmake_dir))
+                print(("Error: cannot create cmake module directory in %s" % (output_cmake_dir)))
                 sys.exit(e)      
         try:
             for f in os.listdir(cmake_modules_dir):
                 if os.path.isfile(os.path.join(cmake_modules_dir, f)):
                     shutil.copy(os.path.join(cmake_modules_dir, f), output_cmake_dir)
         except Exception as e:
-            print("Error: cannot copy cmake module files from %s to %s" % (cmake_modules_dir, self.output_basedir))
+            print(("Error: cannot copy cmake module files from %s to %s" % (cmake_modules_dir, self.output_basedir)))
             sys.exit(e)       
 
 
@@ -149,14 +150,14 @@ class BenchmarkCodeGen:
         self.copy_platform_files()
         self.copy_cmake_modules()
         
-        print "Parsing files..."
+        print("Parsing files...")
         for f in self.cfiles:
-            print f
+            print(f)
             final_file_dir = os.path.join(self.output_dir, os.path.dirname(f))
             parser = CodeParser(os.path.join(self.input_dir, f), final_file_dir)
             parser.parse_file()
             parser.generate_output_file()
-        print "Done."
+        print("Done.")
 
 
 
