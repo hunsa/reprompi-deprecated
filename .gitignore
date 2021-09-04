@@ -1,3 +1,9 @@
+build/
+bin/
+src/version.h
+*anjuta*
+*kdev4*
+*.pyc
 *.Rhistory
 *.aux
 *.bbl
