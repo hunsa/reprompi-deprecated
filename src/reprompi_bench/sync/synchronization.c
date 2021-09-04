@@ -34,15 +34,15 @@
 #include "skampi_sync/sk_sync.h"
 #include "skampi_sync/sk_parse_options.h"
 
-#elif  ENABLE_WINDOWSYNC_JK
+#elif defined ENABLE_WINDOWSYNC_JK
 #include "joneskoenig_sync/jk_sync.h"
 #include "joneskoenig_sync/jk_parse_options.h"
 
-#elif ENABLE_WINDOWSYNC_HCA
+#elif defined ENABLE_WINDOWSYNC_HCA
 #include "hca_sync/hca_sync.h"
 #include "hca_sync/hca_parse_options.h"
 
-#elif ENABLE_GLOBAL_TIMES
+#elif defined ENABLE_GLOBAL_TIMES
 #include "hca_sync/hca_sync.h"
 #include "hca_sync/hca_parse_options.h"
 #include "mpibarrier_sync/barrier_sync.h"
@@ -77,7 +77,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->parse_sync_params = sk_parse_options;
 }
 
-#elif ENABLE_WINDOWSYNC_JK
+#elif defined ENABLE_WINDOWSYNC_JK
 void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
 {
     sync_f->init_sync_module = jk_init_synchronization_module;
@@ -93,7 +93,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->parse_sync_params = jk_parse_options;
 }
 
-#elif ENABLE_WINDOWSYNC_HCA
+#elif defined ENABLE_WINDOWSYNC_HCA
 void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
 {
     sync_f->init_sync_module = hca_init_synchronization_module;
@@ -110,7 +110,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->parse_sync_params = hca_parse_options;
 }
 
-#elif ENABLE_GLOBAL_TIMES // barrier sync with HCA-global times
+#elif defined ENABLE_GLOBAL_TIMES // barrier sync with HCA-global times
 void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
 {
     sync_f->init_sync_module = hca_init_synchronization_module;
@@ -133,7 +133,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
 #endif
 }
 
-#elif ENABLE_BENCHMARK_BARRIER
+#elif defined ENABLE_BENCHMARK_BARRIER
 void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
 {
     sync_f->init_sync_module = bbarrier_init_synchronization_module;

@@ -52,7 +52,7 @@ void init_timer(void) {
 inline double get_time(void) {
 #ifdef ENABLE_RDTSCP
     return (double)rdtscp()/FREQ_HZ;
-#elif ENABLE_RDTSC
+#elif defined ENABLE_RDTSC
     return (double)rdtsc()/FREQ_HZ;
 #else
     return MPI_Wtime();
@@ -66,7 +66,7 @@ void print_time_parameters(FILE* f) {
 #ifdef ENABLE_RDTSCP
     strcpy(clock, "RDTSCP");
     fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
-#elif ENABLE_RDTSC
+#elif defined ENABLE_RDTSC
     strcpy(clock, "RDTSC");
     fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
 #endif
