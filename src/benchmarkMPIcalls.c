@@ -113,7 +113,7 @@ void reprompib_parse_bench_options(int argc, char** argv) {
     opterr = 0;
 
     const struct option bench_long_options[] = {
-        { "help", required_argument, 0, 'h' },
+        { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 }
     };
 
