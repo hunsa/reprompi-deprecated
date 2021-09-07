@@ -175,12 +175,12 @@ ${HCA_FILES}
 )
 
 set(INTERCOMM_SOURCE_FILES
-${SRC_DIR}/intercommunication/attributes.c
-${SRC_DIR}/intercommunication/error_output.c
-${SRC_DIR}/intercommunication/excluded_collectives.c
-${SRC_DIR}/intercommunication/launchers.c
-${SRC_DIR}/intercommunication/options_parser.c
-${SRC_DIR}/intercommunication/utilities.c
+${SRC_DIR}/contrib/intercommunication/attributes.c
+${SRC_DIR}/contrib/intercommunication/error_output.c
+${SRC_DIR}/contrib/intercommunication/excluded_collectives.c
+${SRC_DIR}/contrib/intercommunication/launchers.c
+${SRC_DIR}/contrib/intercommunication/options_parser.c
+${SRC_DIR}/contrib/intercommunication/utilities.c
 )
 
 
