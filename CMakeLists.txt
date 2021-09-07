@@ -174,6 +174,14 @@ ${SRC_DIR}/reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.c
 ${HCA_FILES}
 )
 
+set(INTERCOMM_SOURCE_FILES
+${SRC_DIR}/intercommunication/attributes.c
+${SRC_DIR}/intercommunication/error_output.c
+${SRC_DIR}/intercommunication/excluded_collectives.c
+${SRC_DIR}/intercommunication/launchers.c
+${SRC_DIR}/intercommunication/options_parser.c
+${SRC_DIR}/intercommunication/utilities.c
+)
 
 
 # generate commit version
@@ -215,6 +223,8 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
 # collective functions
 ${COLL_OPS_SRC_FILES}
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 
