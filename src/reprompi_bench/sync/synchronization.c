@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -122,7 +124,7 @@ void initialize_sync_implementation(reprompib_sync_functions_t *sync_f)
     sync_f->get_time = hca_get_adjusted_time;
     sync_f->parse_sync_params = hca_parse_options;
 
-#if ENABLE_BENCHMARK_BARRIER
+#if defined ENABLE_BENCHMARK_BARRIER
     sync_f->print_sync_info = bbarrier_print_sync_parameters;
     sync_f->start_sync = bbarrier_start_synchronization;
     sync_f->stop_sync = bbarrier_stop_synchronization;
