@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#include "intercommunication/intercommunication.h"
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 
