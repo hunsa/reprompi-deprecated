@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,6 +42,8 @@
 #include "reprompi_bench/output_management/results_output.h"
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
+
+#include "intercommunication/intercommunication.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
@@ -131,6 +135,7 @@ void reprompib_parse_bench_options(int argc, char** argv) {
         switch (c) {
         case 'h': /* list of summary options */
             reprompib_print_benchmark_help();
+            icmb_exit(0);
             break;
         case '?':
             break;
