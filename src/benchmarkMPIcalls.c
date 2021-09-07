@@ -49,14 +49,10 @@ static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
 
 void print_initial_settings(const reprompib_options_t* opts, const reprompib_common_options_t* common_opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     print_common_settings(common_opts, print_sync_info, dict);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         FILE* f;
 
         f = stdout;
@@ -77,10 +73,8 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
         const reprompib_options_t* opts, const reprompib_common_options_t* common_opts) {
     FILE* f = stdout;
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (common_opts->output_file != NULL) {
             f = fopen(common_opts->output_file, "a");
         }
@@ -102,7 +96,7 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
                 opts->verbose);
     }
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (common_opts->output_file != NULL) {
             fflush(f);
             fclose(f);
@@ -149,7 +143,6 @@ void reprompib_parse_bench_options(int argc, char** argv) {
 
 
 int main(int argc, char* argv[]) {
-    int my_rank, procs;
     long i, jindex;
     double* tstart_sec;
     double* tend_sec;
@@ -167,8 +160,9 @@ int main(int argc, char* argv[]) {
      *
      * */
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &procs);
+
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
 
     // initialize time measurement functions
     init_timer();
@@ -203,7 +197,7 @@ int main(int argc, char* argv[]) {
     generate_job_list(&common_opts, opts.n_rep, &jlist);
 
 
-    init_collective_basic_info(common_opts, procs, &coll_basic_info);
+    init_collective_basic_info(common_opts, icmb_global_size(), &coll_basic_info); // TODO: this was numprocs (size of world), check which size is required here
     // execute the benchmark jobs
     for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
         job_t job;
