@@ -43,7 +43,7 @@
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
 
-#include "intercommunication/intercommunication.h"
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
