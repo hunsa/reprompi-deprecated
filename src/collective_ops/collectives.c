@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
 </license>
  */
 
+// allow strdup with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,6 +36,8 @@
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 const collective_ops_t collective_calls[] = {
         [MPI_ALLGATHER] = {
@@ -346,7 +353,7 @@ void initialize_common_data(const basic_collective_params_t info,
 
     params->op = info.op;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &params->rank);
+    params->rank = icmb_benchmark_rank();
     params->nprocs = info.nprocs;
 
     params->root = info.root;
@@ -376,9 +383,6 @@ void init_collective_basic_info(reprompib_common_options_t opts, int procs, basi
         coll_basic_info->root = opts.root_proc;
     }
 
+    // adjust root for inter-communicator collectives
+    coll_basic_info->root = icmb_collective_root(coll_basic_info->root);
 }
-
-
-
-
-
