@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -99,9 +101,6 @@ static void parse_keyvalue_list(char* args, reprompib_dictionary_t* dict) {
 
 void reprompib_parse_extra_key_value_options(reprompib_dictionary_t* dict, int argc, char **argv) {
     int c;
-    int nprocs, my_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     opterr = 0;
     while (1) {
