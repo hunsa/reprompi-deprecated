@@ -33,8 +33,6 @@
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
-#include "contrib/intercommunication/intercommunication.h"
-
 
 /***************************************/
 // MPI_Allreduce with Reduce + Bcast
