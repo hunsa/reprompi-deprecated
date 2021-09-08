@@ -353,6 +353,9 @@ void initialize_common_data(const basic_collective_params_t info,
 
     params->op = info.op;
 
+    params->is_intercommunicator = icmb_is_intercommunicator();
+    params->is_initiator = icmb_is_initiator();
+    params->is_responder = icmb_is_responder();
     params->communicator = icmb_benchmark_communicator();
     params->initiator_size = icmb_initiator_size();
     params->local_size = icmb_local_size();
