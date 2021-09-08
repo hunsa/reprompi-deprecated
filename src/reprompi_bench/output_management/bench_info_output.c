@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,6 +38,8 @@
 
 #include "version.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 
@@ -52,11 +56,8 @@ char* get_mpi_operation_str (MPI_Op op) {
 }
 
 void print_command_line_args(int argc, char* argv[]) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         int i;
         printf("#Command-line arguments: ");
         for (i = 0; i < argc; i++) {
@@ -68,16 +69,19 @@ void print_command_line_args(int argc, char* argv[]) {
 
 
 void print_common_settings_to_file(FILE* f, const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
-    int my_rank, np;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         reprompib_print_dictionary(dict, f);
 
         fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
-        fprintf(f, "#@nprocs=%d\n", np);
+        if (icmb_is_intercommunicator())
+        {
+            fprintf(f, "#@localprocs=%d\n", icmb_initiator_size());
+            fprintf(f, "#@remoteprocs=%d\n", icmb_responder_size());
+        }
+        else{
+            fprintf(f, "#@nprocs=%d\n", icmb_local_size());
+        }
 #ifdef ENABLE_GLOBAL_TIMES
         fprintf(f, "#@clocktype=global\n");
 #ifdef ENABLE_LOGP_SYNC
@@ -97,7 +101,7 @@ void print_common_settings_to_file(FILE* f, const print_sync_info_t print_sync_i
 
 void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_options_t* opts,
     const print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
-    int my_rank, len;
+    int len;
     char type_name[MPI_MAX_OBJECT_NAME];
     MPI_Aint lb, extent;
     int datatypesize;
@@ -105,9 +109,8 @@ void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_opt
     MPI_Type_get_name(opts->datatype, type_name, &len);
     MPI_Type_get_extent(opts->datatype, &lb, &extent);
     MPI_Type_size(opts->datatype, &datatypesize);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         int i;
         if (opts->n_calls > 0) {
           fprintf(f, "#MPI calls:\n");
@@ -141,11 +144,9 @@ void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_opt
 void print_common_settings(const reprompib_common_options_t* opts, const print_sync_info_t print_sync_info,
                            const reprompib_dictionary_t* dict) {
     FILE* f = stdout;
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     print_benchmark_common_settings_to_file(stdout, opts, print_sync_info, dict);
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (opts->output_file != NULL) {
             f = fopen(opts->output_file, "a");
             print_benchmark_common_settings_to_file(f, opts, print_sync_info, dict);
@@ -159,11 +160,8 @@ void print_common_settings(const reprompib_common_options_t* opts, const print_s
 
 
 void print_final_info(const reprompib_common_options_t* opts, const time_t start_time, const time_t end_time) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         FILE* f;
         f = stdout;
         fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
