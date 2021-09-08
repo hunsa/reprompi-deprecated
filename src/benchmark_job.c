@@ -141,7 +141,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       read_input_jobs(opts->input_file, jlist);
     }
     // send the number of jobs to all processes
-    MPI_Bcast(&(jlist->n_jobs), 1, MPI_INT, icmb_collective_root(INPUT_ROOT_PROC), icmb_global_communicator());
+    MPI_Bcast(&(jlist->n_jobs), 1, MPI_INT, icmb_lookup_global_rank(INPUT_ROOT_PROC), icmb_global_communicator());
 
     if (jlist->n_jobs > 0) {
       if (!icmb_has_initiator_rank(INPUT_ROOT_PROC)) { // processes other than the root need to allocate job lists
@@ -153,7 +153,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       MPI_Type_commit (&job_info_dt);
 
       // broadcast the job list to all processes
-      MPI_Bcast(jlist->jobs, jlist->n_jobs, job_info_dt, icmb_collective_root(INPUT_ROOT_PROC), icmb_global_communicator());
+      MPI_Bcast(jlist->jobs, jlist->n_jobs, job_info_dt, icmb_lookup_global_rank(INPUT_ROOT_PROC), icmb_global_communicator());
 
       // free datatype
       MPI_Type_free(&job_info_dt);
@@ -220,7 +220,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       }
 
     }
-    MPI_Bcast(jlist->job_indices, jlist->n_jobs, MPI_INT, icmb_collective_root(OUTPUT_ROOT_PROC),
+    MPI_Bcast(jlist->job_indices, jlist->n_jobs, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC),
     icmb_global_communicator());
   }
 }
