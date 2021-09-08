@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +31,8 @@
 #include "reprompi_bench/sync/sync_info.h"
 #include "bbarrier_sync.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 inline double bbarrier_get_normalized_time(double local_time) {
     return local_time;
 }
@@ -40,19 +44,18 @@ void bbarrier_parse_options(int argc, char **argv, reprompib_sync_options_t* opt
 }
 
 void bbarrier_init_synchronization(void) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 }
 
 
 void dissemination_barrier(void) {
-    int my_rank, np, send_rank, recv_rank;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
+    int send_rank, recv_rank;
     int i, nrounds;
     MPI_Status status;
     int send_value = 1;
     int recv_value = 1;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     nrounds = ceil(log2((double) np));
 
@@ -63,7 +66,7 @@ void dissemination_barrier(void) {
         //printf("[%d] Sending from %d to %d; receive from %d\n", i, my_rank, send_rank, recv_rank);
         MPI_Sendrecv(&send_value, 1, MPI_INT, send_rank, 0,
                 &recv_value, 1, MPI_INT, recv_rank, 0,
-                MPI_COMM_WORLD, &status);
+                icmb_global_communicator(), &status);
     }
 
 }
