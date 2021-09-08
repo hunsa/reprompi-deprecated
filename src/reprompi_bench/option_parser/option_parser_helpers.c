@@ -33,10 +33,8 @@
 static const int OUTPUT_ROOT_PROC = 0;
 
 void reprompib_print_common_help(void) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("%-40s %-40s\n", "-h", "print this help");
         printf("%-40s %-40s\n", "-v",
                 "increase verbosity level (print times measured for each process)");
