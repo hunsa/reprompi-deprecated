@@ -261,5 +261,12 @@ void initialize_data_pingpong(const basic_collective_params_t info, const long c
     params->sbuf = (char*)reprompi_calloc(params->count, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->count, params->datatype_extent);
 }
+
+void cleanup_data_pingpong(collective_params_t* params) {
+  free(params->sbuf);
+  free(params->rbuf);
+  params->sbuf = NULL;
+  params->rbuf = NULL;
+}
 /***************************************/
 
