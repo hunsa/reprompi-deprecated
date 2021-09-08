@@ -80,6 +80,11 @@ typedef struct collparams {
     MPI_Datatype datatype;
     MPI_Aint datatype_extent;
     MPI_Op op;
+    int initiator_size;
+    int local_size;
+    int remote_size;
+    int responder_size;
+    MPI_Comm communicator;
     int rank;
     size_t scount;
     size_t rcount;

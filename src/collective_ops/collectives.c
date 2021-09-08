@@ -353,6 +353,12 @@ void initialize_common_data(const basic_collective_params_t info,
 
     params->op = info.op;
 
+    params->communicator = icmb_benchmark_communicator();
+    params->initiator_size = icmb_initiator_size();
+    params->local_size = icmb_local_size();
+    params->remote_size = icmb_remote_size();
+    params->responder_size = icmb_responder_size();
+
     params->rank = icmb_benchmark_rank();
 
     params->root = info.root;
