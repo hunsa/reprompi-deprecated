@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +30,7 @@
 #include "runtimes_computation.h"
 #include "reprompi_bench/sync/synchronization.h"
 
+#include "contrib/intercommunication/intercommunication.h"
 
 void compute_runtimes_local_clocks(const double* tstart_sec, const double* tend_sec,
         long current_start_index, long current_nreps, int root_proc,
@@ -35,9 +38,6 @@ void compute_runtimes_local_clocks(const double* tstart_sec, const double* tend_
 
     double* local_runtimes = NULL;
     int i, index;
-    int my_rank;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     // compute local runtimes for the [current_start_index, current_start_index + current_nreps) interval
     local_runtimes = (double*) malloc(current_nreps * sizeof(double));
@@ -48,7 +48,7 @@ void compute_runtimes_local_clocks(const double* tstart_sec, const double* tend_
 
     // reduce local measurement results on the root
     MPI_Reduce(local_runtimes, maxRuntimes_sec, current_nreps,
-            MPI_DOUBLE, MPI_MAX, root_proc, MPI_COMM_WORLD);
+            MPI_DOUBLE, MPI_MAX, icmb_lookup_global_rank(root_proc), icmb_global_communicator());
 
     free(local_runtimes);
 }
@@ -65,18 +65,15 @@ void compute_runtimes_global_clocks(const double* tstart_sec, const double* tend
     double* norm_tstart_sec;
     double* norm_tend_sec;
     int i, index;
-    int my_rank;
     int* local_errorcodes;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     // gather error codes in the  [current_start_index, current_start_index + current_nreps) interval
     local_errorcodes = get_errorcodes() + current_start_index;
 
     MPI_Reduce(local_errorcodes, sync_errorcodes, current_nreps,
-            MPI_INT, MPI_MAX, root_proc, MPI_COMM_WORLD);
+            MPI_INT, MPI_MAX, icmb_lookup_global_rank(root_proc), icmb_global_communicator());
 
-    if (my_rank == root_proc)
+    if (icmb_has_initiator_rank(root_proc))
     {
         start_sec = (double*)malloc(current_nreps * sizeof(double));
         end_sec = (double*)malloc(current_nreps * sizeof(double));
@@ -93,10 +90,10 @@ void compute_runtimes_global_clocks(const double* tstart_sec, const double* tend
     }
 
     // gather results at the root process and compute runtimes
-    MPI_Reduce(norm_tstart_sec, start_sec, current_nreps, MPI_DOUBLE, MPI_MIN, root_proc, MPI_COMM_WORLD);
-    MPI_Reduce(norm_tend_sec, end_sec, current_nreps, MPI_DOUBLE, MPI_MAX, root_proc, MPI_COMM_WORLD);
+    MPI_Reduce(norm_tstart_sec, start_sec, current_nreps, MPI_DOUBLE, MPI_MIN, icmb_lookup_global_rank(root_proc), icmb_global_communicator());
+    MPI_Reduce(norm_tend_sec, end_sec, current_nreps, MPI_DOUBLE, MPI_MAX, icmb_lookup_global_rank(root_proc), icmb_global_communicator());
 
-    if (my_rank == root_proc) {
+    if (icmb_has_initiator_rank(root_proc)) {
         for (i = 0; i< current_nreps; i++) {
             maxRuntimes_sec[i] = end_sec[i] - start_sec[i];
         }
