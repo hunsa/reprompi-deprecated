@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -74,7 +76,6 @@ typedef struct collparams {
     char* sbuf;
     char* rbuf;
     char* tmp_buf;
-    int nprocs;
     int root;
     MPI_Datatype datatype;
     MPI_Aint datatype_extent;
@@ -91,7 +92,6 @@ typedef struct collparams {
 
 
 typedef struct basic_collparams {
-    int nprocs;
     int root;
     MPI_Datatype datatype;
     MPI_Op op;
@@ -118,6 +118,12 @@ char* const* get_mpi_calls_list(void);
 
 extern const collective_ops_t collective_calls[];
 
+/*
+ * procs argument is not used with inter-communicators because it is ambiguous
+ *
+ * instead, the implementation must either use the number of processes in the
+ * local group or the number of processes in the remote group
+ */
 void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info);
 
 void execute_Allgather(collective_params_t* params);

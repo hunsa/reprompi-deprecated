@@ -354,7 +354,6 @@ void initialize_common_data(const basic_collective_params_t info,
     params->op = info.op;
 
     params->rank = icmb_benchmark_rank();
-    params->nprocs = info.nprocs;
 
     params->root = info.root;
 
@@ -369,17 +368,23 @@ void initialize_common_data(const basic_collective_params_t info,
 }
 
 
+/*
+ * procs argument is not used with inter-communicators because it is ambiguous
+ *
+ * instead, the implementation must either use the number of processes in the
+ * local group or the number of processes in the remote group, depending on
+ * context
+ */
 void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info) {
     // initialize common collective calls information
     coll_basic_info->datatype = opts.datatype;
-    coll_basic_info->nprocs = procs;
     coll_basic_info->op = opts.operation;
     coll_basic_info->root = 0;
 
     coll_basic_info->pingpong_ranks[0] = opts.pingpong_ranks[0];
     coll_basic_info->pingpong_ranks[1] = opts.pingpong_ranks[1];
 
-    if (opts.root_proc >= 0 && opts.root_proc < procs) {
+    if (opts.root_proc >= 0 && opts.root_proc < icmb_initiator_size()) {
         coll_basic_info->root = opts.root_proc;
     }
 

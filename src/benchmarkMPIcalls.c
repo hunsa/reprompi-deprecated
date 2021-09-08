@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
     generate_job_list(&common_opts, opts.n_rep, &jlist);
 
 
-    init_collective_basic_info(common_opts, icmb_initiator_size(), &coll_basic_info);
+    init_collective_basic_info(common_opts, 0, &coll_basic_info);
     // execute the benchmark jobs
     for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
         job_t job;
