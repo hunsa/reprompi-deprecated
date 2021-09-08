@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,29 +32,28 @@
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
-
 inline void execute_Scan(collective_params_t* params) {
     MPI_Scan(params->sbuf, params->rbuf, params->count, params->datatype,
-            params->op, MPI_COMM_WORLD);
+            params->op, params->communicator);
 }
 
 inline void execute_Allreduce(collective_params_t* params) {
     MPI_Allreduce(params->sbuf, params->rbuf, params->count, params->datatype,
-            params->op, MPI_COMM_WORLD);
+            params->op, params->communicator);
 }
 
 inline void execute_Exscan(collective_params_t* params) {
     MPI_Exscan(params->sbuf, params->rbuf, params->count, params->datatype,
-            params->op, MPI_COMM_WORLD);
+            params->op, params->communicator);
 }
 
 inline void execute_Reduce(collective_params_t* params) {
     MPI_Reduce(params->sbuf, params->rbuf, params->count, params->datatype,
-            params->op, params->root, MPI_COMM_WORLD);
+            params->op, params->root, params->communicator);
 }
 
 inline void execute_Barrier(collective_params_t* params) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(params->communicator);
 }
 
 
@@ -62,7 +63,7 @@ inline void execute_Barrier(collective_params_t* params) {
 
 inline void execute_Bcast(collective_params_t* params) {
     MPI_Bcast(params->sbuf, params->count, params->datatype,
-            params->root, MPI_COMM_WORLD);
+            params->root, params->communicator);
 }
 
 
@@ -79,7 +80,7 @@ void cleanup_Bcast_data(collective_params_t* params) {
 inline void execute_Scatter(collective_params_t* params) {
     MPI_Scatter(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            params->root, MPI_COMM_WORLD);
+            params->root, params->communicator);
 }
 
 void initialize_data_Scatter(const basic_collective_params_t info, const long count, collective_params_t* params) {
@@ -87,7 +88,7 @@ void initialize_data_Scatter(const basic_collective_params_t info, const long co
 
     params->count = count; // size of the Scatter per-process buffer
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->remote_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -115,7 +116,7 @@ void cleanup_data_Scatter(collective_params_t* params) {
 inline void execute_Gather(collective_params_t* params) {
     MPI_Gather(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            params->root, MPI_COMM_WORLD);
+            params->root, params->communicator);
 }
 
 
@@ -125,7 +126,7 @@ void initialize_data_Gather(const basic_collective_params_t info, const long cou
     params->count = count; // size of the buffer sent by each process
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -150,7 +151,7 @@ void cleanup_data_Gather(collective_params_t* params) {
 inline void execute_Allgather(collective_params_t* params) {
     MPI_Allgather(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
+            params->communicator);
 }
 
 
@@ -161,7 +162,7 @@ void initialize_data_Allgather(const basic_collective_params_t info, const long 
     params->count = count; // size of the buffer sent by each process
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -186,7 +187,7 @@ void cleanup_data_Allgather(collective_params_t* params) {
 
 inline void execute_Reduce_scatter(collective_params_t* params) {
     MPI_Reduce_scatter(params->sbuf, params->rbuf, params->counts_array,
-            params->datatype, params->op, MPI_COMM_WORLD);
+            params->datatype, params->op, params->communicator);
 }
 
 
@@ -198,7 +199,7 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->remote_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -206,8 +207,8 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
 
     assert (count < INT_MAX);
     // we send the same number of elements to all processes
-    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
-    for (i=0; i< params->nprocs; i++) {
+    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
+    for (i=0; i< params->remote_size; i++) {
         params->counts_array[i] = count;
     }
 
@@ -235,7 +236,7 @@ void cleanup_data_Reduce_scatter(collective_params_t* params) {
 
 inline void execute_Reduce_scatter_block(collective_params_t* params) {
     MPI_Reduce_scatter_block(params->sbuf, params->rbuf, params->rcount,
-            params->datatype, params->op, MPI_COMM_WORLD);
+            params->datatype, params->op, params->communicator);
 }
 
 
@@ -245,7 +246,7 @@ void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->remote_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -271,7 +272,7 @@ void cleanup_data_Reduce_scatter_block(collective_params_t* params) {
 inline void execute_Alltoall(collective_params_t* params) {
     MPI_Alltoall(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
+            params->communicator);
 }
 
 void initialize_data_Alltoall(const basic_collective_params_t info, const long count, collective_params_t* params) {
@@ -279,8 +280,8 @@ void initialize_data_Alltoall(const basic_collective_params_t info, const long c
 
     params->count = count;
 
-    params->scount = count * params->nprocs;
-    params->rcount = count * params->nprocs;
+    params->scount = count * params->remote_size;
+    params->rcount = count * params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
