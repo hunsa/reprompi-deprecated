@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,6 +30,8 @@
 #include "reprompi_bench/sync/sync_info.h"
 #include "barrier_sync.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 inline double mpibarrier_get_normalized_time(double local_time) {
     return local_time;
 }
@@ -39,13 +43,13 @@ void mpibarrier_parse_options(int argc, char **argv, reprompib_sync_options_t* o
 }
 
 void mpibarrier_init_synchronization(void) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 }
 
 void mpibarrier_start_synchronization(void) {
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 #ifdef ENABLE_DOUBLE_BARRIER
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 #endif
 }
 
