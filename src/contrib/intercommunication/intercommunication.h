@@ -40,6 +40,8 @@ int icmb_warn_on_excluded_operation(char* op_name);
 enum icmb_error_codes
 {
     ICMB_ERROR_AAA = 100,
+    ICMB_ERROR_FILE_INPUT,
+    ICMB_ERROR_MESSAGE_SIZE,
     ICMB_ERROR_PING_EQUALS_PONG,
     ICMB_ERROR_PING_MISSING,
     ICMB_ERROR_PING_TOO_HIGH,

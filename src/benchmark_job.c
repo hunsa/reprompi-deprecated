@@ -1,10 +1,12 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
- Research Group for Parallel Computing
- Faculty of Informatics
- Vienna University of Technology, Austria
-
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -29,6 +31,8 @@
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/misc.h"
 #include "benchmark_job.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int LEN_JOB_BATCH = 40;
 static const int OUTPUT_ROOT_PROC = 0;
@@ -74,7 +78,7 @@ void read_input_jobs(char* file_name, job_list_t* jlist) {
       }
       if (result != expected_result) /* incorrectly formatted file */
       {
-        fprintf(stderr, "ERROR: Incorrectly formatted input file: %s\n", file_name);
+        icmb_warning("Incorrectly formatted input file: %s\n", file_name);
         break;
       }
 
@@ -84,8 +88,13 @@ void read_input_jobs(char* file_name, job_list_t* jlist) {
       mpi_call_index = get_call_index(mpi_call);
       if (mpi_call_index == -1) {
         /* unknown MPI call - read the next line */
-        fprintf(stderr, "ERROR: Unknown MPI call: %s\n", mpi_call);
+        icmb_warning("Unknown MPI call: %s\n", mpi_call);
         continue;
+      }
+      // exclude operations undefined for inter-communicators
+      if (icmb_warn_on_excluded_operation(mpi_call))
+      {
+          continue;
       }
       jlist->jobs[len_jobs].call_index = mpi_call_index;
       jlist->jobs[len_jobs].msize = msize;
@@ -101,8 +110,8 @@ void read_input_jobs(char* file_name, job_list_t* jlist) {
 
     fclose(file);
   } else {
-    fprintf(stderr, "ERROR: Cannot open input file: %s\n", file_name);
-    exit(0);
+    icmb_error("Cannot open input file: %s\n", file_name);
+    icmb_exit(ICMB_ERROR_FILE_INPUT);
   }
 
   if (len_jobs > 0) {
@@ -115,10 +124,7 @@ void read_input_jobs(char* file_name, job_list_t* jlist) {
 
 void generate_job_list(const reprompib_common_options_t *opts, const int predefined_n_rep, job_list_t* jlist) {
   int sizeindex, cindex, i;
-  int my_rank;
   int datatypesize;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   jlist->n_jobs = 0;
   jlist->job_indices = NULL;
@@ -131,14 +137,14 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
     MPI_Aint disp[] = {0, sizeof(int), sizeof(size_t) + sizeof(int), 2 *sizeof(size_t) + sizeof(int)};
     MPI_Datatype job_info_dt;
 
-    if (my_rank == INPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(INPUT_ROOT_PROC)) {
       read_input_jobs(opts->input_file, jlist);
     }
     // send the number of jobs to all processes
-    MPI_Bcast(&(jlist->n_jobs), 1, MPI_INT, INPUT_ROOT_PROC, MPI_COMM_WORLD);
+    MPI_Bcast(&(jlist->n_jobs), 1, MPI_INT, icmb_collective_root(INPUT_ROOT_PROC), icmb_global_communicator());
 
     if (jlist->n_jobs > 0) {
-      if (my_rank != INPUT_ROOT_PROC) { // processes other than the root need to allocate job lists
+      if (!icmb_has_initiator_rank(INPUT_ROOT_PROC)) { // processes other than the root need to allocate job lists
         jlist->jobs = (job_t*) calloc(jlist->n_jobs, sizeof(job_t));
       }
 
@@ -147,7 +153,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       MPI_Type_commit (&job_info_dt);
 
       // broadcast the job list to all processes
-      MPI_Bcast(jlist->jobs, jlist->n_jobs, job_info_dt, INPUT_ROOT_PROC, MPI_COMM_WORLD);
+      MPI_Bcast(jlist->jobs, jlist->n_jobs, job_info_dt, icmb_collective_root(INPUT_ROOT_PROC), icmb_global_communicator());
 
       // free datatype
       MPI_Type_free(&job_info_dt);
@@ -164,11 +170,16 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       i = 0;
       for (sizeindex = 0; sizeindex < opts->n_msize; sizeindex++) {
         for (cindex = 0; cindex < opts->n_calls; cindex++) {
-          jlist->jobs[i].msize = opts->msize_list[sizeindex];
-          jlist->jobs[i].call_index = opts->list_mpi_calls[cindex];
-          jlist->jobs[i].n_rep = predefined_n_rep;
-
-          i++;
+            // skip collectives undefined for inter-communicators
+            char* call_name = get_call_from_index(opts->list_mpi_calls[cindex]);
+            if (!icmb_warn_on_excluded_operation(call_name))
+            {
+                jlist->jobs[i].msize = opts->msize_list[sizeindex];
+                jlist->jobs[i].call_index = opts->list_mpi_calls[cindex];
+                jlist->jobs[i].n_rep = predefined_n_rep;
+            }
+            free(call_name);
+            i++;
         }
       }
 
@@ -190,12 +201,8 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
     jlist->jobs[i].count = jlist->jobs[i].msize / datatypesize;
 
     if (jlist->jobs[i].count * datatypesize != jlist->jobs[i].msize) {
-      if (my_rank == OUTPUT_ROOT_PROC) {
-        printf("ERROR: Message size %zu for %s is not a multiple of the datatype size (%d)\n\n", jlist->jobs[i].msize,
-            get_call_from_index(jlist->jobs[i].call_index), datatypesize);
-      }
-      MPI_Finalize();
-      exit(0);
+        icmb_error("Message size %zu for %s is not a multiple of the datatype size (%d)", jlist->jobs[i].msize, get_call_from_index(jlist->jobs[i].call_index), datatypesize);
+        icmb_exit(ICMB_ERROR_MESSAGE_SIZE);
     }
   }
 
@@ -204,7 +211,7 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
     // shuffle the list of job indices
     jlist->job_indices = (int*) malloc(jlist->n_jobs * sizeof(int));
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
       for (i = 0; i < jlist->n_jobs; i++) {
         jlist->job_indices[i] = i;
       }
@@ -213,8 +220,8 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
       }
 
     }
-    MPI_Bcast(jlist->job_indices, jlist->n_jobs, MPI_INT, OUTPUT_ROOT_PROC,
-    MPI_COMM_WORLD);
+    MPI_Bcast(jlist->job_indices, jlist->n_jobs, MPI_INT, icmb_collective_root(OUTPUT_ROOT_PROC),
+    icmb_global_communicator());
   }
 }
 
