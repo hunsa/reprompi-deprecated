@@ -1,3 +1,4 @@
+
 /* Inter-Communicator MPI Benchmarking
  * Copyright (c) 2021 Stefan Christians
  * SPDX-License-Identifier: MIT
@@ -6,7 +7,12 @@
 #ifndef ICMB_LAUNCHERS_LIB_H
 #define ICMB_LAUNCHERS_LIB_H
 
-#include <mpi.h>
+/*
+ * When used as a library, it is the applications responsibility to start
+ * processes, organize them in groups, and create communicators.
+ * This interface provides the means for the application to hand over
+ * communicators for the intiating and responding groups to the benchmark
+ */
 
 /*
  * For benchmarking with intra-communicators, sets the intra-communicator
@@ -27,4 +33,3 @@ void icmb_set_communicator(MPI_Comm intracommunicator);
 void icmb_set_communicators(MPI_Comm initiator, MPI_Comm responder);
 
 #endif /* ICMB_LAUNCHERS_LIB_H */
-

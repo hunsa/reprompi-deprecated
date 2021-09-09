@@ -41,7 +41,7 @@
 #include "results_output.h"
 #include "reproMPIbenchmark.h"
 
-#include "contrib/intercommunication/intercommunication_lib.h"
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 static const int N_USER_VARS = 4;
