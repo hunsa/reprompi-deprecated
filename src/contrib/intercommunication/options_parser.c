@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "intercommunication.h"
 #include "attributes.h"
+#include "error_output.h"
 #include "launchers.h"
 
 enum {
@@ -100,6 +100,7 @@ void icmb_parse_intercommunication_options (int argc, char** argv)
 
 			case STARTUP_ARGS_SPLIT:
 				doSplit = 1;
+                // read optional argument seprated either by '=' or whitespace
                 const char *tmp_optarg = optarg;
                 if(!optarg && NULL != argv[optind] && '-' != argv[optind][0]) {
                     tmp_optarg = argv[optind++];

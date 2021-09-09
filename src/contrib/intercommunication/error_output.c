@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "intercommunication.h"
+#include "utilities.h"
+#include "error_output.h"
 
 static const int MAX_MSG_LEN = 256;
 static const int OUTPUT_ROOT_PROC = 0;

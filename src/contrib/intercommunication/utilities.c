@@ -7,8 +7,8 @@
  * convenience functions to access and interpret attributes
  */
 
-#include "intercommunication.h"
 #include "attributes.h"
+#include "utilities.h"
 
 /*
  * returns true if the given communicator is an inter-communicator

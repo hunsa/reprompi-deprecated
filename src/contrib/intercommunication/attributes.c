@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "intercommunication.h"
 #include "attributes.h"
 
 /*****************************************************************************/

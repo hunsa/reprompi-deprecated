@@ -8,14 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "intercommunication.h"
-#include "intercommunication_lib.h"
 #include "attributes.h"
 #include "launchers.h"
+#include "launchers_lib.h"
 
 static const int MSG_TAG_SPLIT = 2;
 
-static const char* INTERCOMM_SERVICE_NAME = "reprompi_intercomm_benchmark_service";
+static const char* INTERCOMM_SERVICE_NAME = "inter_communicator_mpi_benchmarking_service";
 
 /*****************************************************************************/
 
@@ -268,7 +267,7 @@ void icmb_launch_server()
  * If no communicator is set, the benchmark will default to using
  * MPI_COMM_WORLD
  */
-void set_communicator(MPI_Comm intracommunicator) {
+void icmb_set_communicator(MPI_Comm intracommunicator) {
 
     // make sure we receive an intra-communicator
     // we can not receive inter-communicators because
@@ -278,7 +277,7 @@ void set_communicator(MPI_Comm intracommunicator) {
     MPI_Comm_test_inter(intracommunicator, &is_intercommunicator);
     assert(!is_intercommunicator);
 
-    // communicators are ownd by the application, we only work with duplicates
+    // communicators are owned by the application, we only work with duplicates
     MPI_Comm benchmark_communicator;
     MPI_Comm_dup(intracommunicator, &benchmark_communicator);
     icmb_set_initiator_attribute(benchmark_communicator);
@@ -296,7 +295,7 @@ void set_communicator(MPI_Comm intracommunicator) {
  * The inter-communicator will be constructed from these two
  * intra-communicators.
  */
-void set_communicators(MPI_Comm initiator, MPI_Comm responder)
+void icmb_set_communicators(MPI_Comm initiator, MPI_Comm responder)
 {
     // make sure we receive only intra-communicators
     int is_intercommunicator;

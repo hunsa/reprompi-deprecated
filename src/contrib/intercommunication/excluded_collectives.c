@@ -7,7 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "intercommunication.h"
+#include "error_output.h"
+#include "excluded_collectives.h"
 
 /*
  * scan operations are not defined for inter-communicators
