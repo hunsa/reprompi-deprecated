@@ -4,12 +4,16 @@ compare_clocks.c
 parse_test_options.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/sync/time_measurement.c
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 add_executable(measure_rtt
 measure_rtt.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/sync/time_measurement.c
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 set(MEASURE_CLOCK_DRIFT
@@ -18,6 +22,8 @@ parse_test_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SYNC_SRC_FILES}
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 add_executable(measure_clock_drift_HCA  
@@ -39,6 +45,8 @@ parse_test_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/option_parser_helpers.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SYNC_SRC_FILES}
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 add_executable(sync_duration_HCA
