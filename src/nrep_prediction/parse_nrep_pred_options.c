@@ -163,6 +163,11 @@ void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) 
     }
   }
 
+  if (printhelp) {
+    MPI_Finalize();
+    exit(0);
+  }
+
   // check for errors
   if (opts_p->max_nrep <= 0) {
     reprompib_print_error_and_exit("Invalid max_nrep (should be positive)");
@@ -186,10 +191,6 @@ void nrep_pred_parse_params(int argc, char** argv, nrep_pred_options_t* opts_p) 
   optind = 1;	// reset optind to enable option re-parsing
   opterr = 1;	// reset opterr to catch invalid options
 
-  if (printhelp) {
-    MPI_Finalize();
-    exit(0);
-  }
 }
 
 void nrep_pred_free_params(nrep_pred_options_t* opts_p) {
