@@ -8,7 +8,6 @@
 
 #include "error_output.h"
 #include "excluded_collectives.h"
-#include "launchers.h"
 #include "options_parser.h"
 #include "utilities.h"
 
