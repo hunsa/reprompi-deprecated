@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,16 +36,15 @@
 #include "reproMPIbenchmark.h"
 #include "results_output.h"
 
+#include "contrib/intercommunication/intercommunication_lib.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 void print_results_header(const reprompib_lib_output_info_t* output_info_p,
     const reprompib_job_t* job_p) {
     FILE* f = stdout;
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         int i;
 
         for (i=0; i<job_p->n_user_svars; i++) {
@@ -98,7 +99,6 @@ void compute_runtimes_local_clocks_with_reduction(
 
     double* local_runtimes = NULL;
     int i, index;
-    int my_rank, np;
     MPI_Op operation = MPI_MAX;
 
     if (strcmp("min", op) == 0) {
@@ -107,9 +107,6 @@ void compute_runtimes_local_clocks_with_reduction(
     if (strcmp("mean", op) == 0) {
         operation = MPI_SUM;
     }
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     // compute local runtimes for the [current_start_index, current_start_index + current_nreps) interval
     local_runtimes = (double*) malloc(current_nreps * sizeof(double));
@@ -120,12 +117,12 @@ void compute_runtimes_local_clocks_with_reduction(
 
     // reduce local measurement results on the root
     MPI_Reduce(local_runtimes, maxRuntimes_sec, current_nreps,
-            MPI_DOUBLE, operation, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_DOUBLE, operation, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (strcmp("mean", op) == 0) {      // reduce with sum and then compute mean
             for (i = 0; i < current_nreps; i++) {
-                maxRuntimes_sec[i] = maxRuntimes_sec[i]/np;
+                maxRuntimes_sec[i] = maxRuntimes_sec[i]/icmb_global_size();
             }
         }
     }
@@ -139,15 +136,12 @@ void print_runtimes(FILE* f, const reprompib_job_t* job_p,
 
     double* maxRuntimes_sec;
     int i;
-    int my_rank;
     int* sync_errorcodes;
     long current_start_index;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     maxRuntimes_sec = NULL;
     sync_errorcodes = NULL;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         maxRuntimes_sec = (double*) malloc(job_p->n_rep * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
@@ -169,7 +163,7 @@ void print_runtimes(FILE* f, const reprompib_job_t* job_p,
             maxRuntimes_sec, job_p->op);
 #endif
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         for (i = 0; i < job_p->n_rep; i++) {
             int j;
 
@@ -206,15 +200,11 @@ void print_runtimes_allprocs(FILE* f, const reprompib_job_t* job_p,
 
     double* maxRuntimes_sec;
     int i;
-    int my_rank;
-    int np;
     int proc_id;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int np = icmb_global_size();
 
     maxRuntimes_sec = NULL;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         maxRuntimes_sec = (double*) malloc(job_p->n_rep * np * sizeof(double));
 
         for (proc_id = 0; proc_id < np; proc_id++) {
@@ -264,11 +254,9 @@ void print_measurement_results(FILE* f,
     double* global_end_sec = NULL;
     double* tmp_local_start_sec = NULL;
     double* tmp_local_end_sec = NULL;
-    int my_rank, np;
     int* errorcodes = NULL;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int np = icmb_global_size();
 
     if (output_info_p->verbose == 0 && strcmp(job_p->timertype, "all") != 0) {
         print_runtimes(f, job_p, get_errorcodes, get_global_time);
@@ -277,7 +265,7 @@ void print_measurement_results(FILE* f,
     else {
 
 #ifdef ENABLE_WINDOWSYNC
-        if (my_rank == OUTPUT_ROOT_PROC)
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
         {
             errorcodes = (int*)malloc(job_p->n_rep * np * sizeof(int));
             for (i = 0; i < job_p->n_rep * np; i++) {
@@ -290,13 +278,13 @@ void print_measurement_results(FILE* f,
             int* local_errorcodes = get_errorcodes();
 
             MPI_Gather(local_errorcodes, job_p->n_rep, MPI_INT,
-                    errorcodes, job_p->n_rep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+                    errorcodes, job_p->n_rep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
         }
 #endif
 
 #endif
 
-        if (my_rank == OUTPUT_ROOT_PROC) {
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
             local_start_sec = (double*) malloc(
                 job_p->n_rep * np * sizeof(double));
             local_end_sec = (double*) malloc(
@@ -309,10 +297,10 @@ void print_measurement_results(FILE* f,
 
         // gather measurement results
         MPI_Gather(job_p->tstart_sec, job_p->n_rep, MPI_DOUBLE,
-            local_start_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            local_start_sec, job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         MPI_Gather(job_p->tend_sec, job_p->n_rep, MPI_DOUBLE,
-            local_end_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            local_end_sec, job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         tmp_local_start_sec = (double*) malloc(
             job_p->n_rep * np * sizeof(double));
@@ -323,10 +311,10 @@ void print_measurement_results(FILE* f,
             tmp_local_end_sec[i] = get_global_time(job_p->tend_sec[i]);
         }
         MPI_Gather(tmp_local_start_sec, job_p->n_rep, MPI_DOUBLE,
-            global_start_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            global_start_sec, job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         MPI_Gather(tmp_local_end_sec, job_p->n_rep, MPI_DOUBLE,
-            global_end_sec, job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            global_end_sec, job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         free(tmp_local_start_sec);
         free(tmp_local_end_sec);
@@ -338,7 +326,7 @@ void print_measurement_results(FILE* f,
 
         else {      // verbose == 1
 
-            if (my_rank == OUTPUT_ROOT_PROC) {
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
                 for (proc_id = 0; proc_id < np; proc_id++) {
                     for (i = 0; i < job_p->n_rep; i++) {
                         int j;
@@ -369,7 +357,7 @@ void print_measurement_results(FILE* f,
             }
         }
 
-        if (my_rank == OUTPUT_ROOT_PROC) {
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
             free(local_start_sec);
             free(local_end_sec);
             free(global_start_sec);
@@ -393,17 +381,15 @@ void print_summary(FILE* f,
 
     double* maxRuntimes_sec;
     int i, j;
-    int my_rank, np;
     int* sync_errorcodes;
     long current_start_index;
     int n_results = 0, proc;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int np = icmb_global_size();
 
     maxRuntimes_sec = NULL;
     sync_errorcodes = NULL;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         maxRuntimes_sec = (double*) malloc(job_p->n_rep * np * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
@@ -444,13 +430,13 @@ void print_summary(FILE* f,
             int* local_errorcodes = get_errorcodes();
 
             MPI_Gather(local_errorcodes, job_p->n_rep, MPI_INT,
-                    sync_errorcodes, job_p->n_rep, MPI_INT, 0, MPI_COMM_WORLD);
+                    sync_errorcodes, job_p->n_rep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
         }
 #endif
 
 #endif
 
-        if (my_rank == OUTPUT_ROOT_PROC) {
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
             local_start_sec = (double*) malloc(
                 job_p->n_rep * np * sizeof(double));
             local_end_sec = (double*) malloc(
@@ -463,10 +449,10 @@ void print_summary(FILE* f,
 
         // gather measurement results
         MPI_Gather(job_p->tstart_sec, job_p->n_rep, MPI_DOUBLE, local_start_sec,
-            job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         MPI_Gather(job_p->tend_sec, job_p->n_rep, MPI_DOUBLE, local_end_sec, job_p->n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+                MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         tmp_local_start_sec = (double*) malloc(
             job_p->n_rep * np * sizeof(double));
@@ -477,16 +463,16 @@ void print_summary(FILE* f,
             tmp_local_end_sec[i] = get_global_time(job_p->tend_sec[i]);
         }
         MPI_Gather(tmp_local_start_sec, job_p->n_rep, MPI_DOUBLE, global_start_sec,
-            job_p->n_rep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            job_p->n_rep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         MPI_Gather(tmp_local_end_sec, job_p->n_rep, MPI_DOUBLE, global_end_sec, job_p->n_rep,
-                MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+                MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
         free(tmp_local_start_sec);
         free(tmp_local_end_sec);
 
 
-        if (my_rank == OUTPUT_ROOT_PROC) {
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
             int proc_id;
 
             for (proc_id = 0; proc_id < np; proc_id++) {
@@ -507,7 +493,7 @@ void print_summary(FILE* f,
 
 
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         long nreps;
 
         for (proc = 0; proc < n_results; proc++) {
@@ -588,9 +574,3 @@ void print_summary(FILE* f,
         free(maxRuntimes_sec);
     }
 }
-
-
-
-
-
-
