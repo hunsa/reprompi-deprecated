@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,16 +35,16 @@
 #include "pred_helpers.h"
 #include "rse.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 double compute_rse(long nreps, double* runtimes_sec,
         pred_method_info_t prediction_info) {
     double rse = COEF_ERROR_VALUE;
-    int my_rank, i;
+    int i;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
 
         double mean = 0, q1,q3, sd;
         long start_index, end_index, current_nreps;

@@ -1,10 +1,12 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
- Research Group for Parallel Computing
- Faculty of Informatics
- Vienna University of Technology, Austria
-
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -44,6 +46,8 @@
 #include <gsl/gsl_statistics.h>
 #include <gsl/gsl_sort.h>
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
 
@@ -61,15 +65,11 @@ void print_measurement_results_prediction(const job_t* job_p, const reprompib_co
     double* maxRuntimes_sec, const nrep_pred_params_t* pred_params_p, const pred_conditions_t* conds_p) {
 
   int j;
-  int my_rank, np;
   double mean_runtime_sec, median_runtime_sec;
   FILE* f;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
-
   f = stdout;
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     if (opts_p->output_file != NULL) {
       f = fopen(opts_p->output_file, "a");
     }
@@ -100,10 +100,8 @@ void print_measurement_results_prediction(const job_t* job_p, const reprompib_co
 
 void print_initial_settings_prediction_to_file(FILE* f, const nrep_pred_params_t* pred_params_p,
     print_sync_info_t print_sync_info) {
-  int my_rank;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     int i;
     fprintf(f, "#@pred_nrep_min=%ld\n", pred_params_p->n_rep_min);
     fprintf(f, "#@pred_nrep_max=%ld\n", pred_params_p->n_rep_max);
@@ -122,16 +120,14 @@ void print_initial_settings_prediction(const reprompib_common_options_t* common_
     const nrep_pred_params_t* pred_params_p, const reprompib_dictionary_t* dict,
     print_sync_info_t print_sync_info) {
   FILE* f;
-  int my_rank;
   const char header[] = "test nrep count mean_runtime_sec median_runtime_sec pred_method pred_value";
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   print_common_settings(common_opts_p, print_sync_info, dict);
 
   print_initial_settings_prediction_to_file(stdout, pred_params_p, print_sync_info);
 
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     if (common_opts_p->output_file != NULL) {
       f = fopen(common_opts_p->output_file, "a");
       print_initial_settings_prediction_to_file(f, pred_params_p, print_sync_info);
@@ -146,16 +142,12 @@ void print_initial_settings_prediction(const reprompib_common_options_t* common_
 void compute_runtimes(double* tstart_sec, double* tend_sec, long current_start_index, long current_nreps,
     sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time, double* maxRuntimes_sec, long* updated_nreps) {
 
-  int my_rank;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
 #ifdef ENABLE_WINDOWSYNC
   int* sync_errorcodes;
   int i;
 
   sync_errorcodes = NULL;
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
 
     sync_errorcodes = (int*) malloc(current_nreps * sizeof(int));
     for (i = 0; i < current_nreps; i++) {
@@ -178,7 +170,7 @@ void compute_runtimes(double* tstart_sec, double* tend_sec, long current_start_i
   // remove measurements that resulted in an window error
   long nreps = 0;
 
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     for (i = 0; i < current_nreps; i++) {
       //printf("i=%d nrep=%d error=%d\n", i, nreps, sync_errorcodes[i]);
 
@@ -203,7 +195,6 @@ void compute_runtimes(double* tstart_sec, double* tend_sec, long current_start_i
 }
 
 int main(int argc, char* argv[]) {
-  int my_rank, procs;
   long i, jindex, current_index, runtimes_index;
   double* tstart_sec;
   double* tend_sec;
@@ -227,8 +218,9 @@ int main(int argc, char* argv[]) {
   /* start up MPI
    * */
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &procs);
+
+  // parse command line options to launch inter-communicators
+  icmb_parse_intercommunication_options(argc, argv);
 
   // initialize time measurement functions
   init_timer();
@@ -254,7 +246,7 @@ int main(int argc, char* argv[]) {
 
   sync_f.parse_sync_params(argc, argv, &sync_opts);
 
-  init_collective_basic_info(common_opt, procs, &coll_basic_info);
+  init_collective_basic_info(common_opt, 0, &coll_basic_info);
   //generate_pred_job_list(&pred_opts, &common_opt, &jlist);
   generate_job_list(&common_opt, 0, &jlist);
 
@@ -324,7 +316,7 @@ int main(int argc, char* argv[]) {
        }
        */
 
-      MPI_Bcast(&stop_meas, 1, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+      MPI_Bcast(&stop_meas, 1, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
       if (stop_meas == 1) {
         break;
