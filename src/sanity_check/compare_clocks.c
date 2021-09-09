@@ -59,6 +59,9 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     master_rank = 0;
 
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
+
     ret = parse_test_options(&opts, argc, argv);
     validate_test_options_or_abort(ret, &opts);
 
