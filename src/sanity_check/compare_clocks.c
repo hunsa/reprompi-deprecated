@@ -39,9 +39,7 @@
 #include "contrib/intercommunication/intercommunication.h"
 
 int main(int argc, char* argv[]) {
-    int my_rank = icmb_global_rank();
-    int nprocs = icmb_global_size();
-    int p;
+    int my_rank, nprocs, p;
     reprompib_st_opts_t opts;
     int master_rank;
     reprompib_st_error_t ret;
@@ -61,6 +59,9 @@ int main(int argc, char* argv[]) {
 
     // parse command line options to launch inter-communicators
     icmb_parse_intercommunication_options(argc, argv);
+
+    my_rank = icmb_global_rank();
+    nprocs = icmb_global_size();
 
     ret = parse_test_options(&opts, argc, argv);
     validate_test_options_or_abort(ret, &opts);
