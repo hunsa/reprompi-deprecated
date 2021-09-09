@@ -336,6 +336,11 @@ void reprompib_parse_options(int argc, char** argv, nrep_pred_params_t* opts_p) 
     }
   }
 
+  if (printhelp) {
+    MPI_Finalize();
+    exit(0);
+  }
+
   if (opts_p->n_rep_max <= 0) {
     reprompib_print_error_and_exit("Max nreps value is null or not correctly specified");
   }
@@ -355,11 +360,6 @@ void reprompib_parse_options(int argc, char** argv, nrep_pred_params_t* opts_p) 
     if (i >= opts_p->n_methods && opts_p->info[i].method_win >= 0) {
       reprompib_print_error_and_exit("Prediction method window list contains too many values");
     }
-  }
-
-  if (printhelp) {
-    MPI_Finalize();
-    exit(0);
   }
 
   optind = 1;	// reset optind to enable option re-parsing
