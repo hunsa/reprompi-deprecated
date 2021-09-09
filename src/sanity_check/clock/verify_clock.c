@@ -1,10 +1,12 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
- Research Group for Parallel Computing
- Faculty of Informatics
- Vienna University of Technology, Austria
-
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
  </license>
  */
 
+// allow nanosleep with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,6 +34,8 @@
 #include "mpi.h"
 
 #include "reprompi_bench/sync/time_measurement.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 static const double MAX_TIMER_THRESHOLD_PERCENT = 1;
 
@@ -49,8 +56,11 @@ int main(int argc, char* argv[]) {
   /* start up MPI */
   MPI_Init(&argc, &argv);
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  // parse command line options to launch inter-communicators
+  icmb_parse_intercommunication_options(argc, argv);
+
+  my_rank = icmb_global_rank();
+  nprocs = icmb_global_size();
 
   if (argc < 2 || strcmp(argv[1], "-h") == 0 ) {
     if (my_rank == master_rank) {
@@ -116,7 +126,7 @@ int main(int argc, char* argv[]) {
   }
 
   // gather measurement results
-  MPI_Gather(local_runtimes, nreps, MPI_DOUBLE, all_runtimes, nreps, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Gather(local_runtimes, nreps, MPI_DOUBLE, all_runtimes, nreps, MPI_DOUBLE, 0, icmb_global_communicator());
 
   if (my_rank == master_rank) {
     int passed = 1;
