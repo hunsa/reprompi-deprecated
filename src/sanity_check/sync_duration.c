@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,17 +35,16 @@
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 void print_initial_settings(int argc, char* argv[],
         print_sync_info_t print_sync_info) {
-    int my_rank;
     FILE* f;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
     f = stdout;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         int i;
         fprintf(f, "#Command-line arguments: ");
         for (i = 0; i < argc; i++) {
@@ -80,8 +81,11 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     master_rank = 0;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
+
+    my_rank = icmb_global_rank();
+    nprocs = icmb_global_size();
 
     if (my_rank == master_rank) {
         all_runtimes = (double*) calloc(nprocs, sizeof(double));
@@ -102,10 +106,10 @@ int main(int argc, char* argv[]) {
     runtime_s = get_time() - runtime_s;
 
     MPI_Gather(&runtime_s, 1, MPI_DOUBLE, all_runtimes, 1, MPI_DOUBLE, 0,
-            MPI_COMM_WORLD);
+            icmb_global_communicator());
 
     f = stdout;
-    if (my_rank == master_rank) {
+    if ( my_rank == master_rank) {
         fprintf(f, "p runtime\n");
         for (p = 0; p < nprocs; p++) {
             fprintf(f, "%3d %14.9f\n", p, all_runtimes[p]);
