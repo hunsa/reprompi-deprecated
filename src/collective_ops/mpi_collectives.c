@@ -246,13 +246,14 @@ void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->remote_size;
-    params->rcount = count;
+    params->scount = 0; // unused in reduce_scatter_block
+    params->rcount = params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
+
+    params->sbuf = (char *) reprompi_calloc(params->rcount * count, params->datatype_extent);
+    params->rbuf = (char *) reprompi_calloc(count, params->datatype_extent);
 }
 
 
