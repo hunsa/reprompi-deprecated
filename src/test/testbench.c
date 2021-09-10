@@ -254,9 +254,9 @@ int main(int argc, char* argv[]) {
     srand(1000);
 
 
-//     if (argc > 1) {
-//         count = atol(argv[1]);
-//     }
+    if (argc > 1) {
+        count = atol(argv[1]);
+    }
 
     /* start up MPI
      *
