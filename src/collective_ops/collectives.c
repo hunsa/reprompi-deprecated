@@ -361,6 +361,7 @@ void initialize_common_data(const basic_collective_params_t info,
     params->local_size = icmb_local_size();
     params->remote_size = icmb_remote_size();
     params->responder_size = icmb_responder_size();
+    params->larger_size = icmb_larger_size();
 
     params->rank = icmb_benchmark_rank();
 
