@@ -45,7 +45,8 @@ int icmb_is_excluded_operation(char* op_name)
 
     // see if lower case of op_name is in lsit of excluded operations
     char* lower = (char *) malloc((strlen(op_name)+1) * sizeof(char));
-    strcpy(lower, to_lower(op_name));
+    strcpy(lower, op_name);
+    to_lower(lower);
 
     int index = -1;
     int i;

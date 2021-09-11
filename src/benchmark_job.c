@@ -177,9 +177,9 @@ void generate_job_list(const reprompib_common_options_t *opts, const int predefi
                 jlist->jobs[i].msize = opts->msize_list[sizeindex];
                 jlist->jobs[i].call_index = opts->list_mpi_calls[cindex];
                 jlist->jobs[i].n_rep = predefined_n_rep;
+                ++i;
             }
             free(call_name);
-            i++;
         }
       }
 

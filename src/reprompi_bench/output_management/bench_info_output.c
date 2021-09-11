@@ -115,7 +115,12 @@ void print_benchmark_common_settings_to_file(FILE* f, const reprompib_common_opt
         if (opts->n_calls > 0) {
           fprintf(f, "#MPI calls:\n");
           for (i = 0; i < opts->n_calls; i++) {
-            fprintf(f, "#\t%s\n", get_call_from_index(opts->list_mpi_calls[i]));
+              char* call_name = get_call_from_index(opts->list_mpi_calls[i]);
+              if (!icmb_is_excluded_operation(call_name))
+              {
+                  fprintf(f, "#\t%s\n", call_name);
+              }
+              free(call_name);
           }
         }
         if (opts->n_msize > 0) {
