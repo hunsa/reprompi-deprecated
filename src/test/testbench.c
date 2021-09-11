@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -141,11 +143,11 @@ void check_results(char coll1[], char coll2[],
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     // gather send and receive buffers from all processes
-    send_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.scount * coll_params.datatype_extent);
-    mockup_send_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.scount * mockup_params.datatype_extent);
+    send_buffer = (test_type*)malloc(coll_params.local_size* coll_params.scount * coll_params.datatype_extent);
+    mockup_send_buffer = (test_type*)malloc(mockup_params.local_size* mockup_params.scount * mockup_params.datatype_extent);
 
-    recv_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.rcount * coll_params.datatype_extent);
-    mockup_recv_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.rcount * mockup_params.datatype_extent);
+    recv_buffer = (test_type*)malloc(coll_params.local_size* coll_params.rcount * coll_params.datatype_extent);
+    mockup_recv_buffer = (test_type*)malloc(mockup_params.local_size* mockup_params.rcount * mockup_params.datatype_extent);
 
     collect_buffers(coll_params, (char*)send_buffer, (char*)recv_buffer);
     collect_buffers(mockup_params, (char*)mockup_send_buffer, (char*)mockup_recv_buffer);
@@ -167,7 +169,7 @@ void check_results(char coll1[], char coll2[],
         else {
             if (strcmp(coll1, "MPI_Bcast")){
 
-                for (p=0; p<coll_params.nprocs; p++) {
+                for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process %d\n", p);
 
                     print_buffers(coll1, coll2,
@@ -175,11 +177,11 @@ void check_results(char coll1[], char coll2[],
                             mockup_recv_buffer + p*coll_params.rcount,
                             coll_params.rcount);
                 }
-                error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.nprocs * coll_params.rcount));
+                error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.rcount));
             }
             else {
                 // for Bcast check source buffers
-                for (p=0; p<coll_params.nprocs; p++) {
+                for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process %d\n", p);
 
                     print_buffers(coll1, coll2,
@@ -187,7 +189,7 @@ void check_results(char coll1[], char coll2[],
                             mockup_send_buffer + p*coll_params.scount,
                             coll_params.scount);
                 }
-                error = (!identical(send_buffer, mockup_send_buffer, coll_params.nprocs * coll_params.scount));
+                error = (!identical(send_buffer, mockup_send_buffer, coll_params.local_size * coll_params.scount));
 
             }
 
@@ -267,7 +269,6 @@ int main(int argc, char* argv[]) {
     basic_coll_info.datatype = MPI_DOUBLE;
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = 0;
-    basic_coll_info.nprocs = nprocs;
 
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
