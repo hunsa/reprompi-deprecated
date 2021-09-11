@@ -323,6 +323,7 @@ void initialize_data_default(const basic_collective_params_t info, const long co
 
     params->scount = count;
     params->rcount = count;
+    params->tcount = 0;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -362,6 +363,7 @@ void initialize_common_data(const basic_collective_params_t info,
     params->remote_size = icmb_remote_size();
     params->responder_size = icmb_responder_size();
     params->larger_size = icmb_larger_size();
+    params->global_size = icmb_global_size();
 
     params->rank = icmb_benchmark_rank();
 
