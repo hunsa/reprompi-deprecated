@@ -23,6 +23,9 @@ int icmb_is_responder();
 int icmb_larger_size();
 int icmb_local_size();
 int icmb_lookup_global_rank(int initiator_rank);
+int icmb_lookup_is_initator(int global_rank);
+int icmb_lookup_is_responder(int global_rank);
+int icmb_lookup_benchmark_rank(int global_rank);
 int icmb_remote_size();
 int icmb_responder_size();
 

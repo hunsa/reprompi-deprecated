@@ -257,3 +257,132 @@ int icmb_lookup_global_rank(int initiator_rank) {
 
     return global_ranks[0];
 }
+
+/*
+ * returns true if the process identifed by global_rank belongs to the
+ * initiating group
+ */
+int icmb_lookup_is_initator (int global_rank)
+{
+    // all processes are initiators in intra-communicators
+    if (!icmb_is_intercommunicator())
+    {
+        return 1;
+    }
+
+    int result = 1;
+
+    int global_ranks[1];
+    global_ranks[0] = global_rank;
+
+    MPI_Group initiator_group;
+    if (icmb_is_initiator())
+    {
+        MPI_Comm_group(icmb_benchmark_communicator(), &initiator_group);
+    }
+    else
+    {
+        MPI_Comm_remote_group(icmb_benchmark_communicator(), &initiator_group);
+    }
+
+    MPI_Group global_group;
+    MPI_Comm_group(icmb_global_communicator(), &global_group);
+
+    int local_ranks[1];
+    MPI_Group_translate_ranks(global_group, 1, global_ranks, initiator_group, local_ranks);
+    if (MPI_UNDEFINED == local_ranks[0])
+    {
+        result = 0;
+    }
+
+    MPI_Group_free(&initiator_group);
+    MPI_Group_free(&global_group);
+
+    return result;
+}
+
+/*
+ * returns true if the process identifed by global_rank belongs to the
+ * responding group
+ */
+int icmb_lookup_is_responder (int global_rank)
+{
+    // all processes are responders in intra-communicators
+    if (!icmb_is_intercommunicator())
+    {
+        return 1;
+    }
+
+    int result = 1;
+
+    int global_ranks[1];
+    global_ranks[0] = global_rank;
+
+    MPI_Group responder_group;
+    if (icmb_is_initiator())
+    {
+        MPI_Comm_remote_group(icmb_benchmark_communicator(), &responder_group);
+    }
+    else
+    {
+        MPI_Comm_group(icmb_benchmark_communicator(), &responder_group);
+    }
+
+    MPI_Group global_group;
+    MPI_Comm_group(icmb_global_communicator(), &global_group);
+
+    int local_ranks[1];
+    MPI_Group_translate_ranks(global_group, 1, global_ranks, responder_group, local_ranks);
+    if (MPI_UNDEFINED == local_ranks[0])
+    {
+        result = 0;
+    }
+
+    MPI_Group_free(&responder_group);
+    MPI_Group_free(&global_group);
+
+    return result;
+}
+
+/*
+ * returns rank in the benchmark communicator's initiating or responding group
+ * matching rank in the global communicator
+ */
+int icmb_lookup_benchmark_rank(int global_rank) {
+    if (!icmb_is_intercommunicator())
+    {
+        return global_rank;
+    }
+
+    int global_ranks[1];
+    global_ranks[0] = global_rank;
+
+    MPI_Group initiator_group;
+    MPI_Group responder_group;
+    if (icmb_is_initiator())
+    {
+        MPI_Comm_group(icmb_benchmark_communicator(), &initiator_group);
+        MPI_Comm_remote_group(icmb_benchmark_communicator(), &responder_group);
+    }
+    else
+    {
+        MPI_Comm_group(icmb_benchmark_communicator(), &responder_group);
+        MPI_Comm_remote_group(icmb_benchmark_communicator(), &initiator_group);
+    }
+
+    MPI_Group global_group;
+    MPI_Comm_group(icmb_global_communicator(), &global_group);
+
+    int local_ranks[1];
+    MPI_Group_translate_ranks(global_group, 1, global_ranks, initiator_group, local_ranks);
+    if (MPI_UNDEFINED == local_ranks[0])
+    {
+        MPI_Group_translate_ranks(global_group, 1, global_ranks, responder_group, local_ranks);
+    }
+
+    MPI_Group_free(&initiator_group);
+    MPI_Group_free(&responder_group);
+    MPI_Group_free(&global_group);
+
+    return local_ranks[0];
+}
