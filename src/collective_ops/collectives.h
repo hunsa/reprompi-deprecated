@@ -88,7 +88,6 @@ typedef struct collparams {
     int remote_size;
     int responder_size;
     int larger_size;
-    int global_size;
     MPI_Comm communicator;
     int rank;
     size_t scount;
