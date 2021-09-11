@@ -186,7 +186,6 @@ inline void execute_pingpong_Sendrecv(collective_params_t* params) {
 }
 
 void initialize_data_pingpong(const basic_collective_params_t info, const long count, collective_params_t* params) {
-  int i;
   int other_rank;
   int nranks = 2;
 
