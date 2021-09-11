@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,15 +55,15 @@ inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->count = count/params->nprocs + (count % params->nprocs != 0);
+    params->count = count/params->local_size + (count % params->local_size != 0);
 
     params->scount = count;
-    params->rcount = count + params->nprocs; // at most one extra element per process
+    params->rcount = count + params->local_size; // at most one extra element per process
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc((params->scount + params->nprocs), params->datatype_extent);
+    params->sbuf = (char*)reprompi_calloc((params->scount + params->local_size), params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
     params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 

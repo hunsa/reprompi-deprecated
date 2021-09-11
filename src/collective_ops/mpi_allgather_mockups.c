@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -40,7 +42,7 @@ inline void execute_GL_Allgather_as_Alltoall(collective_params_t* params) {
     // replicate data in the source buffer nprocs times
     {
         int i;
-        for (i=1; i<params->nprocs; i++) {
+        for (i=1; i<params->local_size; i++) {
             memcpy((char*)params->sbuf + i * params->count * params->datatype_extent, (char*)params->sbuf,
                     params->count * params->datatype_extent);
         }
@@ -60,8 +62,8 @@ void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t in
     params->count = count; // size of the buffer for each process
 
     // source buffer must contain count elements repeated nprocs times
-    params->scount = count * params->nprocs;
-    params->rcount = count * params->nprocs;
+    params->scount = count * params->local_size;
+    params->rcount = count * params->local_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -107,7 +109,7 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->local_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -181,7 +183,7 @@ void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->local_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);

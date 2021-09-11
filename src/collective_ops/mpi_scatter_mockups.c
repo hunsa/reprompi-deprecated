@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +55,7 @@ void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, c
 
     params->count = count; // size of the block scattered to each process
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->local_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);

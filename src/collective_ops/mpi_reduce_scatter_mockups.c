@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -49,7 +51,7 @@ void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collec
 
     params->count = count; // size of the block received by each process after scatter
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->local_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -94,7 +96,7 @@ void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_param
 
     params->count = count; // size of the block received by each process after scatter
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->local_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -138,7 +140,7 @@ void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_
 
     params->count = count; // size of the block received by each process after scatter
 
-    params->scount = count * params->nprocs;
+    params->scount = count * params->local_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -150,12 +152,12 @@ void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_
     params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
 
     // we send the same number of elements (count) to all processes
-    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
-    params->displ_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
 
     params->counts_array[0] = count;
     params->displ_array[0] = 0;
-    for (i=1; i< params->nprocs; i++) {
+    for (i=1; i< params->local_size; i++) {
         params->counts_array[i] = count;
         params->displ_array[i] = params->displ_array[i-1] + params->counts_array[i-1];
     }

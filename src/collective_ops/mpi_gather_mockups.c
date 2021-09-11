@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -48,7 +50,7 @@ void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info
     params->count = count; // block size per process
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->local_size;
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
@@ -92,7 +94,7 @@ void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, c
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->local_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);

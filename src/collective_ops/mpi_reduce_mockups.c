@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -87,7 +89,7 @@ void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_par
 
     initialize_common_data(info, params);
 
-    params->count = count / params->nprocs; // block size per process
+    params->count = count / params->local_size; // block size per process
 
     params->scount = count;
     params->rcount = count;
@@ -96,8 +98,8 @@ void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_par
     assert (params->rcount < INT_MAX);
 
     // we send the same number of elements to all processes
-    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
-    for (i=0; i< params->nprocs; i++) {
+    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    for (i=0; i< params->local_size; i++) {
         params->counts_array[i] = params->count;
     }
 
@@ -140,7 +142,7 @@ inline void execute_GL_Reduce_as_ReducescatterblockGather(collective_params_t* p
 void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->count = count / params->nprocs; // block size per process
+    params->count = count / params->local_size; // block size per process
 
     params->scount = count;
     params->rcount = count;
@@ -186,11 +188,11 @@ void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_pa
     initialize_common_data(info, params);
 
     // set block size per process according to rank
-    if (params->rank < count % params->nprocs) {
-        params->count = count / params->nprocs + 1;
+    if (params->rank < count % params->local_size) {
+        params->count = count / params->local_size + 1;
     }
     else {
-        params->count = count / params->nprocs;
+        params->count = count / params->local_size;
     }
 
     // total count for the initial message and the final result
@@ -201,15 +203,15 @@ void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_pa
     assert (params->rcount < INT_MAX);
 
     // each process receives a different number of elements according to its rank
-    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
-    params->displ_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
 
-    for (i=0; i< params->nprocs; i++) {
-        if (i < count % params->nprocs) {
-            params->counts_array[i] = count / params->nprocs + 1;
+    for (i=0; i< params->local_size; i++) {
+        if (i < count % params->local_size) {
+            params->counts_array[i] = count / params->local_size + 1;
         }
         else {
-            params->counts_array[i] = count / params->nprocs;
+            params->counts_array[i] = count / params->local_size;
         }
 
 
