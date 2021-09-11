@@ -4,9 +4,7 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
- *
- * Copyright (c) 2021 Stefan Christians
- *
+
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +30,7 @@
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
+
 /***************************************/
 // MPI_Allgather with Alltoall
 
@@ -41,7 +40,7 @@ inline void execute_GL_Allgather_as_Alltoall(collective_params_t* params) {
     // replicate data in the source buffer nprocs times
     {
         int i;
-        for (i=1; i<params->remote_size; i++) {
+        for (i=1; i<params->nprocs; i++) {
             memcpy((char*)params->sbuf + i * params->count * params->datatype_extent, (char*)params->sbuf,
                     params->count * params->datatype_extent);
         }
@@ -50,7 +49,7 @@ inline void execute_GL_Allgather_as_Alltoall(collective_params_t* params) {
 
     MPI_Alltoall(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            params->communicator);
+            MPI_COMM_WORLD);
 }
 
 
@@ -61,8 +60,8 @@ void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t in
     params->count = count; // size of the buffer for each process
 
     // source buffer must contain count elements repeated nprocs times
-    params->scount = count * params->remote_size;
-    params->rcount = count * params->remote_size;
+    params->scount = count * params->nprocs;
+    params->rcount = count * params->nprocs;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -94,7 +93,7 @@ inline void execute_GL_Allgather_as_Allreduce(collective_params_t* params) {
 #endif
 
     MPI_Allreduce(params->tmp_buf, params->rbuf, params->rcount, params->datatype,
-            params->op, params->communicator);
+            params->op, MPI_COMM_WORLD);
 
 }
 
@@ -108,7 +107,7 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->remote_size;
+    params->rcount = count * params->nprocs;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
@@ -169,10 +168,10 @@ void cleanup_data_GL_Allgather_as_Allreduce(collective_params_t* params) {
 inline void execute_GL_Allgather_as_GatherBcast(collective_params_t* params) {
     MPI_Gather(params->sbuf, params->count, params->datatype,
             params->rbuf, params->count, params->datatype,
-            params->root, params->communicator);
+            params->root, MPI_COMM_WORLD);
 
     MPI_Bcast(params->rbuf, params->rcount, params->datatype,
-            params->root, params->communicator);
+            params->root, MPI_COMM_WORLD);
 }
 
 
@@ -182,7 +181,7 @@ void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->remote_size;
+    params->rcount = count * params->nprocs;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);

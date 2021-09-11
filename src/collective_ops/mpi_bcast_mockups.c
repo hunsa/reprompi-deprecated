@@ -4,9 +4,7 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
- *
- * Copyright (c) 2021 Stefan Christians
- *
+
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,16 +31,17 @@
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
+
 /***************************************/
 // MPI_Bcast with Scatter + Allgather
 
 inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
     MPI_Scatter(params->sbuf, params->count, params->datatype,
                 params->rbuf, params->count, params->datatype,
-                params->root, params->communicator);
+                params->root, MPI_COMM_WORLD);
     MPI_Allgather(params->rbuf, params->count, params->datatype,
                 params->tmp_buf, params->count, params->datatype,
-                params->communicator);
+                MPI_COMM_WORLD);
 
 #ifdef COMPILE_BENCH_TESTS
     memcpy(params->sbuf, params->tmp_buf, params->scount);
@@ -54,15 +53,15 @@ inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->count = count/params->remote_size + (count % params->remote_size != 0);
+    params->count = count/params->nprocs + (count % params->nprocs != 0);
 
     params->scount = count;
-    params->rcount = count + params->remote_size; // at most one extra element per process
+    params->rcount = count + params->nprocs; // at most one extra element per process
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc((params->scount + params->remote_size), params->datatype_extent);
+    params->sbuf = (char*)reprompi_calloc((params->scount + params->nprocs), params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
     params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 

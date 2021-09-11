@@ -4,9 +4,7 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
- *
- * Copyright (c) 2021 Stefan Christians
- *
+
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,6 +30,7 @@
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
 
+
 /***************************************/
 // MPI_Scan with MPI_Exscan and MPI_Reduce_local
 inline void execute_GL_Scan_as_ExscanReducelocal(collective_params_t* params) {
@@ -43,7 +42,7 @@ inline void execute_GL_Scan_as_ExscanReducelocal(collective_params_t* params) {
 #endif
 
     MPI_Exscan(params->sbuf, params->tmp_buf, params->count, params->datatype,
-                params->op, params->communicator);
+                params->op, MPI_COMM_WORLD);
     MPI_Reduce_local(params->tmp_buf, params->sbuf, params->count,
                 params->datatype, params->op);
 

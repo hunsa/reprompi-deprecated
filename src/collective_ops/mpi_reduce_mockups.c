@@ -4,9 +4,7 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
- *
- * Copyright (c) 2021 Stefan Christians
- *
+
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -38,7 +36,7 @@
 inline void execute_GL_Reduce_as_Allreduce(collective_params_t* params) {
 
     MPI_Allreduce(params->sbuf, params->rbuf, params->count, params->datatype,
-            params->op, params->communicator);
+            params->op, MPI_COMM_WORLD);
 
 }
 
@@ -75,11 +73,11 @@ void cleanup_data_GL_Reduce_as_Allreduce(collective_params_t* params) {
 inline void execute_GL_Reduce_as_ReducescatterGather(collective_params_t* params) {
 
     MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array,
-            params->datatype, params->op, params->communicator);
+            params->datatype, params->op, MPI_COMM_WORLD);
 
     MPI_Gather(params->tmp_buf, params->count, params->datatype,
                 params->rbuf, params->count, params->datatype,
-                params->root, params->communicator);
+                params->root, MPI_COMM_WORLD);
 
 }
 
@@ -89,7 +87,7 @@ void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_par
 
     initialize_common_data(info, params);
 
-    params->count = count / params->remote_size; // block size per process
+    params->count = count / params->nprocs; // block size per process
 
     params->scount = count;
     params->rcount = count;
@@ -98,8 +96,8 @@ void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_par
     assert (params->rcount < INT_MAX);
 
     // we send the same number of elements to all processes
-    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
-    for (i=0; i< params->remote_size; i++) {
+    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
+    for (i=0; i< params->nprocs; i++) {
         params->counts_array[i] = params->count;
     }
 
@@ -130,11 +128,11 @@ void cleanup_data_GL_Reduce_as_ReducescatterGather(collective_params_t* params) 
 inline void execute_GL_Reduce_as_ReducescatterblockGather(collective_params_t* params) {
 
     MPI_Reduce_scatter_block(params->sbuf, params->tmp_buf, params->count,
-            params->datatype, params->op, params->communicator);
+            params->datatype, params->op, MPI_COMM_WORLD);
 
     MPI_Gather(params->tmp_buf, params->count, params->datatype,
                 params->rbuf, params->count, params->datatype,
-                params->root, params->communicator);
+                params->root, MPI_COMM_WORLD);
 
 }
 
@@ -142,7 +140,7 @@ inline void execute_GL_Reduce_as_ReducescatterblockGather(collective_params_t* p
 void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collective_params_t info, const long count, collective_params_t* params) {
     initialize_common_data(info, params);
 
-    params->count = count / params->remote_size; // block size per process
+    params->count = count / params->nprocs; // block size per process
 
     params->scount = count;
     params->rcount = count;
@@ -173,11 +171,11 @@ void cleanup_data_GL_Reduce_as_ReducescatterblockGather(collective_params_t* par
 inline void execute_GL_Reduce_as_ReducescatterGatherv(collective_params_t* params) {
 
     MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array,
-            params->datatype, params->op, params->communicator);
+            params->datatype, params->op, MPI_COMM_WORLD);
 
     MPI_Gatherv(params->tmp_buf, params->count, params->datatype,
                 params->rbuf, params->counts_array, params->displ_array, params->datatype,
-                params->root, params->communicator);
+                params->root, MPI_COMM_WORLD);
 
 }
 
@@ -188,11 +186,11 @@ void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_pa
     initialize_common_data(info, params);
 
     // set block size per process according to rank
-    if (params->rank < count % params->remote_size) {
-        params->count = count / params->remote_size + 1;
+    if (params->rank < count % params->nprocs) {
+        params->count = count / params->nprocs + 1;
     }
     else {
-        params->count = count / params->remote_size;
+        params->count = count / params->nprocs;
     }
 
     // total count for the initial message and the final result
@@ -203,15 +201,15 @@ void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_pa
     assert (params->rcount < INT_MAX);
 
     // each process receives a different number of elements according to its rank
-    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
-    params->displ_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->nprocs, sizeof(int));
 
-    for (i=0; i< params->remote_size; i++) {
-        if (i < count % params->remote_size) {
-            params->counts_array[i] = count / params->remote_size + 1;
+    for (i=0; i< params->nprocs; i++) {
+        if (i < count % params->nprocs) {
+            params->counts_array[i] = count / params->nprocs + 1;
         }
         else {
-            params->counts_array[i] = count / params->remote_size;
+            params->counts_array[i] = count / params->nprocs;
         }
 
 

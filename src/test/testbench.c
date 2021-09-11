@@ -4,9 +4,7 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
- *
- * Copyright (c) 2021 Stefan Christians
- *
+
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -32,9 +30,6 @@
 //#include "parse_options.h"
 #include "../collective_ops/collectives.h"
 #include "testbench.h"
-
-#include "contrib/intercommunication/intercommunication.h"
-
 
 typedef double test_type;
 
@@ -89,10 +84,10 @@ void collect_buffers(const collective_params_t params, char* send_buffer, char* 
     // gather measurement results
     MPI_Gather(params.sbuf,  params.scount * params.datatype_extent, MPI_CHAR,
             send_buffer,  params.scount * params.datatype_extent, MPI_CHAR,
-            icmb_lookup_global_rank(0), icmb_global_communicator());
+            0, MPI_COMM_WORLD);
     MPI_Gather(params.rbuf,  params.rcount * params.datatype_extent, MPI_CHAR,
             recv_buffer,  params.rcount * params.datatype_extent, MPI_CHAR,
-            icmb_lookup_global_rank(0), icmb_global_communicator());
+            0, MPI_COMM_WORLD);
 }
 
 
@@ -100,7 +95,7 @@ void print_buffers(char coll1[], char coll2[], test_type* buffer1, test_type* bu
 /*
     int my_rank;
     int i;
-    MPI_Comm_rank(REPLACE_MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (my_rank == 0) {
         printf("%s\n", coll1);
@@ -138,22 +133,24 @@ void check_results(char coll1[], char coll2[],
         collective_params_t mockup_params,
         int check_only_at_root) {
 
-    int p;
+    int my_rank, p;
     int error = 0;
     test_type *send_buffer, *mockup_send_buffer;
     test_type *recv_buffer, *mockup_recv_buffer;
 
-    // gather send and receive buffers from all processes
-    send_buffer = (test_type*)malloc(coll_params.remote_size * coll_params.scount * coll_params.datatype_extent);
-    mockup_send_buffer = (test_type*)malloc(mockup_params.remote_size * mockup_params.scount * mockup_params.datatype_extent);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    recv_buffer = (test_type*)malloc(coll_params.remote_size * coll_params.rcount * coll_params.datatype_extent);
-    mockup_recv_buffer = (test_type*)malloc(mockup_params.remote_size * mockup_params.rcount * mockup_params.datatype_extent);
+    // gather send and receive buffers from all processes
+    send_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.scount * coll_params.datatype_extent);
+    mockup_send_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.scount * mockup_params.datatype_extent);
+
+    recv_buffer = (test_type*)malloc(coll_params.nprocs* coll_params.rcount * coll_params.datatype_extent);
+    mockup_recv_buffer = (test_type*)malloc(mockup_params.nprocs* mockup_params.rcount * mockup_params.datatype_extent);
 
     collect_buffers(coll_params, (char*)send_buffer, (char*)recv_buffer);
     collect_buffers(mockup_params, (char*)mockup_send_buffer, (char*)mockup_recv_buffer);
 
-    if (icmb_has_initiator_rank(0)) {
+    if (my_rank == 0) {
         printf ("----------------------------------------\n");
         printf ("---------------- Comparing functions %s and %s\n", coll1, coll2);
 
@@ -170,7 +167,7 @@ void check_results(char coll1[], char coll2[],
         else {
             if (strcmp(coll1, "MPI_Bcast")){
 
-                for (p=0; p<coll_params.remote_size; p++) {
+                for (p=0; p<coll_params.nprocs; p++) {
                     printf ("=========== Process %d\n", p);
 
                     print_buffers(coll1, coll2,
@@ -178,11 +175,11 @@ void check_results(char coll1[], char coll2[],
                             mockup_recv_buffer + p*coll_params.rcount,
                             coll_params.rcount);
                 }
-                error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.remote_size * coll_params.rcount));
+                error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.nprocs * coll_params.rcount));
             }
             else {
                 // for Bcast check source buffers
-                for (p=0; p<coll_params.remote_size; p++) {
+                for (p=0; p<coll_params.nprocs; p++) {
                     printf ("=========== Process %d\n", p);
 
                     print_buffers(coll1, coll2,
@@ -190,7 +187,7 @@ void check_results(char coll1[], char coll2[],
                             mockup_send_buffer + p*coll_params.scount,
                             coll_params.scount);
                 }
-                error = (!identical(send_buffer, mockup_send_buffer, coll_params.remote_size * coll_params.scount));
+                error = (!identical(send_buffer, mockup_send_buffer, coll_params.nprocs * coll_params.scount));
 
             }
 
@@ -247,6 +244,7 @@ void test_collective(basic_collective_params_t basic_coll_info,
 
 
 int main(int argc, char* argv[]) {
+    int nprocs;
     basic_collective_params_t basic_coll_info;
     long count = 100;
 
@@ -263,13 +261,13 @@ int main(int argc, char* argv[]) {
      * */
     MPI_Init(&argc, &argv);
 
-    // parse command line options to launch inter-communicators
-    icmb_parse_intercommunication_options(argc, argv);
 
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
     basic_coll_info.datatype = MPI_DOUBLE;
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = 0;
+    basic_coll_info.nprocs = nprocs;
 
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
@@ -295,11 +293,12 @@ int main(int argc, char* argv[]) {
 
     test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
-    if (count % icmb_responder_size()  == 0) {  // only works if the number of processes is a divisor of count
+    if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
         test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
-    }
-    if ((count % icmb_remote_size() == 0) && (count % icmb_local_size() == 0)) {  // only works if the number of processes is a divisor of count
         test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+    }
+    else {
+
     }
 
     /* shut down MPI */
