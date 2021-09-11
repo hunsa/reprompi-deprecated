@@ -10,7 +10,6 @@
 
 #include "attributes.h"
 #include "launchers.h"
-#include "launchers_lib.h"
 
 static const int MSG_TAG_SPLIT = 2;
 
@@ -35,6 +34,10 @@ void icmb_launch_standard()
     MPI_Comm global_communicator;
     MPI_Comm_dup(MPI_COMM_WORLD, &global_communicator);
     icmb_set_globalcommunicator_attribute(global_communicator);
+
+    MPI_Comm partial_communicator;
+    MPI_Comm_dup(MPI_COMM_WORLD, &partial_communicator);
+    icmb_set_partialcommunicator_attribute(partial_communicator);
 }
 
 /*****************************************************************************/
@@ -70,20 +73,21 @@ void icmb_launch_split(int num_workers)
     int color = num_workers ? (rank>=(size - num_workers)) : rank % 2;
 
     // split MPI_COMM_WORLD into two partial communicators
-    MPI_Comm partialcomm;
-    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &partialcomm);
+    MPI_Comm partial_communicator;
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &partial_communicator );
+    icmb_set_partialcommunicator_attribute(partial_communicator);
 
     // create inter-communicator spanning both partial communicators
     MPI_Comm benchmark_communicator;
     if(0 == color)
     {
         int remote_leader = num_workers ? (size - num_workers) : 1;
-        MPI_Intercomm_create(partialcomm, 0, MPI_COMM_WORLD, remote_leader, MSG_TAG_SPLIT, &benchmark_communicator);
+        MPI_Intercomm_create( partial_communicator, 0, MPI_COMM_WORLD, remote_leader, MSG_TAG_SPLIT, &benchmark_communicator);
         icmb_set_initiator_attribute(benchmark_communicator);
     }
     else
     {
-        MPI_Intercomm_create(partialcomm, 0, MPI_COMM_WORLD, 0, MSG_TAG_SPLIT, &benchmark_communicator);
+        MPI_Intercomm_create( partial_communicator, 0, MPI_COMM_WORLD, 0, MSG_TAG_SPLIT, &benchmark_communicator);
     }
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
 
@@ -114,6 +118,10 @@ void icmb_launch_split(int num_workers)
  */
 void icmb_launch_master(int num_workers, char* command, char** argv)
 {
+    // use our own limited MPI_COMM_WORLD as partial communicator
+    MPI_Comm partial_communicator;
+    MPI_Comm_dup(MPI_COMM_WORLD, &partial_communicator);
+    icmb_set_partialcommunicator_attribute(partial_communicator);
 
     // spawn workers and create inter-communicator
     MPI_Comm benchmark_communicator;
@@ -160,6 +168,11 @@ void icmb_launch_worker()
         MPI_Comm global_communicator;
         MPI_Intercomm_merge(benchmark_communicator, 1, &global_communicator);
         icmb_set_globalcommunicator_attribute(global_communicator);
+
+        // use our own limited MPI_COMM_WORLD as partial communicator
+        MPI_Comm partial_communicator;
+        MPI_Comm_dup(MPI_COMM_WORLD, &partial_communicator);
+        icmb_set_partialcommunicator_attribute(partial_communicator);
     }
 }
 
@@ -205,6 +218,11 @@ void icmb_launch_client(char* port_name)
     MPI_Comm global_communicator;
     MPI_Intercomm_merge(benchmark_communicator, 0, &global_communicator);
     icmb_set_globalcommunicator_attribute(global_communicator);
+
+    // use our own limited MPI_COMM_WORLD as partial communicator
+    MPI_Comm partial_communicator;
+    MPI_Comm_dup(MPI_COMM_WORLD, &partial_communicator);
+    icmb_set_partialcommunicator_attribute(partial_communicator);
 }
 
 /*****************************************************************************/
@@ -248,69 +266,9 @@ void icmb_launch_server()
     MPI_Comm global_communicator;
     MPI_Intercomm_merge(benchmark_communicator, 0, &global_communicator);
     icmb_set_globalcommunicator_attribute(global_communicator);
-}
 
-
-/*****************************************************************************/
-
-/*
- * When used as a library, it is the applications responsibility to start
- * processes, organize them in groups, and create communicators.
- * This interface provides the means for the application to hand over
- * communicators for the intiating and responding groups to the benchmark
- */
-
-/*
- * For benchmarking with intra-communicators, sets the intra-communicator
- * to use.
- *
- * If no communicator is set, the benchmark will default to using
- * MPI_COMM_WORLD
- */
-void icmb_set_communicator(MPI_Comm intracommunicator) {
-
-    // make sure we receive an intra-communicator
-    // we can not receive inter-communicators because
-    // then we do not know which group is the intiator
-    // and which is the responder
-    int is_intercommunicator;
-    MPI_Comm_test_inter(intracommunicator, &is_intercommunicator);
-    assert(!is_intercommunicator);
-
-    // communicators are owned by the application, we only work with duplicates
-    MPI_Comm benchmark_communicator;
-    MPI_Comm_dup(intracommunicator, &benchmark_communicator);
-    icmb_set_initiator_attribute(benchmark_communicator);
-    icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
-
-    MPI_Comm global_communicator;
-    MPI_Comm_dup(intracommunicator, &global_communicator);
-    icmb_set_globalcommunicator_attribute(global_communicator);
-}
-
-/*
- * For benchmarking with inter-communicators, sets the communicators to use for
- * the initiating and responding group, respectively.
- *
- * The inter-communicator will be constructed from these two
- * intra-communicators.
- */
-void icmb_set_communicators(MPI_Comm initiator, MPI_Comm responder)
-{
-    // make sure we receive only intra-communicators
-    int is_intercommunicator;
-    MPI_Comm_test_inter(initiator, &is_intercommunicator);
-    assert(!is_intercommunicator);
-    MPI_Comm_test_inter(responder, &is_intercommunicator);
-    assert(!is_intercommunicator);
-
-    // communicators are ownd by the application, we only work with duplicates
-    MPI_Comm benchmark_communicator;
-    MPI_Comm_dup(initiator, &benchmark_communicator);
-    icmb_set_initiator_attribute(benchmark_communicator);
-    icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
-
-    MPI_Comm global_communicator;
-    MPI_Comm_dup(responder, &global_communicator);
-    icmb_set_globalcommunicator_attribute(global_communicator);
+    // use our own limited MPI_COMM_WORLD as partial communicator
+    MPI_Comm partial_communicator;
+    MPI_Comm_dup(MPI_COMM_WORLD, &partial_communicator);
+    icmb_set_partialcommunicator_attribute(partial_communicator);
 }

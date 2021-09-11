@@ -286,3 +286,65 @@ MPI_Comm icmb_get_globalcommunicator_attribute()
 
     return value->communicator;
 }
+
+/*****************************************************************************/
+
+/*
+ * MPI_COMM_SELF's partial communicator attribute is a handle for an intra-
+ * communicator to access other members of the local group.
+ * When the last reference to the partial communicator is removed, the
+ * communicator is freed.
+ */
+
+/*
+ * key for partial communicator attribute
+ */
+int icmb_key_partialcommunicator = MPI_KEYVAL_INVALID;
+
+/*
+ * sets partial communicator attribute on MPI_COMM_SELF
+ */
+int icmb_set_partialcommunicator_attribute (MPI_Comm partial_communicator)
+{
+    // initialize key
+    if (MPI_KEYVAL_INVALID == icmb_key_partialcommunicator)
+    {
+        if (MPI_SUCCESS != MPI_Comm_create_keyval(icmb_attribute_communicator_copier, icmb_attribute_communicator_destructor, &icmb_key_partialcommunicator, NULL))
+        {
+            return MPI_ERR_INTERN;
+        }
+    }
+
+    // create attribute and store communicator
+    icmb_attribute_communicator_t* attribute = (icmb_attribute_communicator_t*) malloc(sizeof(icmb_attribute_communicator_t));
+    attribute->ref_count = 1;
+    attribute->communicator = partial_communicator;
+
+    // cache partial communicator in MPI_COMM_SELF
+    return MPI_Comm_set_attr(MPI_COMM_SELF, icmb_key_partialcommunicator, attribute);
+}
+
+/*
+ * returns partial communicator attribute from MPI_COMM_SELF
+ */
+MPI_Comm icmb_get_partialcommunicator_attribute()
+{
+    // no key means attribute was not set
+    if (MPI_KEYVAL_INVALID == icmb_key_partialcommunicator)
+    {
+        return MPI_COMM_NULL;
+    }
+
+    // read attribute
+    icmb_attribute_communicator_t* value;
+    int found;
+    MPI_Comm_get_attr(MPI_COMM_SELF, icmb_key_partialcommunicator, &value, &found);
+
+    if (!found)
+    {
+        return MPI_COMM_NULL;
+
+    }
+
+    return value->communicator;
+}

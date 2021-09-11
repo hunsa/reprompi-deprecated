@@ -55,6 +55,23 @@ MPI_Comm icmb_global_communicator()
 }
 
 /*
+ * returns the communicator used for communication within the local group
+ */
+MPI_Comm icmb_partial_communicator()
+{
+    // see if a partial communicator was defined
+    MPI_Comm comm = icmb_get_partialcommunicator_attribute();
+
+    // fall back on MPI_COMM_WORLD
+    if (MPI_COMM_NULL == comm)
+    {
+        return MPI_COMM_WORLD;
+    }
+
+    return comm;
+}
+
+/*
  * returns true if the benchmark communicator is an inter-communicator
  */
 int icmb_is_intercommunicator()
@@ -262,7 +279,7 @@ int icmb_lookup_global_rank(int initiator_rank) {
  * returns true if the process identifed by global_rank belongs to the
  * initiating group
  */
-int icmb_lookup_is_initator (int global_rank)
+int icmb_lookup_is_initiator (int global_rank)
 {
     // all processes are initiators in intra-communicators
     if (!icmb_is_intercommunicator())
@@ -385,4 +402,74 @@ int icmb_lookup_benchmark_rank(int global_rank) {
     MPI_Group_free(&global_group);
 
     return local_ranks[0];
+}
+
+/*
+ * returns size of the global process's local group in the benchmark communicator
+ */
+int icmb_lookup_local_size ( int global_rank )
+{
+    // there is only one group for intra-communicators
+    if (!icmb_is_intercommunicator())
+    {
+        return icmb_local_size();
+    }
+
+    if (icmb_lookup_is_initiator(global_rank))
+    {
+        if (icmb_is_initiator())
+        {
+            return icmb_local_size();
+        }
+        else
+        {
+            return icmb_remote_size();
+        }
+    }
+    else
+    {
+        if (icmb_is_initiator())
+        {
+            return icmb_remote_size();
+        }
+        else
+        {
+            return icmb_local_size();
+        }
+    }
+}
+
+/*
+ * returns size of the global process's remote group in the benchmark communicator
+ */
+int icmb_lookup_remote_size ( int global_rank )
+{
+    // there is only one group for intra-communicators
+    if (!icmb_is_intercommunicator())
+    {
+        return icmb_local_size();
+    }
+
+    if (icmb_lookup_is_initiator(global_rank))
+    {
+        if (icmb_is_initiator())
+        {
+            return icmb_remote_size();
+        }
+        else
+        {
+            return icmb_local_size();
+        }
+    }
+    else
+    {
+        if (icmb_is_initiator())
+        {
+            return icmb_local_size();
+        }
+        else
+        {
+            return icmb_remote_size();
+        }
+    }
 }

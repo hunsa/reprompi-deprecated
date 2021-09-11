@@ -25,6 +25,7 @@ typedef struct
 // attribute keys
 extern int icmb_key_benchmarkcommunicator;
 extern int icmb_key_globalcommunicator;
+extern int icmb_key_partialcommunicator;
 extern int icmb_key_initiator;
 extern int icmb_key_port;
 
@@ -38,8 +39,10 @@ int icmb_attribute_port_destructor (MPI_Comm comm, int key, void* value, void* s
 int icmb_get_initiator_attribute(MPI_Comm comm);
 MPI_Comm icmb_get_benchmarkcommunicator_attribute();
 MPI_Comm icmb_get_globalcommunicator_attribute();
+MPI_Comm icmb_get_partialcommunicator_attribute();
 int icmb_set_benchmarkcommunicator_attribute(MPI_Comm benchmark_communicator);
 int icmb_set_globalcommunicator_attribute(MPI_Comm global_communicator);
+int icmb_set_partialcommunicator_attribute(MPI_Comm partial_communicator);
 int icmb_set_initiator_attribute(MPI_Comm comm);
 int icmb_set_port_attribute(MPI_Comm comm, const char* service_name, const char* port_name);
 
