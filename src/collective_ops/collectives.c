@@ -328,6 +328,8 @@ void initialize_data_default(const basic_collective_params_t info, const long co
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
