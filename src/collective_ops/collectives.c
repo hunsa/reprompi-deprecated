@@ -323,6 +323,7 @@ void initialize_data_default(const basic_collective_params_t info, const long co
 
     params->scount = count;
     params->rcount = count;
+    params->tscount = count;
     params->trcount = count;
 
     assert (params->scount < INT_MAX);

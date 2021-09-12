@@ -92,6 +92,7 @@ typedef struct collparams {
     int rank;
     size_t scount;
     size_t rcount;
+    size_t tscount;
     size_t trcount;
     int* counts_array;
     int* displ_array;
