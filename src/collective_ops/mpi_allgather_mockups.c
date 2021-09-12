@@ -42,16 +42,13 @@ inline void execute_GL_Allgather_as_Alltoall(collective_params_t* params) {
     // replicate data in the source buffer nprocs times
     {
         int i;
-        for (i=1; i<params->local_size; i++) {
-            memcpy((char*)params->sbuf + i * params->count * params->datatype_extent, (char*)params->sbuf,
-                    params->count * params->datatype_extent);
+        for (i=1; i<params->remote_size; i++) {
+            memcpy((char*)params->sbuf + i * params->count * params->datatype_extent, (char*)params->sbuf, params->count * params->datatype_extent);
         }
     }
 #endif
 
-    MPI_Alltoall(params->sbuf, params->count, params->datatype,
-            params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
+    MPI_Alltoall(params->sbuf, params->count, params->datatype, params->rbuf, params->count, params->datatype, params->communicator);
 }
 
 
@@ -62,15 +59,14 @@ void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t in
     params->count = count; // size of the buffer for each process
 
     // source buffer must contain count elements repeated nprocs times
-    params->scount = count * params->local_size;
-    params->rcount = count * params->local_size;
+    params->scount = count * params->remote_size;
+    params->rcount = count * params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
 }
 
 
@@ -90,12 +86,10 @@ void cleanup_data_GL_Allgather_as_Alltoall(collective_params_t* params) {
 inline void execute_GL_Allgather_as_Allreduce(collective_params_t* params) {
 
 #ifdef COMPILE_BENCH_TESTS
-    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatype_extent, (char*)params->sbuf,
-            params->scount * params->datatype_extent);
+    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatype_extent, (char*)params->sbuf, params->scount * params->datatype_extent);
 #endif
 
-    MPI_Allreduce(params->tmp_buf, params->rbuf, params->rcount, params->datatype,
-            params->op, MPI_COMM_WORLD);
+    MPI_Allreduce(params->tmp_buf, params->rbuf, params->trcount, params->datatype, params->op, params->communicator);
 
 }
 
@@ -109,43 +103,47 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->local_size;
+    params->rcount = count * params->remote_size;
+
+    params->tscount = count * params->larger_size;
+    params->trcount = count * params->larger_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->trcount, params->datatype_extent);
+    params->tmp_buf = (char*)reprompi_calloc(params->tscount, params->datatype_extent);
 
     // set identity operand for different operations
     if (params->op == MPI_BAND || params->op == MPI_PROD) {
-        MPI_Type_get_envelope(params->datatype,
-                &num_ints, &num_adds, &num_dtypes, &combiner);
+        MPI_Type_get_envelope(params->datatype, &num_ints, &num_adds, &num_dtypes, &combiner);
 
         if (combiner == MPI_COMBINER_NAMED) {
             if (params->datatype == MPI_INT) {
-                for (i=0; i<params->rcount; i++) {
+                for (i=0; i<params->tscount; i++) {
                     ((int*)params->tmp_buf)[i] = 1;
                 }
             }
             else {
                 if (params->datatype == MPI_DOUBLE) {
-                    for (i=0; i<params->rcount; i++) {
+                    for (i=0; i<params->tscount; i++) {
                         ((double*)params->tmp_buf)[i] = 1;
                     }
                 }
                 else {
-                    memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
+                    memset( params->tmp_buf, 0xFF, params->tscount * params->datatype_extent);
                 }
             }
         }
         else {
-            memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
+            memset( params->tmp_buf, 0xFF, params->tscount * params->datatype_extent);
         }
     }
     else {
-        memset(params->tmp_buf, 0, params->rcount * params->datatype_extent);
+        memset(params->tmp_buf, 0, params->tscount * params->datatype_extent);
     }
 }
 
@@ -168,12 +166,20 @@ void cleanup_data_GL_Allgather_as_Allreduce(collective_params_t* params) {
 // MPI_Allgather with Gather + Bcast
 
 inline void execute_GL_Allgather_as_GatherBcast(collective_params_t* params) {
-    MPI_Gather(params->sbuf, params->count, params->datatype,
-            params->rbuf, params->count, params->datatype,
-            params->root, MPI_COMM_WORLD);
 
-    MPI_Bcast(params->rbuf, params->rcount, params->datatype,
-            params->root, MPI_COMM_WORLD);
+    if (!params->is_intercommunicator)
+    {
+        MPI_Gather(params->sbuf, params->count, params->datatype, params->rbuf, params->count, params->datatype, 0, params->communicator);
+    }
+    else
+    {
+        // for inter-communication, need to gather in both directions
+        MPI_Gather(params->sbuf, params->count, params->datatype, params->rbuf, params->count, params->datatype, params->troot_i2r, params->communicator);
+        MPI_Gather(params->sbuf, params->count, params->datatype, params->rbuf, params->count, params->datatype, params->troot_r2i, params->communicator);
+    }
+
+    // broadcast within local group only
+    MPI_Bcast(params->rbuf, params->rcount, params->datatype, 0, params->partial_communicator);
 }
 
 
@@ -183,7 +189,7 @@ void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->local_size;
+    params->rcount = count * params->remote_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);

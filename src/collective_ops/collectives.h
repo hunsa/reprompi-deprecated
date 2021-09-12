@@ -96,6 +96,9 @@ typedef struct collparams {
     size_t trcount;
     int* counts_array;
     int* displ_array;
+    MPI_Comm partial_communicator;
+    int troot_i2r;
+    int troot_r2i;
 
     // parameters relevant for ping-pong operations
     int pingpong_ranks[2];

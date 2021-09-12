@@ -378,6 +378,35 @@ void initialize_common_data(const basic_collective_params_t info,
     params->tmp_buf = NULL;
     params->counts_array = NULL;
     params->displ_array = NULL;
+
+    // some communicator and root trickery
+    // to allow GL mockups to simulate bidirectional all-to-alls
+    // with unidirectional all-to-ones
+    params->partial_communicator = icmb_partial_communicator();
+    params->troot_i2r = 0;
+    params->troot_r2i = 0;
+    if (params->is_intercommunicator)
+    {
+        if (params->is_initiator)
+        {
+            if (0 == params->rank)
+            {
+                params->troot_i2r = MPI_ROOT;
+            }
+            else{
+                params->troot_r2i = MPI_PROC_NULL;
+            }
+        }
+        else {
+            if (0 == params->rank)
+            {
+                params->troot_r2i = MPI_ROOT;
+            }
+            else{
+                params->troot_r2i = MPI_PROC_NULL;
+            }
+        }
+    }
 }
 
 
