@@ -23,18 +23,75 @@
 </license>
  */
 
+#include <assert.h>
+#include <getopt.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 #include "mpi.h"
 
-//#include "parse_options.h"
 #include "../collective_ops/collectives.h"
 #include "testbench.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 typedef double test_type;
 
+static const int OUTPUT_ROOT_PROC = 0;
+
+static const struct option test_long_options[] = {
+        { "count", required_argument, 0, 'c' },
+        { "help", no_argument, 0, 'c' },
+        { NULL, 0, NULL, 0 }
+};
+
+static const char test_short_options[] = "c:h";
+
+static void print_help (char* command)
+{
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        printf("Usage: mpiexec -n <numprocs> %s [options]\n", command);
+
+        printf("\ntest options:\n");
+        printf("%-25s %-.54s\n", "--count=<nummsgs>", "communicates <nummsgs> number of messages");
+
+        icmb_print_intercommunication_help();
+    }
+}
+
+static void parse_test_options (int argc, char** argv, long* count)
+{
+    // we expect to be started after MPI_Init was called
+    int is_initialized;
+    MPI_Initialized(&is_initialized);
+    assert(is_initialized);
+
+    int c;
+    opterr = 0;
+
+	while(1) {
+		c = getopt_long(argc, argv, test_short_options, test_long_options, NULL);
+		if(c == -1) {
+			break;
+		}
+
+		switch(c) {
+
+			case 'c':
+                *count = atol(optarg);
+				break;
+
+            case 'h':
+                print_help(argv[0]);
+                icmb_exit(0);
+                break;
+		}
+	}
+    optind = 1; // reset optind to enable option re-parsing
+    opterr = 1; // reset opterr to catch invalid options
+}
 
 void set_buffer_sequentially(const test_type start_val, const int n_elems, char* buffer) {
     int i;
@@ -246,61 +303,59 @@ void test_collective(basic_collective_params_t basic_coll_info,
 
 
 int main(int argc, char* argv[]) {
-    int nprocs;
     basic_collective_params_t basic_coll_info;
     long count = 100;
 
-
     srand(1000);
-
-
-    if (argc > 1) {
-        count = atol(argv[1]);
-    }
 
     /* start up MPI
      *
      * */
     MPI_Init(&argc, &argv);
 
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
 
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    parse_test_options(argc, argv, &count);
 
     basic_coll_info.datatype = MPI_DOUBLE;
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = 0;
 
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
+//
+//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
+//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
+//
+//     test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
+//
+//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
+//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
+//
+//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
+//
+//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
+//
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
+//
+//     test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
+//
+//     test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
-    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
-    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
 
-    test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
-
-    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
-    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
-
-    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
-
-    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
-
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
-
-    test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
-
-    test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
-
-    if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
-        test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
-        test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
-    }
-    else {
-
-    }
+//     int nprocs;
+//     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+//     if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
+//         test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
+//         test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+//     }
+//     else {
+//
+//     }
 
     /* shut down MPI */
     MPI_Finalize();
