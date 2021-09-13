@@ -234,30 +234,37 @@ void cleanup_data_Reduce_scatter(collective_params_t* params) {
 /***************************************/
 // MPI_Reduce_scatter_block
 
-inline void execute_Reduce_scatter_block(collective_params_t* params) {
-    MPI_Reduce_scatter_block(params->sbuf, params->rbuf, params->rcount,
-            params->datatype, params->op, params->communicator);
+inline void execute_Reduce_scatter_block(collective_params_t* params)
+{
+      MPI_Reduce_scatter_block(params->sbuf, params->rbuf, params->trcount, params->datatype, params->op, params->communicator);
 }
 
-
-
-void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
     params->count = count; // size of the block received by each process
 
-    params->scount = 0; // unused in reduce_scatter_block
-    params->rcount = params->remote_size;
+    params->scount = count * params->local_size; // size of send buffer
+    params->rcount = count;
+    params->trcount = count;
+    if (params->is_intercommunicator)
+    {
+        params->scount  *= params->remote_size; // send buffers must have same size in both groups
+        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+    }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
-    params->sbuf = (char *) reprompi_calloc(params->rcount * count, params->datatype_extent);
-    params->rbuf = (char *) reprompi_calloc(count, params->datatype_extent);
+    params->sbuf = (char *) reprompi_calloc(params->scount, params->datatype_extent);
+    params->rbuf = (char *) reprompi_calloc(params->trcount, params->datatype_extent);
+
 }
 
-
-void cleanup_data_Reduce_scatter_block(collective_params_t* params) {
+void cleanup_data_Reduce_scatter_block(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     params->sbuf = NULL;
