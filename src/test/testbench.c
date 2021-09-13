@@ -135,8 +135,8 @@ void set_buffer_random(const int n_elems, char* buffer) {
     buff = (test_type*)buffer;
     for (i=0; i< n_elems; i++) {
         // TODO: set back to random when done, now using rank for easy identification
-        //buff[i] = rand();
-        buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
+        buff[i] = rand();
+        //buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
     }
 }
 
@@ -241,7 +241,7 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
                 error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.rcount));
             }
             else {
-                // for Bcast check source buffers
+               // for Bcast check source buffers
                 for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process %d\n", p);
 
@@ -249,29 +249,33 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
                 }
                 error = (!identical(send_buffer, mockup_send_buffer, coll_params.local_size * coll_params.scount));
 
-            }
+           }
 
         }
     }
+
+    free(send_buffer);
+    free(mockup_send_buffer);
+    free(recv_buffer);
+    free(mockup_recv_buffer);
 
     return error;
 }
 
 static int check_results_for_initiators (char coll1[], char coll2[], collective_params_t coll_params, collective_params_t mockup_params, int check_only_at_root)
 {
+    // initiators are not involved in one-to-all operations
+    if (!strcmp(coll1, "MPI_Bcast")) // strcmp returns 0 (false) if strings match
+    {
+        return 0;
+    }
+
     int error = 0;
 
     int p;
-    test_type *send_buffer, *mockup_send_buffer;
     test_type *recv_buffer, *mockup_recv_buffer;
 
-    // gather send and receive buffers from all processes
-    send_buffer = (test_type*)malloc(coll_params.local_size* coll_params.scount * coll_params.datatype_extent);
-    MPI_Gather(coll_params.sbuf,  coll_params.scount * coll_params.datatype_extent, MPI_CHAR, send_buffer,  coll_params.scount * coll_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_partial_communicator());
-
-    mockup_send_buffer = (test_type*)malloc(mockup_params.local_size* mockup_params.scount * mockup_params.datatype_extent);
-    MPI_Gather(mockup_params.sbuf,  mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, mockup_send_buffer,  mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_partial_communicator());
-
+    // gather receive buffers from all processes
     recv_buffer = (test_type*)malloc(coll_params.local_size* coll_params.rcount * coll_params.datatype_extent);
     MPI_Gather(coll_params.rbuf,  coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, recv_buffer,  coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_partial_communicator());
 
@@ -286,28 +290,17 @@ static int check_results_for_initiators (char coll1[], char coll2[], collective_
             error = (!identical(recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount));
         }
         else {
-            if (strcmp(coll1, "MPI_Bcast")){
-
                 for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process Initiator %d\n", p);
 
                     print_buffers(coll1, coll2, recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount);
                 }
                 error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.rcount));
-            }
-            else {
-                // for Bcast check source buffers
-                for (p=0; p<coll_params.local_size; p++) {
-                    printf ("=========== Process Initiator %d\n", p);
-
-                    print_buffers(coll1, coll2, send_buffer + p*coll_params.scount, mockup_send_buffer + p*coll_params.scount, coll_params.scount);
-                }
-                error = (!identical(send_buffer, mockup_send_buffer, coll_params.local_size * coll_params.scount));
-
-            }
-
         }
     }
+
+    free(recv_buffer);
+    free(mockup_recv_buffer);
 
     return error;
 }
@@ -330,19 +323,19 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
     if (icmb_is_responder())
     {
         // let initiator root gather our data
-        MPI_Gather(coll_params.sbuf, coll_params.scount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, 0, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
-        MPI_Gather(mockup_params.sbuf, mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, 0, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
-        MPI_Gather(coll_params.rbuf, coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, 0, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
-        MPI_Gather(mockup_params.rbuf, mockup_params.rcount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, 0, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
+        MPI_Gather(coll_params.sbuf, coll_params.scount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
+        MPI_Gather(mockup_params.sbuf, mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
+        MPI_Gather(coll_params.rbuf, coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
+        MPI_Gather(mockup_params.rbuf, mockup_params.rcount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
     }
 
     if (icmb_is_initiator() && !icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
     {
         // exclude other initiator processes from collective communication
-        MPI_Gather(NULL, 0, 0, NULL, 0, 0, MPI_PROC_NULL, icmb_benchmark_communicator()); // send_buffer
-        MPI_Gather(NULL, 0, 0, NULL, 0, 0, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_send_buffer
-        MPI_Gather(NULL, 0, 0, NULL, 0, 0, MPI_PROC_NULL, icmb_benchmark_communicator()); // recv_buffer
-        MPI_Gather(NULL, 0, 0, NULL, 0, 0, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_recv_buffer
+        MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // send_buffer
+        MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_send_buffer
+        MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // recv_buffer
+        MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_recv_buffer
     }
 
     if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
@@ -370,12 +363,30 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
         test_type* mockup_recv_buffer = (test_type*)malloc(mockup_params.remote_size * mock_rcount * mockup_params.datatype_extent);
         MPI_Gather(NULL, 0, 0, mockup_recv_buffer, mock_rcount * mockup_params.datatype_extent, MPI_CHAR, MPI_ROOT, icmb_benchmark_communicator());
 
-        for (p=0; p<coll_params.remote_size; p++) {
-            printf ("=========== Process Responder %d\n", p);
-            print_buffers(coll1, coll2, recv_buffer + p * coll_rcount, mockup_recv_buffer + p * coll_rcount, coll_rcount);
+        if (strcmp(coll1, "MPI_Bcast"))
+        {
+            // this is NOT bcast (strcmp returns 0=false if strings match)
+            for (p=0; p<coll_params.remote_size; p++)
+            {
+                printf ("=========== Process Responder %d\n", p);
+                print_buffers(coll1, coll2, recv_buffer + p * coll_rcount, mockup_recv_buffer + p * coll_rcount, coll_rcount);
+            }
+            error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.remote_size * coll_rcount));
         }
-        error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.remote_size * coll_rcount));
+        else
+        {
+            // for Bcast check source buffers
+            for (p=0; p<coll_params.remote_size; p++) {
+                printf ("=========== Process Responder %d\n", p);
+                print_buffers(coll1, coll2, send_buffer + p * coll_scount, mockup_send_buffer + p * coll_scount, coll_scount);
+            }
+            error = (!identical(send_buffer, mockup_send_buffer, coll_params.remote_size * coll_scount));
+        }
 
+        free(send_buffer);
+        free(mockup_send_buffer);
+        free(recv_buffer);
+        free(mockup_recv_buffer);
     }
 
     return error;
@@ -473,16 +484,16 @@ int main(int argc, char* argv[])
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = icmb_collective_root(OUTPUT_ROOT_PROC);
 
-
     //test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
     //test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
+    //test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
 
-//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
-//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
-//
-//     test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
-//
+    //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
+    //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
+    //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+
+    test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
+
 //     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
 //     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
 //

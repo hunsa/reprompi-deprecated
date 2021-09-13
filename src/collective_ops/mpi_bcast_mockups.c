@@ -37,40 +37,32 @@
 /***************************************/
 // MPI_Bcast with Scatter + Allgather
 
-inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
-    MPI_Scatter(params->sbuf, params->count, params->datatype,
-                params->rbuf, params->count, params->datatype,
-                params->root, MPI_COMM_WORLD);
-    MPI_Allgather(params->rbuf, params->count, params->datatype,
-                params->tmp_buf, params->count, params->datatype,
-                MPI_COMM_WORLD);
-
-#ifdef COMPILE_BENCH_TESTS
-    memcpy(params->sbuf, params->tmp_buf, params->scount);
-#endif
+inline void execute_GL_Bcast_as_ScatterAllgather(collective_params_t* params)
+{
+    MPI_Scatter(params->sbuf, params->scount, params->datatype, params->tmp_buf, params->rcount, params->datatype, params->root, params->communicator);
+    MPI_Allgather(params->tmp_buf, params->rcount, params->datatype, params->rbuf, params->rcount, params->datatype, params->partial_communicator);
 }
 
-
-
-void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
-    params->count = count/params->local_size + (count % params->local_size != 0);
+    params->count = count;
 
     params->scount = count;
-    params->rcount = count + params->local_size; // at most one extra element per process
+    params->rcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc((params->scount + params->local_size), params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
+    params->sbuf = (char*) reprompi_calloc(params->scount, params->datatype_extent);
+    params->tmp_buf = (char*) reprompi_calloc(params->rcount, params->datatype_extent);
+    params->rbuf = (char*) reprompi_calloc(params->rcount * params->local_size, params->datatype_extent);
 }
 
 
-void cleanup_data_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
+void cleanup_data_GL_Bcast_as_ScatterAllgather(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     free(params->tmp_buf);
@@ -79,10 +71,3 @@ void cleanup_data_GL_Bcast_as_ScatterAllgather(collective_params_t* params) {
     params->tmp_buf = NULL;
 }
 /***************************************/
-
-
-
-
-
-
-
