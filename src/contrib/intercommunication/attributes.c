@@ -169,7 +169,10 @@ int icmb_attribute_communicator_destructor (MPI_Comm comm, int key, void* value,
     icmb_attribute_communicator_t* attribute = (icmb_attribute_communicator_t*)value;
     attribute->ref_count--;
     if (attribute->ref_count < 1) {
-        MPI_Comm_disconnect(&attribute->communicator);
+        // actually prefer MPI_Comm_disconnect here,
+        // but then openMPI hangs on MPI_Finalize()
+        // (no problem with MPICH)
+        MPI_Comm_free(&attribute->communicator);
         free((void*) attribute);
     }
     return MPI_SUCCESS;
