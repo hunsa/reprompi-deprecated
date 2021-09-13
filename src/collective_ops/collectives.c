@@ -120,11 +120,6 @@ const collective_ops_t collective_calls[] = {
                 &initialize_data_GL_Allreduce_as_ReduceBcast,
                 &cleanup_data_GL_Allreduce_as_ReduceBcast
         },
-//        [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER] = {
-//                &execute_GL_Allreduce_as_ReducescatterAllgather,
-//                &initialize_data_GL_Allreduce_as_ReducescatterAllgather,
-//                &cleanup_data_GL_Allreduce_as_ReducescatterAllgather
-//        },
         [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV] = {
                 &execute_GL_Allreduce_as_ReducescatterAllgatherv,
                 &initialize_data_GL_Allreduce_as_ReducescatterAllgatherv,

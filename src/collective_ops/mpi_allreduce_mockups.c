@@ -38,16 +38,28 @@
 /***************************************/
 // MPI_Allreduce with Reduce + Bcast
 
-inline void execute_GL_Allreduce_as_ReduceBcast(collective_params_t* params) {
-    MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype,
-            params->op, params->root, MPI_COMM_WORLD);
-    MPI_Bcast(params->rbuf, params->rcount, params->datatype,
-            params->root, MPI_COMM_WORLD);
+inline void execute_GL_Allreduce_as_ReduceBcast(collective_params_t* params)
+{
+    if (!params->is_intercommunicator)
+    {
+        MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype, params->op, 0, params->communicator);
+    }
+    else
+    {
+        // it is unfortunate that we need to branch inside the measured execution procedure,
+        // but for inter-communication we need to reduce in both directions
+        MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype, params->op, params->troot_i2r, params->communicator);
+        MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype, params->op, params->troot_r2i, params->communicator);
+    }
+
+    // broadcast within local group only
+    MPI_Bcast(params->rbuf, params->rcount, params->datatype, 0, params->partial_communicator);
 }
 
 
 
-void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
     params->count = count;
@@ -64,66 +76,12 @@ void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t
 }
 
 
-void cleanup_data_GL_Allreduce_as_ReduceBcast(collective_params_t* params) {
+void cleanup_data_GL_Allreduce_as_ReduceBcast(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     params->sbuf = NULL;
     params->rbuf = NULL;
-
-}
-/***************************************/
-
-
-/***************************************/
-// MPI_Allreduce with Reduce_scatter and Allgather
-inline void execute_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params) {
-
-    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array,
-            params->datatype, params->op, MPI_COMM_WORLD);
-
-    MPI_Allgather(params->tmp_buf, params->count, params->datatype,
-            params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
-
-}
-
-
-void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collective_params_t info,
-        const long count, collective_params_t* params) {
-    int i;
-
-    initialize_common_data(info, params);
-
-    params->count = count / params->local_size; // block size per process
-
-    params->scount = count;
-    params->rcount = count;
-
-    assert (params->scount < INT_MAX);
-    assert (params->rcount < INT_MAX);
-
-    // we send the same number of elements to all processes
-    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
-    for (i=0; i< params->local_size; i++) {
-        params->counts_array[i] = params->count;
-    }
-
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-
-}
-
-
-void cleanup_data_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* params) {
-    free(params->sbuf);
-    free(params->rbuf);
-    free(params->tmp_buf);
-    free(params->counts_array);
-    params->sbuf = NULL;
-    params->rbuf = NULL;
-    params->tmp_buf = NULL;
-    params->counts_array = NULL;
 
 }
 /***************************************/
@@ -132,40 +90,42 @@ void cleanup_data_GL_Allreduce_as_ReducescatterAllgather(collective_params_t* pa
 
 /***************************************/
 // MPI_Allreduce with Reduce_scatterblock and Allgather
-inline void execute_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params) {
+inline void execute_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params)
+{
 
-
-    MPI_Reduce_scatter_block(params->sbuf, params->tmp_buf, params->count,
-            params->datatype, params->op, MPI_COMM_WORLD);
-
-    MPI_Allgather(params->tmp_buf, params->count, params->datatype,
-            params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
+    MPI_Reduce_scatter_block(params->sbuf, params->tmp_buf, params->trcount, params->datatype, params->op, params->communicator);
+    MPI_Allgather(params->tmp_buf, params->rcount, params->datatype, params->rbuf, params->rcount, params->datatype, params->partial_communicator);
 
 }
 
 
-void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_collective_params_t info,
-        const long count, collective_params_t* params) {
+void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
+    params->count = count; // size of the block received by each process
 
-    params->count = count / params->local_size; // block size per process
-
-    params->scount = count;
+    params->scount = count * params->local_size; // size of send buffer for reduce_scatter_block
     params->rcount = count;
+    params->trcount = count;
+    if (params->is_intercommunicator)
+    {
+        params->scount  *= params->remote_size; // send buffers must have same size in both groups
+        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+    }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-    params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-
+    params->sbuf = (char *) reprompi_calloc(params->scount, params->datatype_extent);
+    params->tmp_buf = (char *) reprompi_calloc(params->trcount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(count * params->local_size, params->datatype_extent);
 }
 
 
-void cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params) {
+void cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     free(params->tmp_buf);
@@ -179,30 +139,28 @@ void cleanup_data_GL_Allreduce_as_ReducescatterblockAllgather(collective_params_
 
 /***************************************/
 // MPI_Allreduce with Reduce_scatter and Allgatherv
-inline void execute_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params) {
+inline void execute_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params)
+{
 
-    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array,
-            params->datatype, params->op, MPI_COMM_WORLD);
+    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array, params->datatype, params->op, params->communicator);
 
-    MPI_Allgatherv(params->tmp_buf, params->count, params->datatype,
-            params->rbuf, params->counts_array, params->displ_array, params->datatype,
-            MPI_COMM_WORLD);
+    MPI_Allgatherv(params->tmp_buf, params->count, params->datatype, params->rbuf, params->counts_array, params->displ_array, params->datatype, params->partial_communicator);
 
 }
 
 
-void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info,
-        const long count, collective_params_t* params) {
+void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     int i;
 
     initialize_common_data(info, params);
 
     // set block size per process according to rank
-    if (params->rank < count % params->local_size) {
-        params->count = count / params->local_size + 1;
+    if (params->rank < count % params->remote_size) {
+        params->count = count / params->remote_size + 1;
     }
     else {
-        params->count = count / params->local_size;
+        params->count = count / params->remote_size;
     }
 
     // total count for the initial message and the final result
@@ -213,15 +171,15 @@ void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collect
     assert (params->rcount < INT_MAX);
 
     // each process receives a different number of elements according to its rank
-    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
-    params->displ_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
 
-    for (i=0; i< params->local_size; i++) {
-        if (i < count % params->local_size) {
-            params->counts_array[i] = count / params->local_size + 1;
+    for (i=0; i< params->remote_size; i++) {
+        if (i < count % params->remote_size) {
+            params->counts_array[i] = count / params->remote_size + 1;
         }
         else {
-            params->counts_array[i] = count / params->local_size;
+            params->counts_array[i] = count / params->remote_size;
         }
 
 
@@ -244,7 +202,8 @@ void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collect
 }
 
 
-void cleanup_data_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params) {
+void cleanup_data_GL_Allreduce_as_ReducescatterAllgatherv(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     free(params->tmp_buf);
