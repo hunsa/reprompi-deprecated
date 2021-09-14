@@ -36,25 +36,26 @@
 inline void execute_GL_Scan_as_ExscanReducelocal(collective_params_t* params) {
 
 #ifdef COMPILE_BENCH_TESTS
-    if (params->rank == 0) {
+    if (params->rank == 0)
+    {
         memcpy(params->rbuf, params->sbuf, params->scount * params->datatype_extent);
     }
 #endif
 
-    MPI_Exscan(params->sbuf, params->tmp_buf, params->count, params->datatype,
-                params->op, MPI_COMM_WORLD);
-    MPI_Reduce_local(params->tmp_buf, params->sbuf, params->count,
-                params->datatype, params->op);
+    MPI_Exscan(params->sbuf, params->tmp_buf, params->count, params->datatype, params->op, params->communicator);
+    MPI_Reduce_local(params->tmp_buf, params->sbuf, params->count, params->datatype, params->op);
 
 #ifdef COMPILE_BENCH_TESTS
-    if (params->rank > 0) {
+    if (params->rank > 0)
+    {
         memcpy(params->rbuf, params->sbuf, params->scount * params->datatype_extent);
     }
 #endif
 }
 
 
-void initialize_data_GL_Scan_as_ExscanReducelocal(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Scan_as_ExscanReducelocal(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
     params->count = count;
@@ -68,18 +69,16 @@ void initialize_data_GL_Scan_as_ExscanReducelocal(const basic_collective_params_
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
     params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
 }
 
 
-void cleanup_data_GL_Scan_as_ExscanReducelocal(collective_params_t* params) {
+void cleanup_data_GL_Scan_as_ExscanReducelocal(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     free(params->tmp_buf);
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->tmp_buf = NULL;
-
 }
 /***************************************/
-
