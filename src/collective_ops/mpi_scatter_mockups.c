@@ -37,25 +37,24 @@
 /***************************************/
 // Scatter with Bcast
 
-inline void execute_GL_Scatter_as_Bcast(collective_params_t* params) {
-
-    MPI_Bcast(params->sbuf, params->scount, params->datatype,
-              params->root, MPI_COMM_WORLD);
+inline void execute_GL_Scatter_as_Bcast(collective_params_t* params)
+{
+    MPI_Bcast(params->sbuf, params->scount, params->datatype, params->root, params->communicator);
 
 #ifdef COMPILE_BENCH_TESTS
-    memcpy((char*)params->rbuf, (char*)params->sbuf + params->rank * params->count * params->datatype_extent,
-            params->count * params->datatype_extent);
+    memcpy((char*)params->rbuf, (char*)params->sbuf + params->rank * params->count * params->datatype_extent, params->count * params->datatype_extent);
 #endif
 
 }
 
 
-void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
     params->count = count; // size of the block scattered to each process
 
-    params->scount = count * params->local_size;
+    params->scount = count * params->responder_size;
     params->rcount = count;
 
     assert (params->scount < INT_MAX);
@@ -66,7 +65,8 @@ void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, c
 }
 
 
-void cleanup_data_GL_Scatter_as_Bcast(collective_params_t* params) {
+void cleanup_data_GL_Scatter_as_Bcast(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     params->sbuf = NULL;

@@ -135,8 +135,8 @@ void set_buffer_random(const int n_elems, char* buffer) {
     buff = (test_type*)buffer;
     for (i=0; i< n_elems; i++) {
         // TODO: set back to random when done, now using rank for easy identification
-        //buff[i] = rand();
-        buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
+        buff[i] = rand();
+        //buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
     }
 }
 
@@ -259,7 +259,7 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
 static int check_results_for_initiators (char coll1[], char coll2[], collective_params_t coll_params, collective_params_t mockup_params, int check_only_at_root)
 {
     // initiators are not involved in one-to-all operations
-    if (!strcmp(coll1, "MPI_Bcast")) // strcmp returns 0 (false) if strings match
+    if (!strcmp(coll1, "MPI_Bcast") || !strcmp(coll1, "MPI_Scatter")) // strcmp returns 0 (false) if strings match
     {
         return 0;
     }
@@ -482,7 +482,7 @@ int main(int argc, char* argv[])
 
     //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
     //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
-    //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+    //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER); // TODO: check numprocs - see below
 
     //test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
 
@@ -491,30 +491,27 @@ int main(int argc, char* argv[])
 
     //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
     //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
-    //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
+    //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);// TODO: check numprocs - see below
 
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
 
+    // scan is not defined for intercollectives
     if (!icmb_is_intercommunicator())
     {
-        // scan is not defined for intercollectives
-        test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
+//         test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
     }
 
-//     test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
+    test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
 
-//     int nprocs;
-//     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-//     if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
-//         test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
-//         test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
-//     }
-//     else {
-//
-//     }
+    int nprocs;
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    if (count % nprocs == 0) {  // only works if the number of processes is a divisor of count
+        test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
+        test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
+    }
 
     /* shut down MPI */
     MPI_Finalize();
