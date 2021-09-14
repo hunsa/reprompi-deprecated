@@ -46,8 +46,7 @@ inline void execute_GL_Allreduce_as_ReduceBcast(collective_params_t* params)
     }
     else
     {
-        // it is unfortunate that we need to branch inside the measured execution procedure,
-        // but for inter-communication we need to reduce in both directions
+        // for inter-communication, need to reduce in both directions
         MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype, params->op, params->troot_i2r, params->communicator);
         MPI_Reduce(params->sbuf, params->rbuf, params->scount, params->datatype, params->op, params->troot_r2i, params->communicator);
     }

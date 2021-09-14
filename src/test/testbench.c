@@ -135,8 +135,8 @@ void set_buffer_random(const int n_elems, char* buffer) {
     buff = (test_type*)buffer;
     for (i=0; i< n_elems; i++) {
         // TODO: set back to random when done, now using rank for easy identification
-        buff[i] = rand();
-        //buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
+        //buff[i] = rand();
+        buff[i] = (!icmb_is_initiator())*10 + icmb_benchmark_rank();
     }
 }
 
@@ -207,15 +207,12 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
     int error = 0;
 
     int p;
-    test_type *send_buffer, *mockup_send_buffer;
+    test_type *send_buffer;
     test_type *recv_buffer, *mockup_recv_buffer;
 
     // gather send and receive buffers from all processes
     send_buffer = (test_type*)malloc(coll_params.local_size* coll_params.scount * coll_params.datatype_extent);
     MPI_Gather(coll_params.sbuf,  coll_params.scount * coll_params.datatype_extent, MPI_CHAR, send_buffer,  coll_params.scount * coll_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, coll_params.communicator);
-
-    mockup_send_buffer = (test_type*)malloc(mockup_params.local_size* mockup_params.scount * mockup_params.datatype_extent);
-    MPI_Gather(mockup_params.sbuf,  mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, mockup_send_buffer,  mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, mockup_params.communicator);
 
     recv_buffer = (test_type*)malloc(coll_params.local_size* coll_params.rcount * coll_params.datatype_extent);
     MPI_Gather(coll_params.rbuf,  coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, recv_buffer,  coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, OUTPUT_ROOT_PROC, coll_params.communicator);
@@ -227,15 +224,14 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
 
         if (check_only_at_root) {
             p = coll_params.root;
+            printf("checking only at root :-)\n");
             print_buffers(coll1, coll2, recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount);
             error = (!identical(recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount));
         }
         else {
             if (strcmp(coll1, "MPI_Bcast")){
-
                 for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process %d\n", p);
-
                     print_buffers(coll1, coll2, recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount);
                 }
                 error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.rcount));
@@ -244,10 +240,9 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
                // for Bcast check source buffers
                 for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process %d\n", p);
-
-                    print_buffers(coll1, coll2, send_buffer + p*coll_params.scount, mockup_send_buffer + p*coll_params.scount, coll_params.scount);
+                    print_buffers(coll1, coll2, send_buffer + p*coll_params.scount, mockup_recv_buffer + p*coll_params.scount, coll_params.scount);
                 }
-                error = (!identical(send_buffer, mockup_send_buffer, coll_params.local_size * coll_params.scount));
+                error = (!identical(send_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.scount));
 
            }
 
@@ -255,7 +250,6 @@ static int check_results_for_intracommunicator (char coll1[], char coll2[], coll
     }
 
     free(send_buffer);
-    free(mockup_send_buffer);
     free(recv_buffer);
     free(mockup_recv_buffer);
 
@@ -272,7 +266,7 @@ static int check_results_for_initiators (char coll1[], char coll2[], collective_
 
     int error = 0;
 
-    int p;
+    int p = 0;
     test_type *recv_buffer, *mockup_recv_buffer;
 
     // gather receive buffers from all processes
@@ -284,15 +278,16 @@ static int check_results_for_initiators (char coll1[], char coll2[], collective_
 
     if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
 
-        if (check_only_at_root) {
-            p = coll_params.root;
+        if (check_only_at_root)
+        {
+            p = OUTPUT_ROOT_PROC;
             print_buffers(coll1, coll2, recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount);
             error = (!identical(recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount));
         }
-        else {
+        else
+        {
                 for (p=0; p<coll_params.local_size; p++) {
                     printf ("=========== Process Initiator %d\n", p);
-
                     print_buffers(coll1, coll2, recv_buffer + p*coll_params.rcount, mockup_recv_buffer + p*coll_params.rcount, coll_params.rcount);
                 }
                 error = (!identical(recv_buffer, mockup_recv_buffer, coll_params.local_size * coll_params.rcount));
@@ -307,6 +302,12 @@ static int check_results_for_initiators (char coll1[], char coll2[], collective_
 
 static int check_results_for_responders (char coll1[], char coll2[], collective_params_t coll_params, collective_params_t mockup_params, int check_only_at_root)
 {
+    // responders are not involved in all-to-one operations
+    if (check_only_at_root)
+    {
+        return 0;
+    }
+
     int error = 0;
 
     int p;
@@ -315,7 +316,6 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
     {
         // inform unknown sizes to initiator root
         MPI_Send(&coll_params.scount, 1, MPI_SIZE_T, OUTPUT_ROOT_PROC, MSG_TAG_COLL_SCOUNT, icmb_benchmark_communicator());
-        MPI_Send(&mockup_params.scount, 1, MPI_SIZE_T, OUTPUT_ROOT_PROC, MSG_TAG_MOCK_SCOUNT, icmb_benchmark_communicator());
         MPI_Send(&coll_params.rcount, 1, MPI_SIZE_T, OUTPUT_ROOT_PROC, MSG_TAG_COLL_RCOUNT, icmb_benchmark_communicator());
         MPI_Send(&mockup_params.rcount, 1, MPI_SIZE_T, OUTPUT_ROOT_PROC, MSG_TAG_MOCK_RCOUNT, icmb_benchmark_communicator());
     }
@@ -324,7 +324,6 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
     {
         // let initiator root gather our data
         MPI_Gather(coll_params.sbuf, coll_params.scount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
-        MPI_Gather(mockup_params.sbuf, mockup_params.scount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
         MPI_Gather(coll_params.rbuf, coll_params.rcount * coll_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
         MPI_Gather(mockup_params.rbuf, mockup_params.rcount * mockup_params.datatype_extent, MPI_CHAR, NULL, 0, MPI_CHAR, OUTPUT_ROOT_PROC, icmb_benchmark_communicator());
     }
@@ -333,7 +332,6 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
     {
         // exclude other initiator processes from collective communication
         MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // send_buffer
-        MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_send_buffer
         MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // recv_buffer
         MPI_Gather(NULL, 0, MPI_CHAR, NULL, 0, MPI_CHAR, MPI_PROC_NULL, icmb_benchmark_communicator()); // mockup_recv_buffer
     }
@@ -343,8 +341,6 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
         // receive remote sizes from responder root
         size_t coll_scount;
         MPI_Recv(&coll_scount, 1, MPI_SIZE_T, 0, MSG_TAG_COLL_SCOUNT, icmb_benchmark_communicator(), MPI_STATUS_IGNORE);
-        size_t mock_scount;
-        MPI_Recv(&mock_scount, 1, MPI_SIZE_T, 0, MSG_TAG_MOCK_SCOUNT, icmb_benchmark_communicator(), MPI_STATUS_IGNORE);
         size_t coll_rcount;
         MPI_Recv(&coll_rcount, 1, MPI_SIZE_T, 0, MSG_TAG_COLL_RCOUNT, icmb_benchmark_communicator(), MPI_STATUS_IGNORE);
         size_t mock_rcount;
@@ -353,9 +349,6 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
         // gather send and receive buffers from responder processes
         test_type* send_buffer = (test_type*)malloc(coll_params.remote_size * coll_scount * coll_params.datatype_extent);
         MPI_Gather(NULL, 0, 0, send_buffer,  coll_scount * coll_params.datatype_extent, MPI_CHAR, MPI_ROOT, icmb_benchmark_communicator());
-
-        test_type* mockup_send_buffer = (test_type*)malloc(mockup_params.remote_size * mock_scount * mockup_params.datatype_extent);
-        MPI_Gather(NULL, 0, 0, mockup_send_buffer, mock_scount * mockup_params.datatype_extent, MPI_CHAR, MPI_ROOT, icmb_benchmark_communicator());
 
         test_type* recv_buffer = (test_type*)malloc(coll_params.remote_size * coll_rcount * coll_params.datatype_extent);
         MPI_Gather(NULL, 0, 0, recv_buffer, coll_rcount * coll_params.datatype_extent, MPI_CHAR, MPI_ROOT, icmb_benchmark_communicator());
@@ -378,13 +371,12 @@ static int check_results_for_responders (char coll1[], char coll2[], collective_
             // for Bcast check source buffers
             for (p=0; p<coll_params.remote_size; p++) {
                 printf ("=========== Process Responder %d\n", p);
-                print_buffers(coll1, coll2, send_buffer + p * coll_scount, mockup_send_buffer + p * coll_scount, coll_scount);
+                print_buffers(coll1, coll2, send_buffer + p * coll_scount, mockup_recv_buffer + p * coll_scount, coll_scount);
             }
-            error = (!identical(send_buffer, mockup_send_buffer, coll_params.remote_size * coll_scount));
+            error = (!identical(send_buffer, mockup_recv_buffer, coll_params.remote_size * coll_scount));
         }
 
         free(send_buffer);
-        free(mockup_send_buffer);
         free(recv_buffer);
         free(mockup_recv_buffer);
     }
@@ -492,21 +484,21 @@ int main(int argc, char* argv[])
     //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
     //test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER);
 
-    test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
+    //test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
 
-//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
-//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
-//
+    //test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
+    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
+
 //     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
-//
+
 //     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
-//
+
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
-//
+
 //     test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
-//
+
 //     test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
 
