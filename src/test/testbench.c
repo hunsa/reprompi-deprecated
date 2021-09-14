@@ -487,11 +487,11 @@ int main(int argc, char* argv[])
     //test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
 
     //test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
-    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
+    //test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
 
-//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
-
-//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
+    //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
+    //test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
+    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER);
 
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
 //     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);

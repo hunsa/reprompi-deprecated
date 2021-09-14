@@ -188,8 +188,7 @@ void execute_pingpong_Sendrecv(collective_params_t* params);
 
 
 // buffer initialization functions
-void initialize_common_data(const basic_collective_params_t info,
-        collective_params_t* params);
+void initialize_common_data(const basic_collective_params_t info, collective_params_t* params);
 void initialize_data_default(const basic_collective_params_t info, const long count, collective_params_t* params);
 
 void initialize_data_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params);
@@ -204,14 +203,12 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
 void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t info, const long count, collective_params_t* params);
-//void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_Allreduce(const basic_collective_params_t info, const long count, collective_params_t* params);
-//void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_params_t info, const long count, collective_params_t* params);
