@@ -185,9 +185,9 @@ void cleanup_data_Allgather(collective_params_t* params) {
 /***************************************/
 // MPI_Reduce_scatter
 
-inline void execute_Reduce_scatter(collective_params_t* params) {
-    MPI_Reduce_scatter(params->sbuf, params->rbuf, params->counts_array,
-            params->datatype, params->op, params->communicator);
+inline void execute_Reduce_scatter(collective_params_t* params)
+{
+    MPI_Reduce_scatter(params->sbuf, params->rbuf, params->counts_array, params->datatype, params->op, params->communicator);
 }
 
 
@@ -199,31 +199,34 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->remote_size;
+    params->scount = count * params->local_size;
     params->rcount = count;
+    params->trcount = count;
+    if (params->is_intercommunicator)
+    {
+        params->scount  *= params->remote_size; // send buffers must have same size in both groups
+        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+    }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
-    assert (count < INT_MAX);
-    // we send the same number of elements to all processes
+    // sum of number of elements must be same in both groups
     params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
-    for (i=0; i< params->remote_size; i++) {
-        params->counts_array[i] = count;
+    for (i=0; i< params->local_size; i++) {
+        params->counts_array[i] = params->trcount;
     }
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
+    params->rbuf = (char*)reprompi_calloc(params->trcount, params->datatype_extent);
 }
 
 
 void cleanup_data_Reduce_scatter(collective_params_t* params) {
     free(params->sbuf);
     free(params->rbuf);
-
     free(params->counts_array);
-
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->counts_array = NULL;
