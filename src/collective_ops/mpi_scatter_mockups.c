@@ -60,7 +60,7 @@ void initialize_data_GL_Scatter_as_Bcast(const basic_collective_params_t info, c
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->sbuf = (char*)reprompi_calloc(params->count * params->larger_size, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);;
 }
 
