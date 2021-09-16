@@ -366,6 +366,7 @@ void initialize_common_data(const basic_collective_params_t info,
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->tmp_buf = NULL;
+    params->scounts_array = NULL;
     params->counts_array = NULL;
     params->displ_array = NULL;
 

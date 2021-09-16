@@ -119,59 +119,56 @@ void cleanup_data_GL_Reduce_as_ReducescatterblockGather(collective_params_t* par
 // MPI_Reduce with Reduce_scatter and Gatherv
 inline void execute_GL_Reduce_as_ReducescatterGatherv(collective_params_t* params)
 {
-    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->counts_array, params->datatype, params->op, params->communicator);
+    MPI_Reduce_scatter(params->sbuf, params->tmp_buf, params->scounts_array, params->datatype, params->op, params->communicator);
 
     MPI_Gatherv(params->tmp_buf, params->count, params->datatype, params->rbuf, params->counts_array, params->displ_array, params->datatype, 0, params->partial_communicator);
 }
 
 
-void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     int i;
 
     initialize_common_data(info, params);
 
-    // set block size per process according to rank
-    if (params->rank < count % params->remote_size) {
-        params->count = count / params->remote_size + 1;
-    }
-    else {
-        params->count = count / params->remote_size;
-    }
+    params->count = count; // size of the block received by each process
 
-    // total count for the initial message and the final result
-    params->scount = count;
+    params->scount = count * params->local_size;
     params->rcount = count;
+    params->trcount = count;
+    if (params->is_intercommunicator)
+    {
+        params->scount  *= params->remote_size; // send buffers must have same size in both groups
+        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+    }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
-    // each process receives a different number of elements according to its rank
-    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
-    params->displ_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
+    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->tmp_buf = (char*)reprompi_calloc(params->trcount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->rcount * params->local_size, params->datatype_extent);
 
-    for (i=0; i< params->remote_size; i++) {
-        if (i < count % params->remote_size) {
-            params->counts_array[i] = count / params->remote_size + 1;
-        }
-        else {
-            params->counts_array[i] = count / params->remote_size;
-        }
+    // calculate inter-communicator count and displacement arrays for reducescatter
+    params->scounts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    for (i=0; i< params->local_size; i++) {
+        params->scounts_array[i] = params->trcount;
+    }
 
-
-        if (i==0) {
+    // calculate intra-communicator count and displacement arrays for allgatherv
+    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    params->displ_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
+    for (i=0; i< params->local_size; i++) {
+        params->counts_array[i] = params->rcount;
+        if (i==0)
+        {
             params->displ_array[0] = 0;
         }
-        else {
+        else{
             params->displ_array[i] = params->displ_array[i-1] + params->counts_array[i-1];
         }
     }
-
-
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
-    // initialize with the message size communicated to the current process
-    params->tmp_buf = (char*)reprompi_calloc(params->count, params->datatype_extent);
 
 }
 
@@ -182,11 +179,13 @@ void cleanup_data_GL_Reduce_as_ReducescatterGatherv(collective_params_t* params)
     free(params->tmp_buf);
     free(params->counts_array);
     free(params->displ_array);
+    free(params->scounts_array);
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->tmp_buf = NULL;
     params->counts_array = NULL;
     params->displ_array = NULL;
+    params->scounts_array = NULL;
 }
 /***************************************/
 

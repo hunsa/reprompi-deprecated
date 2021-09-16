@@ -213,7 +213,7 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
     assert (params->trcount < INT_MAX);
 
     // sum of number of elements must be same in both groups
-    params->counts_array = (int*)reprompi_calloc(params->remote_size, sizeof(int));
+    params->counts_array = (int*)reprompi_calloc(params->local_size, sizeof(int));
     for (i=0; i< params->local_size; i++) {
         params->counts_array[i] = params->trcount;
     }

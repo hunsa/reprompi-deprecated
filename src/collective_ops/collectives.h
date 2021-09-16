@@ -94,6 +94,7 @@ typedef struct collparams {
     size_t rcount;
     size_t tscount;
     size_t trcount;
+    int* scounts_array;
     int* counts_array;
     int* displ_array;
     MPI_Comm partial_communicator;

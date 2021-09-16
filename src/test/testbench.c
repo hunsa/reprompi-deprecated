@@ -476,39 +476,39 @@ int main(int argc, char* argv[])
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = icmb_collective_root(OUTPUT_ROOT_PROC);
 
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
-    test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
-
-    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
-    test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
-
-    test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
-
-    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
-    test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
-
-    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
-    test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
-
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
-    test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
+//     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);
+//
+//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCEBCAST);
+//     test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV);
+//
+//     test_collective(basic_coll_info, count, MPI_BCAST, GL_BCAST_AS_SCATTERALLGATHER);
+//
+//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_ALLGATHER);
+//     test_collective(basic_coll_info, count, MPI_GATHER, GL_GATHER_AS_REDUCE);
+//
+//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_ALLREDUCE);
+//     test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERGATHERV);
+//
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_ALLREDUCE);
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER, GL_REDUCESCATTER_AS_REDUCESCATTERV);
+//     test_collective(basic_coll_info, count, MPI_REDUCE_SCATTER_BLOCK, GL_REDUCESCATTERBLOCK_AS_REDUCESCATTER);
 
     // scan is not defined for inter-communicators
     if (!icmb_is_intercommunicator())
     {
-        test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
+//         test_collective(basic_coll_info, count, MPI_SCAN, GL_SCAN_AS_EXSCANREDUCELOCAL);
     }
 
-    test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
+//     test_collective(basic_coll_info, count, MPI_SCATTER, GL_SCATTER_AS_BCAST);
 
 
     // reduce_scatter_block only works if the number of processes is a divisor of count
     if ((0 == count % icmb_initiator_size()) && (0 == count % icmb_responder_size()))
     {
-        test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER); // TODO: check numprocs and sendbuf size
-        test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER); // TODO: check numprocs and sendbuf size
+//         test_collective(basic_coll_info, count, MPI_REDUCE, GL_REDUCE_AS_REDUCESCATTERBLOCKGATHER); // TODO: check numprocs and sendbuf size
+//         test_collective(basic_coll_info, count, MPI_ALLREDUCE, GL_ALLREDUCE_AS_REDUCESCATTERBLOCKALLGATHER); // TODO: check numprocs and sendbuf size
     }
 
     /* shut down MPI */
