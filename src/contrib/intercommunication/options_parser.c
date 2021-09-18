@@ -123,6 +123,12 @@ void icmb_parse_intercommunication_options (int argc, char** argv)
                 break;
 		}
 	}
+
+	// add non-option argumets to spawn options
+    for (; optind < argc; optind++){
+        spawn_argv[spawn_argc++] = strdup(argv[optind]);
+    }
+
     optind = 1; // reset optind to enable option re-parsing
     opterr = 1; // reset opterr to catch invalid options
 

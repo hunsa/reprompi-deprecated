@@ -113,6 +113,13 @@ static void parse_test_options (int argc, char** argv, long* count)
                 break;
 		}
 	}
+
+	// in case count was passed as none-option argument
+    if (optind < argc)
+    {
+        *count = atol(argv[optind]);
+    }
+
     optind = 1; // reset optind to enable option re-parsing
     opterr = 1; // reset opterr to catch invalid options
 }
@@ -500,6 +507,9 @@ int main(int argc, char* argv[])
     basic_coll_info.datatype = MPI_DOUBLE;
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = icmb_collective_root(OUTPUT_ROOT_PROC);
+
+    printf("count: %ld\n", count);
+    return 0;
 
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
