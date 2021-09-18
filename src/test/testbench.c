@@ -66,7 +66,7 @@ static const int OUTPUT_ROOT_PROC = 0;
 
 static const struct option test_long_options[] = {
         { "count", required_argument, 0, 'c' },
-        { "help", no_argument, 0, 'c' },
+        { "help", no_argument, 0, 'h' },
         { NULL, 0, NULL, 0 }
 };
 
@@ -117,7 +117,7 @@ static void parse_test_options (int argc, char** argv, long* count)
 	// in case count was passed as none-option argument
     if (optind < argc)
     {
-        *count = atol(argv[optind]);
+        *count = atol(argv[optind++]);
     }
 
     optind = 1; // reset optind to enable option re-parsing

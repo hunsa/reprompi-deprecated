@@ -23,6 +23,7 @@ enum icmb_error_codes
     ICMB_ERROR_SPAWN_FROM_CLIENT_SERVER,
     ICMB_ERROR_SPLIT_FROM_CLIENT_SERVER,
     ICMB_ERROR_UNDEFINED_OPERATION,
+    ICMB_ERROR_WRONG_ARGUMENT,
 };
 
 void icmb_abort(int exit_code);

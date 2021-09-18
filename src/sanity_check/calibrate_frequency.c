@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,11 +26,6 @@
 // allow nanosleep with c99
 #define _POSIX_C_SOURCE 200809L
 
-////////////
-#define ENABLE_RDTSC
-#define RDTSC_CALIBRATION
-/////////////
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,7 +33,7 @@
 #include <math.h>
 #include "mpi.h"
 
-#include "sync/time_measurement.h"
+#include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
 
 #include "contrib/intercommunication/intercommunication.h"
