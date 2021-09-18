@@ -508,9 +508,6 @@ int main(int argc, char* argv[])
     basic_coll_info.op = MPI_SUM;
     basic_coll_info.root = icmb_collective_root(OUTPUT_ROOT_PROC);
 
-    printf("count: %ld\n", count);
-    return 0;
-
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLREDUCE);
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_ALLTOALL);
     test_collective(basic_coll_info, count, MPI_ALLGATHER, GL_ALLGATHER_AS_GATHERBCAST);

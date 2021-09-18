@@ -9,7 +9,8 @@ NREP_INDEX_VAR_NAME = "reprompib_nrep_index"
 SYNCF_VAR_NAME = "reprompib_sync_f"
 
 def generate_init_bench(indent):
-    code = [ "reprompib_initialize_benchmark(argc, argv, &%s, &%s);" % (SYNCF_VAR_NAME, PARSED_OPTS_VAR)
+    code = [ "icmb_parse_intercommunication_options(argc, argv);",
+            "reprompib_initialize_benchmark(argc, argv, &%s, &%s);" % (SYNCF_VAR_NAME, PARSED_OPTS_VAR),
              ]
     return format_code(code, indent)
 
@@ -106,6 +107,7 @@ def generate_add_includes(indent):
     code = [ "#include <string.h>",
             "#include \"reprompi_bench/sync/synchronization.h\"",
             "#include \"reprompi_bench/benchmark_lib/reproMPIbenchmark.h\"",
+            "#include \"contrib/intercommunication/intercommunication.h\"",
             ]
     return format_code(code, indent)
 
