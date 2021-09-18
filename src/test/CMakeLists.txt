@@ -8,6 +8,7 @@ ${SRC_DIR}/reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.c
 ${COLL_OPS_SRC_FILES}
 # intercommunication
 ${INTERCOMM_SOURCE_FILES}
+${SRC_DIR}/reprompi_bench/misc.c
 )
 TARGET_LINK_LIBRARIES(testbench ${COMMON_LIBRARIES} )
 

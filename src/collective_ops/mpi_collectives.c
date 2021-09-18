@@ -31,6 +31,7 @@
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
+#include "reprompi_bench/misc.h"
 
 inline void execute_Scan(collective_params_t* params) {
     MPI_Scan(params->sbuf, params->rbuf, params->count, params->datatype,
@@ -199,17 +200,20 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->local_size;
+    params->scount = count * params->remote_size;
+    params->tscount = count * params->local_size;
     params->rcount = count;
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        params->scount  *= params->remote_size; // send buffers must have same size in both groups
-        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        params->tscount *= equalizer; // send buffers must have same size in both groups
+        params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
     assert (params->trcount < INT_MAX);
 
     // sum of number of elements must be same in both groups
@@ -218,7 +222,7 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
         params->counts_array[i] = params->trcount;
     }
 
-    params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
+    params->sbuf = (char*)reprompi_calloc(params->tscount, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->trcount, params->datatype_extent);
 }
 
@@ -248,20 +252,23 @@ void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, 
 
     params->count = count; // size of the block received by each process
 
-    params->scount = count * params->local_size; // size of send buffer
+    params->scount = count * params->remote_size;
+    params->tscount = count * params->local_size;
     params->rcount = count;
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        params->scount  *= params->remote_size; // send buffers must have same size in both groups
-        params->trcount *= params->remote_size; // (local_size * trcount) must be same in both groups
+        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        params->tscount *= equalizer; // send buffers must have same size in both groups
+        params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
     assert (params->trcount < INT_MAX);
 
-    params->sbuf = (char *) reprompi_calloc(params->scount, params->datatype_extent);
+    params->sbuf = (char *) reprompi_calloc(params->tscount, params->datatype_extent);
     params->rbuf = (char *) reprompi_calloc(params->trcount, params->datatype_extent);
 
 }

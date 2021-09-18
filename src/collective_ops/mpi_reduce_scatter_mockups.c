@@ -31,7 +31,7 @@
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
-
+#include "reprompi_bench/misc.h"
 
 /***************************************/
 // MPI_Reduce_Scatter_block with MPI_Reduce and MPI_Scatter
@@ -54,7 +54,6 @@ inline void execute_GL_Reduce_scatter_block_as_ReduceScatter(collective_params_t
 
 void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collective_params_t info, const long count, collective_params_t* params)
 {
-
     initialize_common_data(info, params);
 
     params->count = count; // size of the block received by each process after scatter
@@ -66,7 +65,8 @@ void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collec
 
     if (params->is_intercommunicator)
     {
-        params->scount  *= params->local_size; // send buffers must have same size in both groups
+        long equalizer = lcm(params->local_size, params->remote_size) / params->remote_size; // here scount is remote_size, so divide by remote_size to get local_size part
+        params->scount  *= equalizer; // send buffers must have same size in both groups
     }
 
     assert (params->scount < INT_MAX);
@@ -77,7 +77,6 @@ void initialize_data_GL_Reduce_scatter_block_as_ReduceScatter(const basic_collec
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
     params->tmp_buf = (char*)reprompi_calloc(count * params->larger_size, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
 }
 
 
@@ -115,7 +114,8 @@ void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_param
     params->scount = count * params->local_size;
     if (params->is_intercommunicator)
     {
-        params->scount  *= params->remote_size; // need to match size of reduce_scatter send buffer for receiving copy of data to send
+        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        params->scount  *= equalizer; // need to match size of reduce_scatter send buffer for receiving copy of data to send
     }
     params->rcount = count;
 
@@ -126,7 +126,6 @@ void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_param
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
 
     params->tmp_buf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-
 }
 
 
@@ -175,7 +174,9 @@ void initialize_data_GL_Reduce_scatter_as_ReduceScatterv(const basic_collective_
 
     if (params->is_intercommunicator)
     {
-        params->scount  *= params->local_size; // send buffers must have same size in both groups
+        long equalizer = lcm(params->local_size, params->remote_size) / params->remote_size; // here scount is remote_size, so divide by remote_size to get local_size part
+        params->scount  *= equalizer; // send buffers must have same size in both groups
+        //params->scount  *= params->local_size; // send buffers must have same size in both groups
     }
 
     assert (params->scount < INT_MAX);
