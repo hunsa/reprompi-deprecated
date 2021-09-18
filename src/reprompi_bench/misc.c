@@ -126,7 +126,7 @@ long gcd(long a, long b)
     if ((a&1)) // if a is odd
     {
         t = -b;
-        t = t<<1;
+        t = t<<1; // doble t again, just to have single entry point to loop
     }
     else
     {
