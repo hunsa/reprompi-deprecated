@@ -36,7 +36,7 @@
 #include "reproMPIbenchmark.h"
 #include "results_output.h"
 
-#include "contrib/intercommunication/intercommunication_lib.h"
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 
