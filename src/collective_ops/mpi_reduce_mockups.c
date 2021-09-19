@@ -31,7 +31,6 @@
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
-#include "reprompi_bench/misc.h"
 
 /***************************************/
 // MPI_Reduce with Allreduce
@@ -89,7 +88,7 @@ void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collectiv
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        long equalizer = params->combined_size / params->local_size;
         params->tscount *= equalizer; // send buffers must have same size in both groups
         params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }
@@ -142,7 +141,7 @@ void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_pa
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        long equalizer = params->combined_size / params->local_size;
         params->tscount *= equalizer; // send buffers must have same size in both groups
         params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }

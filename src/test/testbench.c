@@ -35,7 +35,6 @@
 
 #include "../collective_ops/collectives.h"
 #include "testbench.h"
-#include "reprompi_bench/misc.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
@@ -460,7 +459,7 @@ void test_collective(basic_collective_params_t basic_coll_info, long count, int 
     */
     if (icmb_is_intercommunicator() && (MPI_REDUCE_SCATTER_BLOCK == coll_index || MPI_REDUCE_SCATTER == coll_index))
     {
-        long remote_recvcount = (lcm(coll_params.local_size, coll_params.remote_size) / coll_params.remote_size) * coll_params.count ;
+        long remote_recvcount = (coll_params.combined_size / coll_params.remote_size) * coll_params.count ;
         for (int i = (coll_params.remote_size-1); 1<=i; --i)
         {
             for (int j=(coll_params.count-1); 0<=j; --j)

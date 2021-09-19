@@ -31,7 +31,6 @@
 #include "mpi.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
-#include "reprompi_bench/misc.h"
 
 inline void execute_Scan(collective_params_t* params) {
     MPI_Scan(params->sbuf, params->rbuf, params->count, params->datatype,
@@ -206,7 +205,7 @@ void initialize_data_Reduce_scatter(const basic_collective_params_t info, const 
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        long equalizer = params->combined_size / params->local_size;
         params->tscount *= equalizer; // send buffers must have same size in both groups
         params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }
@@ -258,7 +257,7 @@ void initialize_data_Reduce_scatter_block(const basic_collective_params_t info, 
     params->trcount = count;
     if (params->is_intercommunicator)
     {
-        long equalizer = lcm(params->local_size, params->remote_size) / params->local_size;
+        long equalizer = params->combined_size / params->local_size;
         params->tscount *= equalizer; // send buffers must have same size in both groups
         params->trcount *= equalizer; // (local_size * trcount) must be same in both groups
     }
