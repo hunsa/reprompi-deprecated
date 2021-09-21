@@ -25,6 +25,7 @@
 #include "reprompi_bench/option_parser/parse_options.h"
 #include "reprompi_bench/sync/sync_info.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
+#include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
@@ -70,6 +71,13 @@ int main(int argc, char* argv[])
     // parse jones-koenig sync options
     reprompib_sync_options_t sync_opts;
     jk_parse_options(argc, argv, &sync_opts);
+
+    // optionally parse mpi barrier sync options
+    if (skew_options.use_mpi_barrier)
+    {
+        mpibarrier_parse_options(argc, argv, &sync_opts);
+    }
+
 
     // TODO: split these up and parse all that are needed accoring to skew options
     // parse the arguments related to the synchronization and timing method
