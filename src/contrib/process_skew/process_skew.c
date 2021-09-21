@@ -26,6 +26,7 @@
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
 #include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
 #include "reprompi_bench/sync/sync_info.h"
+#include "reprompi_bench/sync/synchronization.h"
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_sync.h"
 
@@ -35,6 +36,29 @@
 #include "output.h"
 
 static const int HASHTABLE_SIZE=100;
+
+
+static inline void mpibarrier_start_single()
+{
+    MPI_Barrier(icmb_global_communicator());
+}
+
+static inline void mpibarrier_start_double()
+{
+    MPI_Barrier(icmb_global_communicator());
+    MPI_Barrier(icmb_global_communicator());
+}
+
+static inline void bbarrier_start_single()
+{
+    dissemination_barrier();
+}
+
+static inline void bbarrier_start_double()
+{
+    dissemination_barrier();
+    dissemination_barrier();
+}
 
 int main(int argc, char* argv[])
 {
@@ -88,17 +112,64 @@ int main(int argc, char* argv[])
     // initialize joneskoenig module
     jk_init_synchronization_module(sync_opts, benchmark_opts.n_rep);
     double* tstart_sec = (double*) malloc(benchmark_opts.n_rep * sizeof(double));
-    double* tend_sec = (double*) malloc(benchmark_opts.n_rep * sizeof(double));
 
     // log settings
     print_settings(&skew_options, &params_dict, &benchmark_opts);
     print_header(&skew_options, &benchmark_opts);
 
+    // select synchronization start function
+    start_sync_t sync_func;
+    if (skew_options.use_mpi_barrier)
+    {
+        if (skew_options.use_double_barrier)
+        {
+            sync_func = mpibarrier_start_double;
+        }
+        else
+        {
+            sync_func = mpibarrier_start_single;
+        }
+    }
+    else if (skew_options.use_dissemination_barrier) {
+        if (skew_options.use_double_barrier)
+        {
+            sync_func = bbarrier_start_double;
+        }
+        else
+        {
+            sync_func = bbarrier_start_single;
+        }
+    }
+    else
+    {
+        sync_func = jk_start_synchronization;
+    }
+
+    // synchronize clocks
+    jk_sync_clocks();
+    jk_init_synchronization();
+
+
+    // run benchmark
+    for (int i = 0; i < benchmark_opts.n_rep; ++i)
+    {
+        // synchronize processes
+        sync_func();
+
+        // we are only interested in the start time here,
+        // as that shows the process skew coming out of the barrier
+        tstart_sec[i] = get_time();
+
+        if (skew_options.use_window)
+        {
+            jk_stop_synchronization();
+        }
+    }
+
 
 
     // shutdown joneskoenig module
     free(tstart_sec);
-    free(tend_sec);
     jk_cleanup_synchronization_module();
 
     // shutdown time measurement
