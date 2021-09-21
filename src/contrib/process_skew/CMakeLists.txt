@@ -11,9 +11,6 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
 # collective operations
 ${COLL_OPS_SRC_FILES}
-# output
-${COMMON_OUTPUT_MAN_SRC_FILES}
-${SRC_DIR}/reprompi_bench/output_management/results_output.c
 # synchronization
 ${SYNC_SRC_FILES}
 # intercommunication

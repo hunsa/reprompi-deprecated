@@ -22,7 +22,6 @@
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
-#include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
 #include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
@@ -50,18 +49,11 @@ int main(int argc, char* argv[])
     time_t start_time = time(NULL);
 
     // log command line arguments
-    print_command_line_args(argc, argv);
+    print_command_line(argc, argv);
 
     // parse process skew options
     skew_options_t skew_options;
     parse_process_skew_options(&skew_options, argc, argv);
-
-    // we only use the output file parameter from common options,
-    // so instead of parsing all common options, we get the
-    // output file from above process skew options
-    // and set the parameter in common options manually
-    reprompib_common_options_t common_opts;
-    common_opts.output_file = skew_options.output_file;
 
     // parse extra parameters into the global dictionary
     reprompib_dictionary_t params_dict;
@@ -100,8 +92,7 @@ int main(int argc, char* argv[])
 
     // log settings
     print_settings(&skew_options, &params_dict, &benchmark_opts);
-
-
+    print_header(&skew_options, &benchmark_opts);
 
 
 
@@ -112,7 +103,7 @@ int main(int argc, char* argv[])
 
     // shutdown time measurement
     time_t end_time = time(NULL);
-    print_final_info(&common_opts, start_time, end_time);
+    print_final(&skew_options, start_time, end_time);
 
     // free memory allocations
     free_process_skew_options(&skew_options);

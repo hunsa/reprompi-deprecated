@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <time.h>
 
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
@@ -28,11 +29,90 @@
 #include "contrib/intercommunication/intercommunication.h"
 
 #include "options_parser.h"
+#include "output.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-void print_header(const skew_options_t* skew_options, const reprompib_options_t* benchmark_options)
+void print_command_line(int argc, char** argv)
 {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
+        int i;
+        printf("#Command-line arguments: ");
+        for (i = 0; i < argc; i++) {
+            printf(" %s", argv[i]);
+        }
+        printf("\n");
+    }
+}
+
+void print_header(const skew_options_t* skew_options, const reprompib_options_t* benchmark_options )
+{
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        FILE * f;
+
+        f = stdout;
+        // print summary to stdout
+        if ( benchmark_options->print_summary_methods >0)
+        {
+          int i;
+          fprintf(f, "%14s %10s %10s ", "test", "total_nrep", "valid_nrep");
+
+          for (i=0; i<reprompib_get_number_summary_methods(); i++)
+          {
+            summary_method_info_t* s = reprompib_get_summary_method(i);
+            if ( benchmark_options->print_summary_methods & s->mask)
+            {
+              fprintf(f, "%10s_sec ", s->name);
+            }
+          }
+          fprintf(f, "\n");
+        }
+
+
+        // print results to file (if specified)
+        if (skew_options->output_file != NULL)
+        {
+            f = fopen(skew_options->output_file, "a");
+        }
+
+        if (skew_options->output_file != NULL || benchmark_options->print_summary_methods==0)
+        {
+            if (benchmark_options->verbose)
+            {
+                // print measurement times for each process
+                fprintf(f, "process ");
+            }
+
+            if (skew_options->use_window)
+            {
+                fprintf(f, "%14s %10s %10s ", "test", "nrep", "errorcode");
+            }
+            else
+            {
+                fprintf(f, "%14s %10s ", "test", "nrep");
+            }
+
+            if (benchmark_options->verbose)
+            {
+                if (skew_options->use_window)
+                {
+                    fprintf(f, "%14s %14s %14s %14s \n", "loc_tstart_sec", "loc_tend_sec", "gl_tstart_sec", "gl_tend_sec");
+                }
+                else
+                {
+                    fprintf(f,  "%14s %14s \n", "loc_tstart_sec", "loc_tend_sec");
+                }
+            } else {
+                fprintf(f,  "%14s \n", "runtime_sec");
+            }
+        }
+
+        if (skew_options->output_file != NULL) {
+            fflush(f);
+            fclose(f);
+        }
+    }
 }
 
 static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, const reprompib_dictionary_t* params_dict, const reprompib_options_t* benchmark_options)
@@ -95,4 +175,20 @@ void print_settings(const skew_options_t* skew_options, const reprompib_dictiona
     }
 }
 
+void print_final(const skew_options_t* skew_options, const time_t start_time, const time_t end_time)
+{
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
+        FILE* f;
+        f = stdout;
+        fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
+        fprintf (f, "# Execution time: %lds\n", (long int)(end_time-start_time));
 
+        if (skew_options->output_file != NULL) {
+            f = fopen(skew_options->output_file, "a");
+            fprintf (f, "# Benchmark started at %s", asctime (localtime (&start_time)));
+            fprintf (f, "# Execution time: %lds\n", (long int)(end_time-start_time));
+            fflush(f);
+            fclose(f);
+        }
+    }
+}

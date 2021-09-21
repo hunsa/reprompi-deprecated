@@ -13,7 +13,9 @@
 #ifndef SKEW_OUTPUT_H
 #define SKEW_OUTPUT_H
 
-void print_header(const skew_options_t* skew_options, const reprompib_options_t* benchmark_options);
+void print_command_line(int argc, char** argv);
 void print_settings(const skew_options_t* skew_options, const reprompib_dictionary_t* params_dict, const reprompib_options_t* benchmark_options);
+void print_header(const skew_options_t* skew_options, const reprompib_options_t* benchmark_options);
+void print_final(const skew_options_t* skew_options, const time_t start_time, const time_t end_time);
 
 #endif /* SKEW_OUTPUT_H */
