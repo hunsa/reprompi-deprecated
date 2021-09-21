@@ -1,6 +1,20 @@
 set(PROCESS_SKEW_SRC_FILES
 ${SRC_DIR}/contrib/process_skew/process_skew.c
 ${SRC_DIR}/contrib/process_skew/options_parser.c
+# reprompi benchmark
+${SRC_DIR}/reprompi_bench/misc.c
+${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
+# options parsing
+${COMMON_OPTION_PARSER_SRC_FILES}
+${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c
+${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
+# collective operations
+${COLL_OPS_SRC_FILES}
+# output
+${COMMON_OUTPUT_MAN_SRC_FILES}
+${SRC_DIR}/reprompi_bench/output_management/results_output.c
+# synchronization
+${SYNC_SRC_FILES}
 # intercommunication
 ${INTERCOMM_SOURCE_FILES}
 )

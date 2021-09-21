@@ -18,9 +18,15 @@
 #include <stdio.h>
 #include <time.h>
 
+#include "reprompi_bench/sync/time_measurement.h"
+#include "reprompi_bench/output_management/bench_info_output.h"
+#include "reprompi_bench/option_parser/parse_common_options.h"
+
 #include "contrib/intercommunication/intercommunication.h"
 
 #include "options_parser.h"
+
+static const int HASHTABLE_SIZE=100;
 
 int main(int argc, char* argv[])
 {
@@ -30,10 +36,30 @@ int main(int argc, char* argv[])
     // parse command line options to launch inter-communicators
     icmb_parse_intercommunication_options(argc, argv);
 
+    // initialize time measurement
+    init_timer();
+    time_t start_time = time(NULL);
+
+    //initialize dictionary
+    reprompib_dictionary_t params_dict;
+    reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
+
     // parse process skew options
     skew_options_t opt;
     parse_process_skew_options(&opt, argc, argv);
 
+    // use reprompi's common options structure to handle output file
+    reprompib_common_options_t common_opts;
+    common_opts.output_file = opt.output_file;
+
+
+
+    // shutdown time measurement
+    time_t end_time = time(NULL);
+    print_final_info(&common_opts, start_time, end_time);
+
+    // free memory allocations
+    free_process_skew_options(&opt);
 
     // shut down MPI
     MPI_Finalize();
