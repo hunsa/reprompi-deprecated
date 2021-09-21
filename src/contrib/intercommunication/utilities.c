@@ -240,12 +240,15 @@ int icmb_has_responder_rank(int rank)
 int icmb_collective_root(int initiator_root)
 {
     int collective_root = initiator_root;
-    if (icmb_is_intercommunicator()) {
-        if (icmb_has_initiator_rank(initiator_root)) {
+    if (icmb_is_intercommunicator())
+    {
+        if (icmb_has_initiator_rank(initiator_root))
+        {
             // this process is the collective root
             collective_root = MPI_ROOT;
         }
-        else if (icmb_is_initiator()) {
+        else if (icmb_is_initiator())
+        {
             // this process is not participating
             collective_root = MPI_PROC_NULL;
         }
@@ -257,7 +260,8 @@ int icmb_collective_root(int initiator_root)
  * returns rank in the benchmark communicator's initiating or responding group
  * matching rank in the global communicator
  */
-int icmb_lookup_benchmark_rank(int global_rank) {
+int icmb_lookup_benchmark_rank(int global_rank)
+{
     if (!icmb_is_intercommunicator())
     {
         return global_rank;
@@ -311,7 +315,8 @@ int icmb_global_rank()
  * returns rank in the global communicator
  * matching rank in the benchmark communicator's initiator group
  */
-int icmb_lookup_global_rank(int initiator_rank) {
+int icmb_lookup_global_rank(int initiator_rank)
+{
     if (!icmb_is_intercommunicator())
     {
         return initiator_rank;
@@ -511,17 +516,6 @@ int icmb_remote_size()
 }
 
 /*
- * returns size of responder group
- *
- * convenience function to return the size of the responder group,
- * regardless of what group this process is in
- */
-int icmb_responder_size()
-{
-    return icmb_is_initiator() ? icmb_remote_size() : icmb_local_size();
-}
-
-/*
  * returns size of the global process's remote group in the benchmark communicator
  */
 int icmb_lookup_remote_size ( int global_rank )
@@ -557,6 +551,17 @@ int icmb_lookup_remote_size ( int global_rank )
 }
 
 /*
+ * returns size of responder group
+ *
+ * convenience function to return the size of the responder group,
+ * regardless of what group this process is in
+ */
+int icmb_responder_size()
+{
+    return icmb_is_initiator() ? icmb_remote_size() : icmb_local_size();
+}
+
+/*
  * returns the larger of initiator or responder sizes
  */
 int icmb_larger_size()
@@ -566,7 +571,7 @@ int icmb_larger_size()
 
 /*
  * returns size of global communicator
- * (this is the sum of initiator and responder groups)
+ * (this is the sum of initiator and responder sizes)
  */
 int icmb_global_size()
 {
@@ -577,7 +582,7 @@ int icmb_global_size()
 }
 
 /*
- * returns the least common multiple of initiator and responder groups
+ * returns the least common multiple of initiator and responder sizes
  */
 long icmb_combined_size()
 {
@@ -585,7 +590,7 @@ long icmb_combined_size()
 }
 
 /*
- * returns the product of initiator and responder groups
+ * returns the product of initiator and responder sizes
  */
 long icmb_maximum_size()
 {

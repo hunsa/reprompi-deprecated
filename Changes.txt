@@ -1,3 +1,6 @@
+Version 1.1.0
+  - added support for inter-communicators
+
 Version 1.0.2
   - upgraded python scripts to Python 3
   - made precompiler checks portable
