@@ -25,78 +25,17 @@
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
-#include "reprompi_bench/sync/joneskoenig_sync/jk_sync.h"
 #include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
 #include "reprompi_bench/sync/sync_info.h"
 #include "reprompi_bench/sync/time_measurement.h"
-#include "version.h"
+#include "reprompi_bench/sync/joneskoenig_sync/jk_sync.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
 #include "options_parser.h"
+#include "output.h"
 
-static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
-
-static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, const reprompib_dictionary_t* params_dict, const reprompib_options_t* benchmark_options)
-{
-    // print_benchmark_common_settings_to_file
-    fprintf(f, "#MPI calls:\n");
-    fprintf(f, "#\t%s\n", "process_skew");
-
-    // print_common_settings_to_file
-    reprompib_print_dictionary(params_dict, f);
-    fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
-    if (icmb_is_intercommunicator())
-    {
-        fprintf(f, "#@localprocs=%d\n", icmb_initiator_size());
-        fprintf(f, "#@remoteprocs=%d\n", icmb_responder_size());
-    }
-    else{
-        fprintf(f, "#@nprocs=%d\n", icmb_local_size());
-    }
-    fprintf(f, "#@clocktype=global\n");
-    print_time_parameters(f);
-    jk_print_sync_parameters(f);
-
-    // print_initial_settings
-    fprintf(f, "#@nrep=%ld\n", benchmark_options->n_rep);
-
-    // process skew options
-    if (skew_options->use_window)
-    {
-        fprintf(f, "#@process_sync=window\n");
-    }
-    else if (skew_options->use_mpi_barrier)
-    {
-        fprintf(f, "#@sync=MPI_Barrier\n");
-    }
-    else if (skew_options->use_dissemination_barrier)
-    {
-        fprintf(f, "#@sync=BBarrier\n");
-    }
-    if (skew_options->use_double_barrier)
-    {
-        fprintf(f, "#@doublebarrier=true\n");
-    }
-}
-
-static void print_settings(const skew_options_t* skew_options, const reprompib_dictionary_t* params_dict, const reprompib_options_t* benchmark_options)
-{
-    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
-    {
-        FILE* f = stdout;
-        print_settings_to_file(f, skew_options, params_dict, benchmark_options);
-        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
-            if (skew_options->output_file != NULL) {
-                f = fopen(skew_options->output_file, "a");
-                print_settings_to_file(f, skew_options, params_dict, benchmark_options);
-                fflush(f);
-                fclose(f);
-            }
-        }
-    }
-}
 
 int main(int argc, char* argv[])
 {

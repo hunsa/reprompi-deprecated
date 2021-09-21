@@ -1,6 +1,7 @@
 set(PROCESS_SKEW_SRC_FILES
 ${SRC_DIR}/contrib/process_skew/process_skew.c
 ${SRC_DIR}/contrib/process_skew/options_parser.c
+${SRC_DIR}/contrib/process_skew/output.c
 # reprompi benchmark
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
