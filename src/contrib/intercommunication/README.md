@@ -147,7 +147,7 @@ Note that some complex operations are a bit more involved, for example `MPI_Redu
 ### Avoid Measuring Utiltiy Functions
 Utility functions are not part of the operation to be measured, and precautions must be taken to avoid their measurement.
 
-In below example, the time to resolve `icmb_benchmark_communicator()` would wrongly be included in the measurement of `MPI_Barrier`.
+In below example, the time to execute `icmb_benchmark_communicator()` would wrongly be included in the measurement of `MPI_Barrier`.
 
 ```
 starttime = now();
