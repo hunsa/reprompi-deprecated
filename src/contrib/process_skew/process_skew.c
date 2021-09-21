@@ -23,6 +23,8 @@
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
+#include "reprompi_bench/sync/sync_info.h"
+#include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
@@ -65,6 +67,13 @@ int main(int argc, char* argv[])
     reprompib_options_t benchmark_opts;
     reprompib_parse_options(&benchmark_opts, argc, argv);
 
+    // parse jones-koenig sync options
+    reprompib_sync_options_t sync_opts;
+    jk_parse_options(argc, argv, &sync_opts);
+
+    // TODO: split these up and parse all that are needed accoring to skew options
+    // parse the arguments related to the synchronization and timing method
+//     sync_f.parse_sync_params( argc, argv, &sync_opts);
 
     // shutdown time measurement
     time_t end_time = time(NULL);
