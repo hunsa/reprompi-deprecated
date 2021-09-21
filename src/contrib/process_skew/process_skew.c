@@ -16,6 +16,7 @@
 
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 #include "reprompi_bench/option_parser/parse_common_options.h"
@@ -24,6 +25,7 @@
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
+#include "reprompi_bench/sync/joneskoenig_sync/jk_sync.h"
 #include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
 #include "reprompi_bench/sync/sync_info.h"
 #include "reprompi_bench/sync/time_measurement.h"
@@ -69,6 +71,12 @@ int main(int argc, char* argv[])
     reprompib_options_t benchmark_opts;
     reprompib_parse_options(&benchmark_opts, argc, argv);
 
+    if (!benchmark_opts.n_rep)
+    {
+        // default is one repetition
+        benchmark_opts.n_rep = 1;
+    }
+
     // parse jones-koenig sync options
     reprompib_sync_options_t sync_opts;
     jk_parse_options(argc, argv, &sync_opts);
@@ -84,7 +92,19 @@ int main(int argc, char* argv[])
         bbarrier_parse_options(argc, argv, &sync_opts);
     }
 
+    // initialize joneskoenig module
+    jk_init_synchronization_module(sync_opts, benchmark_opts.n_rep);
+    double* tstart_sec = (double*) malloc(benchmark_opts.n_rep * sizeof(double));
+    double* tend_sec = (double*) malloc(benchmark_opts.n_rep * sizeof(double));
 
+
+
+
+
+    // shutdown joneskoenig module
+    free(tstart_sec);
+    free(tend_sec);
+    jk_cleanup_synchronization_module();
 
     // shutdown time measurement
     time_t end_time = time(NULL);
