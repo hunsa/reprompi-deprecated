@@ -44,6 +44,9 @@ int main(int argc, char* argv[])
     reprompib_dictionary_t params_dict;
     reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
 
+    // log command line arguments
+    print_command_line_args(argc, argv);
+
     // parse process skew options
     skew_options_t opt;
     parse_process_skew_options(&opt, argc, argv);
@@ -51,6 +54,7 @@ int main(int argc, char* argv[])
     // use reprompi's common options structure to handle output file
     reprompib_common_options_t common_opts;
     common_opts.output_file = opt.output_file;
+
 
 
 
