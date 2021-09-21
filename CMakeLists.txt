@@ -40,6 +40,7 @@ set(FREQUENCY_MHZ 2300 CACHE STRING "CPU Frequency (needed for RDTSCP-based time
 option(COMPILE_PRED_BENCHMARK "Enable the NREP prediction benchmarks [default: enabled]" on)
 option(COMPILE_BENCH_LIBRARY "Compile ReproMPI library [default: disabled]" off)
 option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
+option(COMPILE_PROCESS_SKEW "Enable process skew benchmark [default: disabled]" off)
 
 option(COMPILE_SANITY_CHECK_TESTS "Enable sanity check tests" off)
 option(COMPILE_SANITY_CHECK_CLOCK "Enable clock sanity checks" on)
@@ -273,11 +274,13 @@ if (COMPILE_BENCH_LIBRARY)
     ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 endif()
 
-
+if (COMPILE_PROCESS_SKEW)
+    ADD_SUBDIRECTORY(${SRC_DIR}/contrib/process_skew)
+endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
-set(CPACK_PACKAGE_VERSION_PATCH "2")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_SOURCE_GENERATOR "TBZ2")
 
 
