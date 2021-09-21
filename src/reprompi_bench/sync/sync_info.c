@@ -32,7 +32,7 @@ const int REPROMPI_SYNC_N_FITPOINTS_DEFAULT = 20;
 const int REPROMPI_SYNC_N_EXCHANGES_DEFAULT = 10;
 
 const double REPROMPI_SYNC_WAIT_TIME_SEC_DEFAULT = 1e-3;
-const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT = 0;
+const double REPROMPI_SYNC_WIN_SIZE_SEC_DEFAULT = 1e-3;
 
 
 const struct option reprompi_sync_long_options[] = {
