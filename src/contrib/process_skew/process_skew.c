@@ -21,6 +21,8 @@
 #include "reprompi_bench/sync/time_measurement.h"
 #include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
+#include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
+#include "reprompi_bench/option_parser/parse_options.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
@@ -40,22 +42,28 @@ int main(int argc, char* argv[])
     init_timer();
     time_t start_time = time(NULL);
 
-    //initialize dictionary
-    reprompib_dictionary_t params_dict;
-    reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
-
     // log command line arguments
     print_command_line_args(argc, argv);
 
     // parse process skew options
-    skew_options_t opt;
-    parse_process_skew_options(&opt, argc, argv);
+    skew_options_t skew_options;
+    parse_process_skew_options(&skew_options, argc, argv);
 
-    // use reprompi's common options structure to handle output file
+    // we only use the output file parameter from common options,
+    // so instead of parsing all common options, we get the
+    // output file from above process skew options
+    // and set the parameter in common options manually
     reprompib_common_options_t common_opts;
-    common_opts.output_file = opt.output_file;
+    common_opts.output_file = skew_options.output_file;
 
+    // parse extra parameters into the global dictionary
+    reprompib_dictionary_t params_dict;
+    reprompib_init_dictionary(&params_dict, HASHTABLE_SIZE);
+    reprompib_parse_extra_key_value_options(&params_dict, argc, argv);
 
+    // parse reprompi benchmark arguments (nreps, summary)
+    reprompib_options_t benchmark_opts;
+    reprompib_parse_options(&benchmark_opts, argc, argv);
 
 
     // shutdown time measurement
@@ -63,7 +71,7 @@ int main(int argc, char* argv[])
     print_final_info(&common_opts, start_time, end_time);
 
     // free memory allocations
-    free_process_skew_options(&opt);
+    free_process_skew_options(&skew_options);
 
     // shut down MPI
     MPI_Finalize();

@@ -70,6 +70,11 @@ static void print_process_skew_help(char* command) {
         printf("%-25s %-.54s\n", "-b,--bbarrier", "use dissemination barrier synchronization");
         printf("%-25s %-.54s\n", "-d,--double", "use double barriers");
 
+        printf("\noptions for benchmark execution:\n");
+        printf("%-25s %-.54s\n", "--nrep=<nrep>", "set number of experiment repetitions");
+        printf("%-25s %-.54s\n", "--summary=<args>", "list of comma-separated data summarizing methods");
+        printf("%-29s %-.50s\n", "", "(mean, median, min, max)");
+
         printf("\noptions for window based synchronization:\n");
         printf("%-25s %-.54s\n", "--window-size=<win>", "window size in microseconds (default: 1 ms)");
         printf("%-25s %-.54s\n", "--wait-time=<wait>", "wait time in microseconds (default: 1 ms)");
