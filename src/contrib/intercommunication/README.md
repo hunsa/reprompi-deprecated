@@ -145,7 +145,7 @@ For determining the number of element counts to send or receive, or the sizes of
 Note that some complex operations are a bit more involved, for example `MPI_Reduce_scatter_block()` requires send buffers of equal size in both groups, so if the groups contain a different number of processes, the least common multiple of process numbers must be used (`icmb_combined_size()`).
 
 ### Avoid Measuring Utiltiy Functions
-The utility functions are not part of the operation to be measured, and precautions must be taken to avoid their measurement.
+Utility functions are not part of the operation to be measured, and precautions must be taken to avoid their measurement.
 
 In below example, the time to resolve `icmb_benchmark_communicator()` would wrongly be included in the measurement of `MPI_Barrier`.
 
