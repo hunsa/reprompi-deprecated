@@ -18,14 +18,15 @@
 #include <stdio.h>
 #include <time.h>
 
-#include "reprompi_bench/sync/time_measurement.h"
-#include "reprompi_bench/output_management/bench_info_output.h"
 #include "reprompi_bench/option_parser/parse_common_options.h"
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
 #include "reprompi_bench/option_parser/parse_options.h"
-#include "reprompi_bench/sync/sync_info.h"
+#include "reprompi_bench/output_management/bench_info_output.h"
+#include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "reprompi_bench/sync/joneskoenig_sync/jk_parse_options.h"
 #include "reprompi_bench/sync/mpibarrier_sync/barrier_sync.h"
+#include "reprompi_bench/sync/sync_info.h"
+#include "reprompi_bench/sync/time_measurement.h"
 
 #include "contrib/intercommunication/intercommunication.h"
 
@@ -78,10 +79,12 @@ int main(int argc, char* argv[])
         mpibarrier_parse_options(argc, argv, &sync_opts);
     }
 
+    // optionally parse dissemination barrier options
+    {
+        bbarrier_parse_options(argc, argv, &sync_opts);
+    }
 
-    // TODO: split these up and parse all that are needed accoring to skew options
-    // parse the arguments related to the synchronization and timing method
-//     sync_f.parse_sync_params( argc, argv, &sync_opts);
+
 
     // shutdown time measurement
     time_t end_time = time(NULL);
