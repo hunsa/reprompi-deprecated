@@ -104,6 +104,8 @@ Following utility functions are provided in `utilities.c` to conveniently access
 
 If no inter-communicator has been constructed, returned values are appropriate for `MPI_COMM_WORLD`.
 
+***
+
 ## Implementation
 
 ### Replace `MPI_COMM_WORLD`
@@ -163,3 +165,21 @@ starttime = now();
 MPI_Barrier(comm);
 endtime = now();
 ```
+
+### Exclude Undefined Operations
+
+The MPI-standard does not define MPI_Scan and MPI_Exscan for inter-communicators and they should be excluded from benchmarking when inter-communicators are used.
+
+***
+
+## Compiling
+
+  * Include `intercommunication.h` wherever access to Inter-Communicator MPI Benchmarking extensions is required.
+  * Add all Inter-Communicator MPI Benchmarking source files to the build path:
+      * attributes.c
+      * error_output.c
+      * excluded_collectives.c
+      * launchers.c
+      * options_parser.c
+      * utilities.c
+
