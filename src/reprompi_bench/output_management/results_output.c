@@ -242,7 +242,7 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
             {
                 int* local_errorcodes = get_errorcodes();
 
-                MPI_Gather(local_errorcodes, chunk_nrep, MPI_INT,
+                MPI_Gather(local_errorcodes + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_INT,
                         errorcodes, chunk_nrep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
             }
 #endif
@@ -261,20 +261,21 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
             }
 
             // gather measurement results
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec,
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, local_start_sec,
                     chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, local_end_sec, chunk_nrep,
+            MPI_Gather(tend_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, local_end_sec, chunk_nrep,
                     MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
             for (i = 0; i < chunk_nrep; i++) {
-                tstart_sec[i] = get_global_time(tstart_sec[i]);
-                tend_sec[i] = get_global_time(tend_sec[i]);
+                current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+                tstart_sec[current_rep_id] = get_global_time(tstart_sec[current_rep_id]);
+                tend_sec[current_rep_id] = get_global_time(tend_sec[current_rep_id]);
             }
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, global_start_sec,
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, global_start_sec,
                     chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, global_end_sec, chunk_nrep,
+            MPI_Gather(tend_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, global_end_sec, chunk_nrep,
                     MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
             if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
