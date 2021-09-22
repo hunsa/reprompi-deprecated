@@ -65,7 +65,7 @@ enum reprompi_common_getopt_ids {
 };
 
 static const struct option reprompi_default_long_options[] = {
-        {"verbose", optional_argument, 0, REPROMPI_ARGS_VERBOSE},
+        {"verbose", no_argument, 0, REPROMPI_ARGS_VERBOSE},
         { "nrep", required_argument, 0, REPROMPI_ARGS_NREPS },
         {"summary", optional_argument, 0, REPROMPI_ARGS_SUMMARY},
 
