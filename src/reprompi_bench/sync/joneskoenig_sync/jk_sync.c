@@ -376,4 +376,3 @@ void jk_print_sync_parameters(FILE* f) {
     fprintf(f, "#@exchanges=%d\n", parameters.n_exchanges);
     fprintf(f, "#@wait_time_s=%.10f\n", parameters.wait_time_sec);
 }
-

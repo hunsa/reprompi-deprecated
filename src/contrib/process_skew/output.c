@@ -3,7 +3,7 @@
  * Copyright (c) 2021 Stefan Christians
  *
  * based on
- * ReproMPI Benchmark results_output.c
+ * ReproMPI Benchmark
    Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
    Research Group for Parallel Computing
    Faculty of Informatics
@@ -17,7 +17,11 @@
    You should have received a copy of the GNU General Public License along with this program; if not, write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include <gsl/gsl_sort.h>
+#include <gsl/gsl_statistics.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #include "reprompi_bench/option_parser/parse_extra_key_value_options.h"
@@ -32,6 +36,8 @@
 #include "output.h"
 
 static const int OUTPUT_ROOT_PROC = 0;
+static const char* MPI_CALL_NAME = "process_skew";
+static const int OUTPUT_NITERATIONS_CHUNK = 3000; // approx. 1 MB per process
 
 void print_command_line(int argc, char** argv)
 {
@@ -84,14 +90,7 @@ void print_header(const skew_options_t* skew_options, const reprompib_options_t*
                 fprintf(f, "process ");
             }
 
-            if (skew_options->use_window)
-            {
-                fprintf(f, "%14s %10s %10s ", "test", "nrep", "errorcode");
-            }
-            else
-            {
-                fprintf(f, "%14s %10s ", "test", "nrep");
-            }
+            fprintf(f, "%14s %10s ", "test", "nrep");
 
             if (benchmark_options->verbose)
             {
@@ -119,7 +118,7 @@ static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, 
 {
     // print_benchmark_common_settings_to_file
     fprintf(f, "#MPI calls:\n");
-    fprintf(f, "#\t%s\n", "process_skew");
+    fprintf(f, "#\t%s\n", MPI_CALL_NAME);
 
     // print_common_settings_to_file
     reprompib_print_dictionary(params_dict, f);
@@ -171,6 +170,312 @@ void print_settings(const skew_options_t* skew_options, const reprompib_dictiona
                 fflush(f);
                 fclose(f);
             }
+        }
+    }
+}
+
+static void compute_starttimes_global_clocks(const skew_options_t* skew_options, const double* tstart_sec, long current_start_index, long current_nreps, double* max_process_skew, int* sync_errorcodes)
+{
+
+    // gather error codes in the  [current_start_index, current_start_index + current_nreps) interval
+    int* local_errorcodes = NULL;
+    if (skew_options->use_window)
+    {
+        local_errorcodes = jk_get_local_sync_errorcodes() + current_start_index;
+        MPI_Reduce(local_errorcodes, sync_errorcodes, current_nreps, MPI_INT, MPI_MAX, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+    }
+
+    double* start_sec = NULL;
+    double* end_sec = NULL;
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        start_sec = (double*)malloc(current_nreps * sizeof(double));
+        end_sec = (double*)malloc(current_nreps * sizeof(double));
+    }
+
+    double* norm_tstart_sec = (double*)malloc(current_nreps * sizeof(double));
+
+    // normalize results in the  [current_start_index, current_start_index + current_nreps) interval
+    int index;
+    for (int i = 0; i < current_nreps; i++)
+    {
+        index = i + current_start_index;
+        norm_tstart_sec[i] = jk_get_normalized_time(tstart_sec[index]);
+    }
+
+    // gather results at the root process and compute start times
+    MPI_Reduce(norm_tstart_sec, start_sec, current_nreps, MPI_DOUBLE, MPI_MIN, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+    MPI_Reduce(norm_tstart_sec, end_sec, current_nreps, MPI_DOUBLE, MPI_MAX, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        for (int i = 0; i< current_nreps; i++)
+        {
+            max_process_skew[i] = end_sec[i] - start_sec[i];
+        }
+
+        free(start_sec);
+        free(end_sec);
+    }
+
+    free(norm_tstart_sec);
+}
+
+static void print_summary(FILE* f,const skew_options_t* skew_options, const reprompib_options_t* benchmark_options, double* tstart_sec)
+{
+    double* max_process_skew = NULL;
+    int* sync_errorcodes = NULL;
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        max_process_skew = (double*) malloc(benchmark_options->n_rep * sizeof(double));
+
+        if (skew_options->use_window)
+        {
+            sync_errorcodes = (int*) malloc(benchmark_options->n_rep * sizeof(int));
+            for (int i = 0; i < benchmark_options->n_rep; i++)
+            {
+                sync_errorcodes[i] = 0;
+            }
+        }
+    }
+
+    long current_start_index = 0;
+    compute_starttimes_global_clocks(skew_options, tstart_sec, current_start_index, benchmark_options->n_rep, max_process_skew, sync_errorcodes);
+
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
+        long nreps = 0;
+
+        // remove measurements with out-of-window errors
+        if (skew_options->use_window)
+        {
+            for (int i = 0; i < benchmark_options->n_rep; i++)
+            {
+                if (sync_errorcodes[i] == 0)
+                {
+                    if (nreps < i) {
+                        max_process_skew[nreps] = max_process_skew[i];
+                    }
+                    nreps++;
+                }
+            }
+        }
+        else
+        {
+            nreps = benchmark_options->n_rep;
+        }
+
+        gsl_sort(max_process_skew, 1, nreps);
+        fprintf(f, "%14s %10ld %10ld ", MPI_CALL_NAME, benchmark_options->n_rep, nreps);
+
+        if (benchmark_options->print_summary_methods > 0)
+        {
+          for (int i=0; i<reprompib_get_number_summary_methods(); i++)
+          {
+            summary_method_info_t* s = reprompib_get_summary_method(i);
+
+            if (benchmark_options->print_summary_methods & s->mask)
+            {
+              double value = 0;
+
+              if (strcmp(s->name, "mean") == 0)
+              {
+                value = gsl_stats_mean(max_process_skew, 1, nreps);
+              }
+              else if (strcmp(s->name, "median") == 0)
+              {
+                value = gsl_stats_quantile_from_sorted_data (max_process_skew, 1, nreps, 0.5);
+              }
+              else if (strcmp(s->name, "min") == 0)
+              {
+                if (nreps > 0) {
+                  value = max_process_skew[0];
+                }
+              }
+              else if (strcmp(s->name, "max") == 0)
+              {
+                if (nreps > 0) {
+                  value = max_process_skew[nreps-1];
+                }
+              }
+              fprintf(f, "  %.10f ", value);
+            }
+          }
+        }
+        fprintf(f, "\n");
+
+        free(sync_errorcodes);
+        free(max_process_skew);
+    }
+}
+
+static void print_skewtimes(FILE* f,const skew_options_t* skew_options, const reprompib_options_t* benchmark_options, double* tstart_sec)
+{
+    double* max_process_skew = NULL;
+    int* sync_errorcodes = NULL;
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        max_process_skew = (double*) malloc(benchmark_options->n_rep * sizeof(double));
+
+        if (skew_options->use_window)
+        {
+            sync_errorcodes = (int*) malloc(benchmark_options->n_rep * sizeof(int));
+            for (int i = 0; i < benchmark_options->n_rep; i++)
+            {
+                sync_errorcodes[i] = 0;
+            }
+        }
+    }
+
+    long current_start_index = 0;
+    compute_starttimes_global_clocks(skew_options, tstart_sec, current_start_index, benchmark_options->n_rep, max_process_skew, sync_errorcodes);
+
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+
+        for (int i = 0; i < benchmark_options->n_rep; i++)
+        {
+            if (skew_options->use_window)
+            {
+                fprintf(f, "%14s %10d %10d %14.10f\n", MPI_CALL_NAME, i, sync_errorcodes[i], max_process_skew[i]);
+            }
+            else
+            {
+                fprintf(f, "%14s %10d %14.10f\n", MPI_CALL_NAME, i, max_process_skew[i]);
+            }
+        }
+
+        free(sync_errorcodes);
+        free(max_process_skew);
+    }
+}
+
+static void print_measurements(FILE* f,const skew_options_t* skew_options, const reprompib_options_t* benchmark_options, double* tstart_sec)
+{
+    if (benchmark_options->verbose == 0) {
+        print_skewtimes(f, skew_options, benchmark_options, tstart_sec);
+    }
+    else
+    {
+        // we gather data from processes in chunks of OUTPUT_NITERATIONS_CHUNK elements
+        // the total number of chunks depends on the number of repetitions of the current exp benchmark_options->n_rep
+        int nchunks = benchmark_options->n_rep/OUTPUT_NITERATIONS_CHUNK + (benchmark_options->n_rep % OUTPUT_NITERATIONS_CHUNK != 0);
+
+        int chunk_nrep = 0;
+        for (int chunk_id = 0; chunk_id < nchunks; chunk_id++)
+        {
+            //the last chunk may be smaller than OUTPUT_NITERATIONS_CHUNK
+            if ((chunk_id == nchunks - 1) && (benchmark_options->n_rep % OUTPUT_NITERATIONS_CHUNK != 0))
+            {
+                chunk_nrep = benchmark_options->n_rep % OUTPUT_NITERATIONS_CHUNK;
+            }
+            else
+            {
+                chunk_nrep = OUTPUT_NITERATIONS_CHUNK;
+            }
+
+            int* errorcodes = NULL;
+            if (skew_options->use_window)
+            {
+                if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+                {
+                    errorcodes = (int*)malloc(chunk_nrep * icmb_global_size() * sizeof(int));
+                    for (int i = 0; i < chunk_nrep * icmb_global_size(); i++)
+                    {
+                        errorcodes[i] = 0;
+                    }
+                }
+
+                int* local_errorcodes = jk_get_local_sync_errorcodes();
+                MPI_Gather(local_errorcodes, chunk_nrep, MPI_INT, errorcodes, chunk_nrep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+            }
+
+
+            double* local_start_sec = NULL;
+            double* global_start_sec = NULL;
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+            {
+                local_start_sec = (double*) malloc(chunk_nrep * icmb_global_size() * sizeof(double));
+                global_start_sec = (double*) malloc(chunk_nrep * icmb_global_size() * sizeof(double));
+            }
+
+            // gather measurement results
+            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+            for (int i = 0; i < chunk_nrep; i++)
+            {
+                tstart_sec[i] = jk_get_normalized_time(tstart_sec[i]);
+            }
+            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, global_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+            {
+
+                for (int proc_id = 0; proc_id < icmb_global_size(); proc_id++)
+                {
+                    for (int i = 0; i < chunk_nrep; i++)
+                    {
+                        int current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+                        if (skew_options->use_window)
+                        {
+                            fprintf(f, "%7d %14s %10d %10d %14.10f %14.10f\n",
+                                    proc_id,
+                                    MPI_CALL_NAME,
+                                    current_rep_id,
+                                    errorcodes[proc_id * chunk_nrep + i],
+                                    local_start_sec[proc_id * chunk_nrep + i],
+                                    global_start_sec[proc_id * chunk_nrep + i]);
+                        }
+                        else
+                        {
+                            fprintf(f, "%7d %14s %10d %14.10f\n",
+                                    proc_id,
+                                    MPI_CALL_NAME,
+                                    current_rep_id,
+                                    local_start_sec[proc_id * chunk_nrep + i]);
+                        }
+                    }
+                }
+
+                free(local_start_sec);
+                free(global_start_sec);
+                free(errorcodes);
+            }
+
+        }
+
+    }
+}
+
+void print_result(const skew_options_t* skew_options, const reprompib_options_t* benchmark_options, double* tstart_sec)
+{
+    FILE* f = stdout;
+
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        if (skew_options->output_file != NULL)
+        {
+            f = fopen(skew_options->output_file, "a");
+        }
+    }
+
+    if (benchmark_options->print_summary_methods >0)
+    {
+        print_summary(stdout, skew_options, benchmark_options, tstart_sec); // TODO: continue below here
+        if (skew_options->output_file != NULL)
+        {
+            print_measurements(f, skew_options, benchmark_options, tstart_sec);
+        }
+    }
+    else
+    {
+        print_measurements(f, skew_options, benchmark_options, tstart_sec);
+    }
+
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+    {
+        if (skew_options->output_file != NULL)
+        {
+            fflush(f);
+            fclose(f);
         }
     }
 }

@@ -166,7 +166,8 @@ int main(int argc, char* argv[])
         }
     }
 
-
+    // print benchmark result
+    print_result(&skew_options, &benchmark_opts, tstart_sec);
 
     // shutdown joneskoenig module
     free(tstart_sec);
@@ -177,6 +178,8 @@ int main(int argc, char* argv[])
     print_final(&skew_options, start_time, end_time);
 
     // free memory allocations
+    reprompib_free_parameters(&benchmark_opts);
+    reprompib_cleanup_dictionary(&params_dict);
     free_process_skew_options(&skew_options);
 
     // shut down MPI
