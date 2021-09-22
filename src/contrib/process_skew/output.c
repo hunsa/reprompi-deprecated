@@ -87,23 +87,23 @@ void print_header(const skew_options_t* skew_options, const reprompib_options_t*
             if (benchmark_options->verbose)
             {
                 // print measurement times for each process
-                fprintf(f, "process ");
+                fprintf(f, "%7s ", "process");
             }
 
             fprintf(f, "%14s %10s ", "test", "nrep");
 
+            if (skew_options->use_window)
+            {
+                fprintf(f, "%10s ", "errorcode");
+            }
+
             if (benchmark_options->verbose)
             {
-                if (skew_options->use_window)
-                {
-                    fprintf(f, "%14s %14s %14s %14s \n", "loc_tstart_sec", "loc_tend_sec", "gl_tstart_sec", "gl_tend_sec");
-                }
-                else
-                {
-                    fprintf(f,  "%14s %14s \n", "loc_tstart_sec", "loc_tend_sec");
-                }
-            } else {
-                fprintf(f,  "%14s \n", "runtime_sec");
+                fprintf(f, "%14s %14s ", "loc_tstart_sec", "gl_tstart_sec");
+            }
+            else
+            {
+                fprintf(f, "%14s\n", "skew_sec");
             }
         }
 
@@ -334,14 +334,14 @@ static void print_skewtimes(FILE* f,const skew_options_t* skew_options, const re
 
         for (int i = 0; i < benchmark_options->n_rep; i++)
         {
+            fprintf(f, "%14s %10d ", MPI_CALL_NAME, i);
+
             if (skew_options->use_window)
             {
-                fprintf(f, "%14s %10d %10d %14.10f\n", MPI_CALL_NAME, i, sync_errorcodes[i], max_process_skew[i]);
+                fprintf(f, "%10d ", sync_errorcodes[i]);
             }
-            else
-            {
-                fprintf(f, "%14s %10d %14.10f\n", MPI_CALL_NAME, i, max_process_skew[i]);
-            }
+
+            fprintf(f, "%14.10f\n", max_process_skew[i]);
         }
 
         free(sync_errorcodes);
@@ -414,24 +414,14 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
                     for (int i = 0; i < chunk_nrep; i++)
                     {
                         int current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+                        fprintf(f, "%7d %14s %10d ", proc_id, MPI_CALL_NAME, current_rep_id);
+
                         if (skew_options->use_window)
                         {
-                            fprintf(f, "%7d %14s %10d %10d %14.10f %14.10f\n",
-                                    proc_id,
-                                    MPI_CALL_NAME,
-                                    current_rep_id,
-                                    errorcodes[proc_id * chunk_nrep + i],
-                                    local_start_sec[proc_id * chunk_nrep + i],
-                                    global_start_sec[proc_id * chunk_nrep + i]);
+                            fprintf(f, "%10d ", errorcodes[proc_id * chunk_nrep + i]);
                         }
-                        else
-                        {
-                            fprintf(f, "%7d %14s %10d %14.10f\n",
-                                    proc_id,
-                                    MPI_CALL_NAME,
-                                    current_rep_id,
-                                    local_start_sec[proc_id * chunk_nrep + i]);
-                        }
+
+                        fprintf(f, "%14.10f %14.10f\n", local_start_sec[proc_id * chunk_nrep + i], global_start_sec[proc_id * chunk_nrep + i]);
                     }
                 }
 
