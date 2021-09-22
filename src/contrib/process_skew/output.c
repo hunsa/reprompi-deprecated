@@ -401,9 +401,8 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
                 }
 
                 int* local_errorcodes = jk_get_local_sync_errorcodes();
-                MPI_Gather(local_errorcodes, chunk_nrep, MPI_INT, errorcodes, chunk_nrep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+                MPI_Gather(local_errorcodes + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_INT, errorcodes, chunk_nrep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
             }
-
 
             double* local_start_sec = NULL;
             double* global_start_sec = NULL;
@@ -413,14 +412,15 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
                 global_start_sec = (double*) malloc(chunk_nrep * icmb_global_size() * sizeof(double));
             }
 
-            // TODO: this is chunknrep - shouldn't it be index + chunknrep + something?
             // gather measurement results
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, local_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
             for (int i = 0; i < chunk_nrep; i++)
             {
-                tstart_sec[i] = jk_get_normalized_time(tstart_sec[i]);
+                int current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+                tstart_sec[current_rep_id] = jk_get_normalized_time(tstart_sec[current_rep_id]);
             }
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, global_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, global_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
             if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
             {
@@ -444,12 +444,12 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
 
                 free(local_start_sec);
                 free(global_start_sec);
-                free(minimum_start_sec);
                 free(errorcodes);
             }
 
         }
 
+        free(minimum_start_sec);
     }
 }
 
