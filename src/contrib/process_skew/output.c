@@ -99,11 +99,11 @@ void print_header(const skew_options_t* skew_options, const reprompib_options_t*
 
             if (benchmark_options->verbose)
             {
-                fprintf(f, "%14s %14s ", "loc_tstart_sec", "gl_tstart_sec");
+                fprintf(f, "%17s %17s %14s\n", "loc_tstart_sec", "gl_tstart_sec", "skew_sec");
             }
             else
             {
-                fprintf(f, "%14s\n", "skew_sec");
+                fprintf(f, "%14s\n", "max_skew_sec");
             }
         }
 
@@ -356,6 +356,21 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
     }
     else
     {
+        // first we calculate the minimum start time for each sample
+        // so that we know the skew of each process in that sample
+        double* tmp_minimum_start_sec_global_time = (double*) malloc(benchmark_options->n_rep * sizeof(double));
+        for (int i=0; i< benchmark_options->n_rep; ++i)
+        {
+            tmp_minimum_start_sec_global_time[i] = jk_get_normalized_time(tstart_sec[i]);
+        }
+        double* minimum_start_sec = NULL;
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
+        {
+            minimum_start_sec = (double*) malloc(benchmark_options->n_rep * sizeof(double));
+        }
+        MPI_Reduce(tmp_minimum_start_sec_global_time, minimum_start_sec, benchmark_options->n_rep, MPI_DOUBLE, MPI_MIN, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
+        free(tmp_minimum_start_sec_global_time);
+
         // we gather data from processes in chunks of OUTPUT_NITERATIONS_CHUNK elements
         // the total number of chunks depends on the number of repetitions of the current exp benchmark_options->n_rep
         int nchunks = benchmark_options->n_rep/OUTPUT_NITERATIONS_CHUNK + (benchmark_options->n_rep % OUTPUT_NITERATIONS_CHUNK != 0);
@@ -398,6 +413,7 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
                 global_start_sec = (double*) malloc(chunk_nrep * icmb_global_size() * sizeof(double));
             }
 
+            // TODO: this is chunknrep - shouldn't it be index + chunknrep + something?
             // gather measurement results
             MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec, chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
             for (int i = 0; i < chunk_nrep; i++)
@@ -421,12 +437,14 @@ static void print_measurements(FILE* f,const skew_options_t* skew_options, const
                             fprintf(f, "%10d ", errorcodes[proc_id * chunk_nrep + i]);
                         }
 
-                        fprintf(f, "%14.10f %14.10f\n", local_start_sec[proc_id * chunk_nrep + i], global_start_sec[proc_id * chunk_nrep + i]);
+                        fprintf(f, "%17.10f %17.10f ", local_start_sec[proc_id * chunk_nrep + i], global_start_sec[proc_id * chunk_nrep + i]);
+                        fprintf(f, "%14.10f\n", global_start_sec[proc_id * chunk_nrep + i] - minimum_start_sec[current_rep_id]);
                     }
                 }
 
                 free(local_start_sec);
                 free(global_start_sec);
+                free(minimum_start_sec);
                 free(errorcodes);
             }
 
@@ -449,7 +467,7 @@ void print_result(const skew_options_t* skew_options, const reprompib_options_t*
 
     if (benchmark_options->print_summary_methods >0)
     {
-        print_summary(stdout, skew_options, benchmark_options, tstart_sec); // TODO: continue below here
+        print_summary(stdout, skew_options, benchmark_options, tstart_sec);
         if (skew_options->output_file != NULL)
         {
             print_measurements(f, skew_options, benchmark_options, tstart_sec);
