@@ -1,3 +1,7 @@
+Version 1.1.1
+  - added process skew benchmark
+  - corrected indexing for chunked output
+
 Version 1.1.0
   - added support for inter-communicators
 
