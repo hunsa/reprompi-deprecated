@@ -95,7 +95,8 @@ void compute_runtimes_global_clocks(const double* tstart_sec, const double* tend
 
     if (icmb_has_initiator_rank(root_proc)) {
         for (i = 0; i< current_nreps; i++) {
-            maxRuntimes_sec[i] = end_sec[i] - start_sec[i];
+            index = i + current_start_index;
+            maxRuntimes_sec[index] = end_sec[index] - start_sec[index];
         }
 
 
