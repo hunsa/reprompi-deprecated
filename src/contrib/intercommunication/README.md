@@ -16,7 +16,7 @@ To start a benchmark using inter-communicators, following command line options a
 | (none) | The benchmark works as before using `MPI_COMM_WORLD`. |
 | `--split[=<n>]` | The benchmark processes are started and then the highest n processes are split into a new group. Both groups are connected by an inter-communicator. If n is not given, processes are split by even and odd rank. |
 | `--server` | The benchmark processes are started as server and wait for the client to connect. The name of the port on which the server is listening is displayed on `stdout`. |
-| `--client [--port=...]` | The benchmark processes are started as client and connect to the waiting server. If the port is not specified, a nameserver must be running and reachable by both client and server processes. On successful connection, client and server processes are connected by an inter-communicator. |
+| `--client [--port='...']` | The benchmark processes are started as client and connect to the waiting server. If the port is not specified, a nameserver must be running and reachable by both client and server processes. On successful connection, client and server processes are connected by an inter-communicator. |
 | `--workers=<n>` | The benchmark processes are started as master and the spawn n worker processes. Master and worker processes are connected by an inter-communicator. |
 
 example:
@@ -72,6 +72,7 @@ Following utility functions are provided in `utilities.c` to conveniently access
 | `icmb_partial_communicator()` | returns the (intra-)communicator used for communication within the local group |
 | `icmb_benchmark_communicator()` | returns the (inter-)communicator used for benchmarking |
 | `icmb_is_intercommunicator()` | returns true if the benchmark communicator is an inter-communicator |
+| `icmb_intercommunicator_type()` | returns a string indicating how the benchmark communicator was constructed (none, split, spawn, connect) |
 | `icmb_global_communicator()` | returns the (intra-)communicator used for synchronization and collecting results |
 
 | Rank and Identity | |
