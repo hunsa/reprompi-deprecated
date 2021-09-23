@@ -145,11 +145,11 @@ static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, 
     }
     else if (skew_options->use_mpi_barrier)
     {
-        fprintf(f, "#@sync=MPI_Barrier\n");
+        fprintf(f, "#@process_sync=MPI_Barrier\n");
     }
     else if (skew_options->use_dissemination_barrier)
     {
-        fprintf(f, "#@sync=BBarrier\n");
+        fprintf(f, "#process_@sync=BBarrier\n");
     }
     if (skew_options->use_double_barrier)
     {
