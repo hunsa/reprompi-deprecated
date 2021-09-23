@@ -246,29 +246,28 @@ static void print_summary(FILE* f,const skew_options_t* skew_options, const repr
     compute_starttimes_global_clocks(skew_options, tstart_sec, current_start_index, benchmark_options->n_rep, max_process_skew, sync_errorcodes);
 
     if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
-        long nreps = 0;
+        long valid_nreps = 0;
 
-        // remove measurements with out-of-window errors
+        // don't count measurements with out-of-window errors as valid,
+        // but display the result anyway, because we want to see
+        // the process skew
         if (skew_options->use_window)
         {
             for (int i = 0; i < benchmark_options->n_rep; i++)
             {
                 if (sync_errorcodes[i] == 0)
                 {
-                    if (nreps < i) {
-                        max_process_skew[nreps] = max_process_skew[i];
-                    }
-                    nreps++;
+                    valid_nreps++;
                 }
             }
         }
         else
         {
-            nreps = benchmark_options->n_rep;
+            valid_nreps = benchmark_options->n_rep;
         }
 
-        gsl_sort(max_process_skew, 1, nreps);
-        fprintf(f, "%14s %10ld %10ld ", MPI_CALL_NAME, benchmark_options->n_rep, nreps);
+        gsl_sort(max_process_skew, 1, benchmark_options->n_rep);
+        fprintf(f, "%14s %10ld %10ld ", MPI_CALL_NAME, benchmark_options->n_rep, valid_nreps);
 
         if (benchmark_options->print_summary_methods > 0)
         {
@@ -282,22 +281,22 @@ static void print_summary(FILE* f,const skew_options_t* skew_options, const repr
 
               if (strcmp(s->name, "mean") == 0)
               {
-                value = gsl_stats_mean(max_process_skew, 1, nreps);
+                value = gsl_stats_mean(max_process_skew, 1, benchmark_options->n_rep);
               }
               else if (strcmp(s->name, "median") == 0)
               {
-                value = gsl_stats_quantile_from_sorted_data (max_process_skew, 1, nreps, 0.5);
+                value = gsl_stats_quantile_from_sorted_data (max_process_skew, 1, benchmark_options->n_rep, 0.5);
               }
               else if (strcmp(s->name, "min") == 0)
               {
-                if (nreps > 0) {
+                if (benchmark_options->n_rep > 0) {
                   value = max_process_skew[0];
                 }
               }
               else if (strcmp(s->name, "max") == 0)
               {
-                if (nreps > 0) {
-                  value = max_process_skew[nreps-1];
+                if (benchmark_options->n_rep > 0) {
+                  value = max_process_skew[benchmark_options->n_rep-1];
                 }
               }
               fprintf(f, "  %.10f ", value);
