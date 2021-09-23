@@ -16,6 +16,7 @@ int icmb_global_size();
 int icmb_has_initiator_rank(int rank);
 int icmb_has_responder_rank(int rank);
 int icmb_initiator_size();
+char* icmb_intercommunicator_type();
 int icmb_is_initiator();
 int icmb_is_intercommunicator();
 int icmb_is_responder();

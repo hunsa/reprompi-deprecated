@@ -62,6 +62,92 @@ int icmb_get_initiator_attribute(MPI_Comm comm)
 /*****************************************************************************/
 
 /*
+ * The benchmark communicator's intercommunicatortype attribute
+ * stores how the inter-communicator was constructed
+ */
+
+/*
+ * key for type attribute
+ */
+int icmb_key_intercommunicatortype = MPI_KEYVAL_INVALID;
+
+/*
+ * callback function when benchmark communicator is duplicated
+ */
+int icmb_attribute_intercommunicatortype_copier (MPI_Comm comm, int key, void* state, void* value_in, void* value_out, int* flag)
+{
+    icmb_attribute_intercommunicatortype_t* attribute_in = (icmb_attribute_intercommunicatortype_t*)value_in;
+    icmb_attribute_intercommunicatortype_t** attribute_out = (icmb_attribute_intercommunicatortype_t**)value_out;
+    attribute_in->ref_count++;
+    *attribute_out = attribute_in;
+    *flag = 1;
+    return MPI_SUCCESS;
+}
+
+/*
+ * callback function when benchmark communicator is freed
+ */
+int icmb_attribute_intercommunicatortype_destructor (MPI_Comm comm, int key, void* value, void* state)
+{
+    icmb_attribute_intercommunicatortype_t* attribute = (icmb_attribute_intercommunicatortype_t*)value;
+    attribute->ref_count--;
+    if (attribute->ref_count < 1) {
+        free((void*) attribute );
+    }
+    return MPI_SUCCESS;
+}
+
+/*
+ * sets type attribute on given communicator
+ */
+int icmb_set_intercommunicatortype_attribute(MPI_Comm comm, enum IntercommConstructionMethod method)
+{
+    // initialize key
+    if (MPI_KEYVAL_INVALID == icmb_key_intercommunicatortype)
+    {
+        if (MPI_SUCCESS != MPI_Comm_create_keyval(icmb_attribute_intercommunicatortype_copier, icmb_attribute_intercommunicatortype_destructor, &icmb_key_intercommunicatortype, NULL))
+        {
+            return MPI_ERR_INTERN;
+        }
+    }
+
+    // create attribute and store service and port names
+    icmb_attribute_intercommunicatortype_t* attribute = (icmb_attribute_intercommunicatortype_t*) malloc(sizeof(icmb_attribute_intercommunicatortype_t));
+    attribute->ref_count = 1;
+    attribute->method = method;
+
+    // cache service and port names in communicator
+    return MPI_Comm_set_attr(comm, icmb_key_intercommunicatortype, attribute);
+}
+
+/*
+ * returns initiator attribute from given communicator
+ */
+enum IntercommConstructionMethod icmb_get_intercommunicatortype_attribute(MPI_Comm comm)
+{
+    // no key means attribute was not set
+    if (MPI_KEYVAL_INVALID == icmb_key_initiator)
+    {
+        return ICMB_METHOD_NONE;
+    }
+
+    // read attribute
+    icmb_attribute_intercommunicatortype_t* value;
+    int found;
+    MPI_Comm_get_attr(comm, icmb_key_intercommunicatortype, &value, &found);
+
+    if (!found)
+    {
+        return ICMB_METHOD_NONE;
+
+    }
+
+    return value->method;
+}
+
+/*****************************************************************************/
+
+/*
  * The benchmark communicator's port attribute is a structure containing the
  * service and port names on which a server process is listening.
  * When the last reference to the port is removed, the service is unpublished

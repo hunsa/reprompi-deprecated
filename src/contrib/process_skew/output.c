@@ -125,8 +125,10 @@ static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, 
     fprintf(f, "#@reproMPIcommitSHA1=%s\n", git_commit);
     if (icmb_is_intercommunicator())
     {
-        fprintf(f, "#@localprocs=%d\n", icmb_initiator_size());
-        fprintf(f, "#@remoteprocs=%d\n", icmb_responder_size());
+        fprintf(f, "#@intercommunicator=true\n");
+        fprintf(f, "#@intercommunicator_type=%s\n", icmb_intercommunicator_type());
+        fprintf(f, "#@nprocs_intiator=%d\n", icmb_initiator_size());
+        fprintf(f, "#@nprocs_responder=%d\n", icmb_responder_size());
     }
     else{
         fprintf(f, "#@nprocs=%d\n", icmb_local_size());

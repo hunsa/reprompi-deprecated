@@ -146,6 +146,28 @@ int icmb_is_intercommunicator()
 }
 
 /*
+ * returns how the benchmark communicator was constructed
+ */
+char* icmb_intercommunicator_type()
+{
+    enum IntercommConstructionMethod commtype = icmb_get_intercommunicatortype_attribute(icmb_benchmark_communicator());
+    switch (commtype)
+    {
+        case ICMB_METHOD_SPLIT:
+            return "split";
+            break;
+        case ICMB_METHOD_SPAWN:
+            return "spawn";
+            break;
+        case ICMB_METHOD_CONNECT:
+            return "connect";
+            break;
+        default:
+            return "none";
+    }
+}
+
+/*
  * returns the communicator used for synchronization and collecting results
  */
 MPI_Comm icmb_global_communicator()

@@ -30,6 +30,7 @@ void icmb_launch_standard()
     MPI_Comm_dup(MPI_COMM_WORLD, &benchmark_communicator);
     icmb_set_initiator_attribute(benchmark_communicator);
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+    icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_NONE);
 
     MPI_Comm global_communicator;
     MPI_Comm_dup(MPI_COMM_WORLD, &global_communicator);
@@ -90,6 +91,7 @@ void icmb_launch_split(int num_workers)
         MPI_Intercomm_create( partial_communicator, 0, MPI_COMM_WORLD, 0, MSG_TAG_SPLIT, &benchmark_communicator);
     }
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+    icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_SPLIT);
 
     // use MPI_COMM_WORLD for global communication
     MPI_Comm global_communicator;
@@ -128,6 +130,7 @@ void icmb_launch_master(int num_workers, char* command, char** argv)
     MPI_Comm_spawn(command, argv, num_workers, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &benchmark_communicator, MPI_ERRCODES_IGNORE);
     icmb_set_initiator_attribute(benchmark_communicator);
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+    icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_SPAWN);
 
     // create global intra-communicator collectively with spawned workers
     MPI_Comm global_communicator;
@@ -163,6 +166,7 @@ void icmb_launch_worker()
     {
         // this is a worker process
         icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+        icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_SPAWN);
 
         // create global intra-communicator collectively with master
         MPI_Comm global_communicator;
@@ -213,6 +217,7 @@ void icmb_launch_client(char* port_name)
     MPI_Comm_connect(my_port_name, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &benchmark_communicator);
     icmb_set_initiator_attribute(benchmark_communicator);
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+    icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_CONNECT);
 
     // create global intra-communicator collectively with server
     MPI_Comm global_communicator;
@@ -261,6 +266,7 @@ void icmb_launch_server()
         icmb_set_port_attribute(benchmark_communicator, INTERCOMM_SERVICE_NAME, port_name);
     }
     icmb_set_benchmarkcommunicator_attribute(benchmark_communicator);
+    icmb_set_intercommunicatortype_attribute(benchmark_communicator, ICMB_METHOD_CONNECT);
 
     // create global intra-communicator collectively with clients
     MPI_Comm global_communicator;
