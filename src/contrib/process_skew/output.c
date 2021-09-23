@@ -213,7 +213,8 @@ static void compute_starttimes_global_clocks(const skew_options_t* skew_options,
     {
         for (int i = 0; i< current_nreps; i++)
         {
-            max_process_skew[i] = end_sec[i] - start_sec[i];
+            index = i + current_start_index;
+            max_process_skew[index] = end_sec[index] - start_sec[index];
         }
 
         free(start_sec);
