@@ -26,12 +26,15 @@
 
 static const int OUTPUT_ROOT_PROC = 0;
 
-static const char SKEW_ARGS_HELP = 'h';
-static const char SKEW_ARGS_OUTPUT = 'o';
-static const char SKEW_ARGS_WINDOW = 'w';
-static const char SKEW_ARGS_MPI_BARRIER = 'm';
-static const char SKEW_ARGS_DISSEMINATION_BARRIER = 'b';
-static const char SKEW_ARGS_DOUBLE_BARRIER = 'd';
+enum process_skew_getopt_ids
+{
+    SKEW_ARGS_HELP = 'h',
+    SKEW_ARGS_OUTPUT = 'o',
+    SKEW_ARGS_WINDOW = 'w',
+    SKEW_ARGS_MPI_BARRIER = 'm',
+    SKEW_ARGS_DISSEMINATION_BARRIER = 'b',
+    SKEW_ARGS_DOUBLE_BARRIER = 'd',
+};
 
 static const char skew_short_options[] = "ho:wmbd";
 
