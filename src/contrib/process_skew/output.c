@@ -151,7 +151,7 @@ static void print_settings_to_file(FILE* f, const skew_options_t* skew_options, 
     }
     else if (skew_options->use_dissemination_barrier)
     {
-        fprintf(f, "#process_@sync=BBarrier\n");
+        fprintf(f, "#@process_sync=BBarrier\n");
     }
     if (skew_options->use_double_barrier)
     {
