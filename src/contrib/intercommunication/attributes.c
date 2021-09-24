@@ -111,12 +111,12 @@ int icmb_set_intercommunicatortype_attribute(MPI_Comm comm, enum IntercommConstr
         }
     }
 
-    // create attribute and store service and port names
+    // create attribute and store inter-communicator construction method
     icmb_attribute_intercommunicatortype_t* attribute = (icmb_attribute_intercommunicatortype_t*) malloc(sizeof(icmb_attribute_intercommunicatortype_t));
     attribute->ref_count = 1;
     attribute->method = method;
 
-    // cache service and port names in communicator
+    // cache inter-communicator construction method in communicator
     return MPI_Comm_set_attr(comm, icmb_key_intercommunicatortype, attribute);
 }
 
