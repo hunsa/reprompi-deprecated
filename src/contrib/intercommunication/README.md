@@ -15,9 +15,8 @@ To start a benchmark using inter-communicators, following command line options a
 | :--- | :--- |
 | (none) | The benchmark works as before using `MPI_COMM_WORLD`. |
 | `--split[=<n>]` | The benchmark processes are started and then the highest n processes are split into a new group. Both groups are connected by an inter-communicator. If n is not given, processes are split by even and odd rank. |
-| `--server` | The benchmark processes are started as server and wait for the client to connect. The name of the port on which the server is listening is displayed on `stdout`. |
-| `--client [--port='...']` | The benchmark processes are started as client and connect to the waiting server. If the port is not specified, a nameserver must be running and reachable by both client and server processes. On successful connection, client and server processes are connected by an inter-communicator. |
-| `--workers=<n>` | The benchmark processes are started as master and the spawn n worker processes. Master and worker processes are connected by an inter-communicator. |
+| `--spawn=<n>` | The benchmark processes are started as master and then spawn n worker processes. Master and worker processes are connected by an inter-communicator. |
+| `--connect=<n>` | The benchmark processes are started as client, then n server processes are spawned. The server opens a port and informs it to the client, after which the server is disconnected so that client and server are two independent process groups. The client then connects to the waiting server's port. On successful connection, client and server processes are connected by an inter-communicator. |
 
 example:
 ```
