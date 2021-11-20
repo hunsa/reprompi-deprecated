@@ -29,7 +29,7 @@ The command line options are parsed in `options_parser.c`, and the inter-communi
 
 ### Communicators
 
-Benchmarking with inter-communicators involves for different communicators:
+Benchmarking with inter-communicators involves four different communicators:
 
  1. Before construction of the inter-communicator, only `MPI_COMM_WORLD` exists.
  2. For operations which are benchmarked, `MPI_COMM_WORLD` must be replaced with the new inter-communicator.
