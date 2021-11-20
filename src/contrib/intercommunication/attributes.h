@@ -21,7 +21,6 @@ enum IntercommConstructionMethod
 typedef struct
 {
     int ref_count;
-    char* service_name;
     char* port_name;
 } icmb_attribute_port_t;
 
@@ -64,6 +63,6 @@ int icmb_set_globalcommunicator_attribute(MPI_Comm global_communicator);
 int icmb_set_initiator_attribute(MPI_Comm comm);
 int icmb_set_intercommunicatortype_attribute(MPI_Comm comm, enum IntercommConstructionMethod method);
 int icmb_set_partialcommunicator_attribute(MPI_Comm partial_communicator);
-int icmb_set_port_attribute(MPI_Comm comm, const char* service_name, const char* port_name);
+int icmb_set_port_attribute(MPI_Comm comm, const char* port_name);
 
 #endif /* ICMB_ATTRIBUTES_H */

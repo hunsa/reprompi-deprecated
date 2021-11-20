@@ -149,9 +149,8 @@ enum IntercommConstructionMethod icmb_get_intercommunicatortype_attribute(MPI_Co
 
 /*
  * The benchmark communicator's port attribute is a structure containing the
- * service and port names on which a server process is listening.
- * When the last reference to the port is removed, the service is unpublished
- * and the port is closed.
+ * port name on which a server process is listening.
+ * When the last reference to the port is removed, the port is closed.
  */
 
 /*
@@ -180,9 +179,7 @@ int icmb_attribute_port_destructor (MPI_Comm comm, int key, void* value, void* s
     icmb_attribute_port_t* attribute = (icmb_attribute_port_t*)value;
     attribute->ref_count--;
     if (attribute->ref_count < 1) {
-        MPI_Unpublish_name(attribute->service_name, MPI_INFO_NULL, attribute->port_name);
 		MPI_Close_port(attribute->port_name);
-        free(attribute->service_name);
         free(attribute->port_name);
         free((void*) attribute );
     }
@@ -192,7 +189,7 @@ int icmb_attribute_port_destructor (MPI_Comm comm, int key, void* value, void* s
 /*
  * sets port attribute on given communicator
  */
-int icmb_set_port_attribute(MPI_Comm comm, const char* service_name, const char* port_name)
+int icmb_set_port_attribute(MPI_Comm comm, const char* port_name)
 {
     // initialize key
     if (MPI_KEYVAL_INVALID == icmb_key_port)
@@ -203,19 +200,16 @@ int icmb_set_port_attribute(MPI_Comm comm, const char* service_name, const char*
         }
     }
 
-    // create copies of service and port names
-    char* service = (char*)malloc((strlen(service_name)+1) * sizeof(char));
-    strcpy(service, service_name);
+    // create copy of port name
     char* port = (char*)malloc((strlen(port_name)+1) * sizeof(char));
     strcpy(port, port_name);
 
-    // create attribute and store service and port names
+    // create attribute and store port name
     icmb_attribute_port_t* attribute = (icmb_attribute_port_t*) malloc(sizeof(icmb_attribute_port_t));
     attribute->ref_count = 1;
-    attribute->service_name = service;
     attribute->port_name = port;
 
-    // cache service and port names in communicator
+    // cache port name in communicator
     return MPI_Comm_set_attr(comm, icmb_key_port, attribute);
 }
 
