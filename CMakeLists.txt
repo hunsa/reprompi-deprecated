@@ -3,16 +3,15 @@ cmake_minimum_required(VERSION 2.6...3.20.5)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
    
+set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake"
+    CACHE STRING "Configure project to use a specific platform file")
+include(${INCLUDE_PLATFORM_CONFIG_FILE})
+
 project(reprompi)
 
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
-
-
-set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake" 
-    CACHE STRING "Configure project to use a specific platform file")
-include(${INCLUDE_PLATFORM_CONFIG_FILE})
 
 find_package(GSL REQUIRED)
 if (GSL_INCLUDE_DIR)
