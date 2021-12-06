@@ -10,6 +10,7 @@ src/version.h
 *.out
 *.log
 *.DS_Store
+*.backup
 *~
 *.blg
 *CMakeFiles*
