@@ -21,7 +21,7 @@ do {\
 
 inline uint64_t cntpct(void)
 {
-    unit64_t pct;
+    uint64_t pct;
     HRT_GET_TIMESTAMP(pct);
     return pct;
 }

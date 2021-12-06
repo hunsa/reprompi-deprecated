@@ -20,7 +20,7 @@
 
 inline uint64_t cntvct(void)
 {
-    unit64_t vct;
+    uint64_t vct;
     HRT_GET_TIMESTAMP(vct);
     return vct;
 }
