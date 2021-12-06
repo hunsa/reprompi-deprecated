@@ -29,12 +29,17 @@
 
 #if defined ENABLE_RDTSCP || defined ENABLE_RDTSC
 #include "rdtsc.h"
+#elif defined ENABLE_CNTVCT
+#include "contrib/highres_clocks/cntvct.h"
+#elif defined ENABLE_CNTPCT
+#include "contrib/highres_clocks/cntpct.h"
 #endif
+
 
 #include "time_measurement.h"
 
-#if defined ENABLE_RDTSCP || defined ENABLE_RDTSC
-#ifdef RDTSC_CALIBRATION
+#if defined ENABLE_RDTSCP || defined ENABLE_RDTSC || defined ENABLE_CNTVCT || defined ENABLE_CNTPCT
+#if defined RDTSC_CALIBRATION || defined ENABLE_CNTVCT || defined ENABLE_CNTPCT
 static double FREQ_HZ=0;
 #elif FREQUENCY_MHZ		// Do not calibrate, set frequency to a fixed value
 const double FREQ_HZ=FREQUENCY_MHZ*1.0e6;
@@ -44,7 +49,7 @@ const double FREQ_HZ=2300*1.0e6;
 #endif
 
 void init_timer(void) {
-#ifdef RDTSC_CALIBRATION
+#if defined RDTSC_CALIBRATION || defined ENABLE_CNTVCT || defined ENABLE_CNTPCT
     uint64_t timerfreq = 0;
     HRT_INIT(0 /* do not print */, timerfreq);
     FREQ_HZ = (double)timerfreq;
@@ -56,6 +61,10 @@ inline double get_time(void) {
     return (double)rdtscp()/FREQ_HZ;
 #elif defined ENABLE_RDTSC
     return (double)rdtsc()/FREQ_HZ;
+#elif defined ENABLE_CNTVCT
+    return cntvct()*(1.0/FREQ_HZ);
+#elif defined ENABLE_CNTPCT
+    return cntpct()*(1.0/FREQ_HZ);
 #else
     return MPI_Wtime();
 #endif
@@ -70,6 +79,12 @@ void print_time_parameters(FILE* f) {
     fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
 #elif defined ENABLE_RDTSC
     strcpy(clock, "RDTSC");
+    fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
+#elif defined ENABLE_CNTVCT
+    strcpy(clock, "CNTVCT");
+    fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
+#elif defined ENABLE_CNTPCT
+    strcpy(clock, "CNTPCT");
     fprintf(f, "#@frequency_hz=%lf\n", FREQ_HZ);
 #endif
     fprintf(f, "#@clock=%s\n", clock);

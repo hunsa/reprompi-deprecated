@@ -261,17 +261,19 @@ ENABLE_GLOBAL_TIMES
 
 ** Clock resolution
 
-  The =MPI_Wtime= cll is used by default to obtain the current time.
+  The =MPI_Wtime= call is used by default to obtain the current time.
 To obtain accurate measurements of short time intervals, the benchmark
-can rely on the high resolution =RDTSC/RDTSCP= instructions (if they are
-available on the test machines) by setting on of the following flags:
+can rely on the high resolution TSC instructions (if they are
+available on the test machines) by setting one of the following flags:
 #+BEGIN_EXAMPLE
 ENABLE_RDTSC
 ENABLE_RDTSCP
+ENABLE_CNTPCT
+ENABLE_CNTVCT
 #+END_EXAMPLE
 
-Additionally, setting the clock frequency of the CPU is required to
-obtain accurate measurements:
+When using =RDTSC/RDTSCP=, setting the clock frequency of the CPU is
+additionally required to obtain accurate measurements:
 #+BEGIN_EXAMPLE
 FREQUENCY_MHZ                    2300
 #+END_EXAMPLE
@@ -305,10 +307,10 @@ all the previously detailed configuration parameters.
  ENABLE_LOGP_SYNC                 OFF             
  ENABLE_RDTSC                     OFF             
  ENABLE_RDTSCP                    OFF           
- ENABLE_WINDOWSYNC_HCA            OFF            
+ ENABLE_CNTPCT                    OFF
+ ENABLE_CNTVCT                    OFF
+ ENABLE_WINDOWSYNC_HCA            OFF
  ENABLE_WINDOWSYNC_JK             OFF        
  ENABLE_WINDOWSYNC_SK             OFF      
  FREQUENCY_MHZ                    2300    
 #+END_EXAMPLE
-
-

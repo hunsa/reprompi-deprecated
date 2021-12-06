@@ -33,6 +33,8 @@ option(RDTSC_CALIBRATION "Calibrate the frequency of RTDSC [default: off (uses F
 
 option(ENABLE_RDTSC "Use RDTSC for time measurements [default: MPI_Wtime()]" off)
 option(ENABLE_RDTSCP "Use RDTSCP for time measurements [default: MPI_Wtime()]" off)
+option(ENABLE_CNTPCT "Use CNTPCT_EL0 for time measurements [default: MPI_Wtime()]" off)
+option(ENABLE_CNTVCT "Use CNTVCT_EL0 for time measurements [default: MPI_Wtime()]" off)
 option(ENABLE_DOUBLE_BARRIER "Call barrier twice for synchronization [default: disabled]" off)
 set(FREQUENCY_MHZ 2300 CACHE STRING "CPU Frequency (needed for RDTSCP-based time measurements)")
 
@@ -83,6 +85,13 @@ if(FREQUENCY_MHZ)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DFREQUENCY_MHZ=${FREQUENCY_MHZ}")
 endif()
 
+if(ENABLE_CNTPCT)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_CNTPCT")
+endif()
+
+if(ENABLE_CNTVCT)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_CNTVCT")
+endif()
 
 ###############################################
 ############ Set synchronization flags ########
