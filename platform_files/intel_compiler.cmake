@@ -3,7 +3,7 @@
 
 SET(CMAKE_C_COMPILER mpiicc)
 SET(CMAKE_CXX_COMPILER mpiicpc)
-SET(CMAKE_C_FLAGS "-O3 -Wall ") # -pedantic")
+SET(CMAKE_C_FLAGS "-std=c11 -O3 -Wall ") # -pedantic")
 
 SET(BUILD_SHARED_LIBS 1)
 
