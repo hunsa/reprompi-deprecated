@@ -30,6 +30,7 @@ enum process_skew_getopt_ids
 {
     SKEW_ARGS_HELP = 'h',
     SKEW_ARGS_OUTPUT = 'o',
+    SKEW_ARGS_OUTPUT_FILE = 'f',
     SKEW_ARGS_WINDOW = 'w',
     SKEW_ARGS_MPI_BARRIER = 'm',
     SKEW_ARGS_DISSEMINATION_BARRIER = 'b',
@@ -41,6 +42,7 @@ static const char skew_short_options[] = "ho:wmbd";
 static const struct option skew_long_options[] = {
         { "help", no_argument, 0, SKEW_ARGS_HELP },
         { "output", required_argument, 0, SKEW_ARGS_OUTPUT },
+        { "output-file", required_argument, 0, SKEW_ARGS_OUTPUT_FILE },
         { "window", no_argument, 0, SKEW_ARGS_WINDOW },
         { "barrier", no_argument, 0, SKEW_ARGS_MPI_BARRIER },
         { "bbarrier", no_argument, 0, SKEW_ARGS_DISSEMINATION_BARRIER },
@@ -123,6 +125,7 @@ void parse_process_skew_options(skew_options_t* opt, int argc, char **argv)
 				break;
 
 			case SKEW_ARGS_OUTPUT:
+			case SKEW_ARGS_OUTPUT_FILE:
                 opt->output_file = (char*)malloc((strlen(optarg)+1) * sizeof(char));
                 strcpy(opt->output_file, optarg);
 				break;
