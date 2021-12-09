@@ -1,0 +1,3 @@
+[submodule "src/contrib/intercommunication"]
+	path = src/contrib/intercommunication
+	url = https://github.com/StefanChristians/icmb.git
