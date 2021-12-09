@@ -1,6 +1,8 @@
 
 cmake_minimum_required(VERSION 2.6...3.20.5)
 
+set(CMAKE_C_STANDARD 11)
+
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
    
 set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake"
