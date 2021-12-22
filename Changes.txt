@@ -1,6 +1,7 @@
 Version 1.1.1
   - added process skew benchmark
   - added high resolution clocks for Armv8 ISA
+  - added cmake configuration for Fugaku
   - corrected indexing for chunked output
 
 Version 1.1.0
