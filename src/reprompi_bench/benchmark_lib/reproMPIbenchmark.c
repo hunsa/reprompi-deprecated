@@ -4,7 +4,9 @@
  Research Group for Parallel Computing
  Faculty of Informatics
  Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
  </license>
  */
 
+// allow strdup with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,6 +41,8 @@
 #include "results_output.h"
 #include "reproMPIbenchmark.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 static const int N_USER_VARS = 4;
 static const int HASHTABLE_SIZE=100;
@@ -45,13 +52,9 @@ static int first_print_call = 1;
 static reprompib_dictionary_t params_dict;
 
 void print_initial_settings(long nrep, print_sync_info_t print_sync_info) {
-  int my_rank, np;
   FILE* f = stdout;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
-
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     fprintf(f, "#@nrep=%ld\n", nrep);
     print_common_settings_to_file(f, print_sync_info, &params_dict);
   }
@@ -61,8 +64,6 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
     const reprompib_sync_functions_t* sync_f, const reprompib_options_t* opts) {
   FILE* f = stdout;
   reprompib_lib_output_info_t output_info;
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   output_info.verbose = opts->verbose;
   output_info.print_summary_methods = opts->print_summary_methods;
@@ -83,10 +84,7 @@ void reprompib_print_bench_output(const reprompib_job_t* job_p,
 
 void reprompib_initialize_benchmark(int argc, char* argv[], reprompib_sync_functions_t* sync_f_p,
     reprompib_options_t *opts_p) {
-  int my_rank;
   reprompib_sync_options_t sync_opts;
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   // initialize time measurement functions
   init_timer();

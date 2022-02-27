@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,21 +36,20 @@
 /***************************************/
 // MPI_Gather with Allgather
 
-inline void execute_GL_Gather_as_Allgather(collective_params_t* params) {
-    MPI_Allgather(params->sbuf, params->count, params->datatype,
-            params->rbuf, params->count, params->datatype,
-            MPI_COMM_WORLD);
-
+inline void execute_GL_Gather_as_Allgather(collective_params_t* params)
+{
+    MPI_Allgather(params->sbuf, params->count, params->datatype, params->rbuf, params->count, params->datatype, params->communicator);
 }
 
 
-void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     initialize_common_data(info, params);
 
     params->count = count; // block size per process
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->remote_size;
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
 
@@ -57,7 +58,8 @@ void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info
 }
 
 
-void cleanup_data_GL_Gather_as_Allgather(collective_params_t* params) {
+void cleanup_data_GL_Gather_as_Allgather(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     params->sbuf = NULL;
@@ -71,19 +73,18 @@ void cleanup_data_GL_Gather_as_Allgather(collective_params_t* params) {
 /***************************************/
 // MPI_Gather with Reduce
 
-inline void execute_GL_Gather_as_Reduce(collective_params_t* params) {
-
+inline void execute_GL_Gather_as_Reduce(collective_params_t* params)
+{
 #ifdef COMPILE_BENCH_TESTS
-    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatype_extent, (char*)params->sbuf,
-            params->scount * params->datatype_extent);
+    memcpy((char*)params->tmp_buf + params->rank * params->scount * params->datatype_extent, (char*)params->sbuf, params->scount * params->datatype_extent);
 #endif
 
-    MPI_Reduce(params->tmp_buf, params->rbuf, params->rcount,
-            params->datatype, params->op, params->root, MPI_COMM_WORLD);
+    MPI_Reduce(params->tmp_buf, params->rbuf, params->trcount, params->datatype, params->op, params->root, params->communicator);
 }
 
 
-void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long count, collective_params_t* params) {
+void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long count, collective_params_t* params)
+{
     int num_ints, num_adds, num_dtypes, combiner;
     int i;
 
@@ -92,50 +93,53 @@ void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, c
     params->count = count;
 
     params->scount = count;
-    params->rcount = count * params->nprocs;
+    params->rcount = count * params->remote_size;
+
+    params->tscount = count * params->larger_size;
+    params->trcount = count * params->larger_size;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
-    params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
-
-    params->tmp_buf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
+    params->rbuf = (char*)reprompi_calloc(params->trcount, params->datatype_extent);
+    params->tmp_buf = (char*)reprompi_calloc(params->tscount, params->datatype_extent);
 
     // set identity operand for different operations
     if (params->op == MPI_BAND || params->op == MPI_PROD) {
-        MPI_Type_get_envelope(params->datatype,
-                &num_ints, &num_adds, &num_dtypes, &combiner);
+        MPI_Type_get_envelope(params->datatype, &num_ints, &num_adds, &num_dtypes, &combiner);
 
         if (combiner == MPI_COMBINER_NAMED) {
             if (params->datatype == MPI_INT) {
-                for (i=0; i<params->rcount; i++) {
+                for (i=0; i<params->tscount; i++) {
                     ((int*)params->tmp_buf)[i] = 1;
                 }
             }
             else {
                 if (params->datatype == MPI_DOUBLE) {
-                    for (i=0; i<params->rcount; i++) {
+                    for (i=0; i<params->tscount; i++) {
                         ((double*)params->tmp_buf)[i] = 1;
                     }
                 }
                 else {
-                    memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
+                    memset( params->tmp_buf, 0xFF, params->tscount * params->datatype_extent);
                 }
             }
         }
         else {
-            memset( params->tmp_buf, 0xFF, params->rcount * params->datatype_extent);
+            memset( params->tmp_buf, 0xFF, params->tscount * params->datatype_extent);
         }
     }
     else {
-        memset(params->tmp_buf, 0, params->rcount * params->datatype_extent);
+        memset(params->tmp_buf, 0, params->tscount * params->datatype_extent);
     }
-
 }
 
 
-void cleanup_data_GL_Gather_as_Reduce(collective_params_t* params) {
+void cleanup_data_GL_Gather_as_Reduce(collective_params_t* params)
+{
     free(params->sbuf);
     free(params->rbuf);
     free(params->tmp_buf);
@@ -144,5 +148,3 @@ void cleanup_data_GL_Gather_as_Reduce(collective_params_t* params) {
     params->tmp_buf = NULL;
 }
 /***************************************/
-
-

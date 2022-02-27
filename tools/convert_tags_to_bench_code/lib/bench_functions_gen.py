@@ -1,7 +1,7 @@
 import sys
 import os
 import re
-from __builtin__ import len
+from builtins import len
 
 PARSED_OPTS_VAR = "reprompib_opts"
 JOB_VAR_NAME = "reprompib_job"
@@ -9,7 +9,8 @@ NREP_INDEX_VAR_NAME = "reprompib_nrep_index"
 SYNCF_VAR_NAME = "reprompib_sync_f"
 
 def generate_init_bench(indent):
-    code = [ "reprompib_initialize_benchmark(argc, argv, &%s, &%s);" % (SYNCF_VAR_NAME, PARSED_OPTS_VAR)
+    code = [ "icmb_parse_intercommunication_options(argc, argv);",
+            "reprompib_initialize_benchmark(argc, argv, &%s, &%s);" % (SYNCF_VAR_NAME, PARSED_OPTS_VAR),
              ]
     return format_code(code, indent)
 
@@ -86,9 +87,9 @@ def generate_declare_variables(main_file, ts_arrays, strings_array, indent):
         return generate_declare_variables_main_file(indent)
 
     ts_array_unique = list(set(ts_arrays))
-    additional_vars1 = map((lambda t: "double* %s = NULL;" % (t) ), ts_array_unique)
+    additional_vars1 = list(map((lambda t: "double* %s = NULL;" % (t) ), ts_array_unique))
     strings_array_unique = list(set(strings_array))
-    additional_vars2 = map((lambda s: "char* %s = NULL;" % (s) ), strings_array_unique)
+    additional_vars2 = list(map((lambda s: "char* %s = NULL;" % (s) ), strings_array_unique))
 
     code = [ "extern reprompib_sync_functions_t %s;" % (SYNCF_VAR_NAME),
              "extern reprompib_options_t %s;" % (PARSED_OPTS_VAR),
@@ -106,6 +107,7 @@ def generate_add_includes(indent):
     code = [ "#include <string.h>",
             "#include \"reprompi_bench/sync/synchronization.h\"",
             "#include \"reprompi_bench/benchmark_lib/reproMPIbenchmark.h\"",
+            "#include \"contrib/intercommunication/intercommunication.h\"",
             ]
     return format_code(code, indent)
 
@@ -119,8 +121,8 @@ def generate_init_timestamp_array(name, indent):
 
 def generate_cleanup_arrays(array, indent):
     array_unique = list(set(array))
-    code_free = map((lambda t: "free(%s);" % (t) ), array_unique)
-    code_set_null = map((lambda t: "%s = NULL;" % (t) ), array_unique)
+    code_free = list(map((lambda t: "free(%s);" % (t) ), array_unique))
+    code_set_null = list(map((lambda t: "%s = NULL;" % (t) ), array_unique))
     return format_code(code_free, indent) + format_code(code_set_null, indent)
 
 
@@ -139,8 +141,8 @@ def generate_init_job(output_config, indent):
             "\treprompib_initialize_job(%s.n_rep, %s, %s, " % (PARSED_OPTS_VAR, output_config["start_time"], output_config["end_time"]),
              "\t        \"%s\", \"%s\", \"%s\", &%s);"  % (output_config["op"], output_config["name"], output_config["type"], JOB_VAR_NAME)
             ]
-    job_config.extend( map((lambda (key, val): "\treprompib_add_svar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), svars.iteritems()))
-    job_config.extend( map((lambda  (key, val): "\treprompib_add_ivar_to_job(\"%s\", %s, &%s);" % (key, val, JOB_VAR_NAME) ), ivars.iteritems()))
+    job_config.extend( list(map((lambda key_val: "\treprompib_add_svar_to_job(\"%s\", %s, &%s);" % (key_val[0], key_val[1], JOB_VAR_NAME) ), iter(svars.items()))))
+    job_config.extend( list(map((lambda key_val1: "\treprompib_add_ivar_to_job(\"%s\", %s, &%s);" % (key_val1[0], key_val1[1], JOB_VAR_NAME) ), iter(ivars.items()))))
 
     return format_code(job_config, indent)
 
@@ -170,19 +172,19 @@ def generate_stop_measurement_loop(indent):
 
 def generate_add_to_dictionary(dict, indent):
     spaces = ' ' * indent
-    code = map((lambda t: "reprompib_add_parameter_to_bench(\"%s\", %s);" % (t, dict[t]) ), dict.keys())
+    code = list(map((lambda t: "reprompib_add_parameter_to_bench(\"%s\", %s);" % (t, dict[t]) ), list(dict.keys())))
     return format_code(code, indent)
 
 
 def generate_set_variable(dict, indent):
 
-    code = map((lambda t: "%s = strdup(%s);" % (t, dict[t]) ), dict.keys())
+    code = list(map((lambda t: "%s = strdup(%s);" % (t, dict[t]) ), list(dict.keys())))
     return format_code(code, indent)
 
 
 
 def format_code(code_lines, indent):
     spaces = ' ' * indent
-    code = map((lambda t: "%s%s\n" % (spaces, t) ), code_lines)
+    code = list(map((lambda t: "%s%s\n" % (spaces, t) ), code_lines))
     return "".join(code)
 

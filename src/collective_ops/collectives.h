@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -74,16 +76,31 @@ typedef struct collparams {
     char* sbuf;
     char* rbuf;
     char* tmp_buf;
-    int nprocs;
     int root;
     MPI_Datatype datatype;
     MPI_Aint datatype_extent;
     MPI_Op op;
+    int is_intercommunicator;
+    int is_initiator;
+    int is_responder;
+    int initiator_size;
+    int local_size;
+    int remote_size;
+    int responder_size;
+    int larger_size;
+    long combined_size;
+    MPI_Comm communicator;
     int rank;
     size_t scount;
     size_t rcount;
+    size_t tscount;
+    size_t trcount;
+    int* scounts_array;
     int* counts_array;
     int* displ_array;
+    MPI_Comm partial_communicator;
+    int troot_i2r;
+    int troot_r2i;
 
     // parameters relevant for ping-pong operations
     int pingpong_ranks[2];
@@ -91,7 +108,6 @@ typedef struct collparams {
 
 
 typedef struct basic_collparams {
-    int nprocs;
     int root;
     MPI_Datatype datatype;
     MPI_Op op;
@@ -118,6 +134,12 @@ char* const* get_mpi_calls_list(void);
 
 extern const collective_ops_t collective_calls[];
 
+/*
+ * procs argument is not used with inter-communicators because it is ambiguous
+ *
+ * instead, the implementation must either use the number of processes in the
+ * local group or the number of processes in the remote group
+ */
 void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info);
 
 void execute_Allgather(collective_params_t* params);
@@ -168,8 +190,7 @@ void execute_pingpong_Sendrecv(collective_params_t* params);
 
 
 // buffer initialization functions
-void initialize_common_data(const basic_collective_params_t info,
-        collective_params_t* params);
+void initialize_common_data(const basic_collective_params_t info, collective_params_t* params);
 void initialize_data_default(const basic_collective_params_t info, const long count, collective_params_t* params);
 
 void initialize_data_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params);
@@ -184,14 +205,12 @@ void initialize_data_GL_Allgather_as_Allreduce(const basic_collective_params_t i
 void initialize_data_GL_Allgather_as_Alltoall(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allgather_as_GatherBcast(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReduceBcast(const basic_collective_params_t info, const long count, collective_params_t* params);
-//void initialize_data_GL_Allreduce_as_ReducescatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReducescatterAllgatherv(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Allreduce_as_ReducescatterblockAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Bcast_as_ScatterAllgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Gather_as_Allgather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Gather_as_Reduce(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_Allreduce(const basic_collective_params_t info, const long count, collective_params_t* params);
-//void initialize_data_GL_Reduce_as_ReducescatterGather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_ReducescatterGatherv(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_as_ReducescatterblockGather(const basic_collective_params_t info, const long count, collective_params_t* params);
 void initialize_data_GL_Reduce_scatter_as_Allreduce(const basic_collective_params_t info, const long count, collective_params_t* params);

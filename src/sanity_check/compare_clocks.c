@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
 </license>
 */
 
+// allow nanosleep with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -30,6 +35,8 @@
 
 #include "reprompi_bench/sync/time_measurement.h"
 #include "parse_test_options.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 int main(int argc, char* argv[]) {
     int my_rank, nprocs, p;
@@ -50,10 +57,14 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     master_rank = 0;
 
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
+
+    my_rank = icmb_global_rank();
+    nprocs = icmb_global_size();
+
     ret = parse_test_options(&opts, argc, argv);
     validate_test_options_or_abort(ret, &opts);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
     n_wait_steps = opts.n_rep + 1;
 
@@ -87,10 +98,10 @@ int main(int argc, char* argv[]) {
 
     // gather measurement results
     MPI_Gather(rdtsc_times, n_wait_steps, MPI_DOUBLE, all_rdtsc_times,
-            n_wait_steps, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            n_wait_steps, MPI_DOUBLE, 0, icmb_global_communicator());
 
     MPI_Gather(wtime_times, n_wait_steps, MPI_DOUBLE, all_wtime_times,
-            n_wait_steps, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            n_wait_steps, MPI_DOUBLE, 0, icmb_global_communicator());
 
     if (my_rank == master_rank) {
         for (p = 0; p < nprocs; p++) {

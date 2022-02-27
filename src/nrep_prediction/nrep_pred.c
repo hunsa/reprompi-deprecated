@@ -1,10 +1,12 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
- Research Group for Parallel Computing
- Faculty of Informatics
- Vienna University of Technology, Austria
-
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -41,6 +43,8 @@
 #include "benchmark_job.h"
 #include "parse_nrep_pred_options.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 #ifndef ENABLE_WINDOWSYNC
 
 static const int OUTPUT_ROOT_PROC = 0;
@@ -62,12 +66,10 @@ typedef struct summary {
 // can only be done at the root
 static nrep_pred_state_t check_prediction_ready(const double* maxRuntimes_sec, const long measured_nreps,
     const double rse_threshold, const int root_proc) {
-  int my_rank;
   double mean, sd, rse;
   nrep_pred_state_t state = NREP_PRED_OK;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  if (my_rank != root_proc) {
+  if (!icmb_has_initiator_rank(root_proc)) {
     return NREP_PRED_NOT_DONE;
   }
 
@@ -111,10 +113,8 @@ static int compute_array_summary(const double* my_array, const long array_length
 
 static long compute_nreps(const double ref_runtime_s, const double time_limit_s, const int root_proc) {
   long nreps;
-  int my_rank;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  if (my_rank != root_proc) {
+  if (!icmb_has_initiator_rank(root_proc)) {
     return -1;
   }
   //printf("median=%.10f\n", ref_runtime_s);
@@ -127,13 +127,11 @@ static long compute_nreps(const double ref_runtime_s, const double time_limit_s,
 static void nrep_pred_print_prediction_results(const job_t* job, const reprompib_common_options_t* opts,
     const nrep_pred_options_t* pred_params, const long measured_nreps, const long estimated_nreps,
     const array_summary_t* summ) {
-  int my_rank;
   FILE* f;
 
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   f = stdout;
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     if (opts->output_file != NULL) {
       f = fopen(opts->output_file, "a");
     }
@@ -148,12 +146,10 @@ static void nrep_pred_print_prediction_results(const job_t* job, const reprompib
 }
 
 void nrep_pred_print_results_header(const char* filename) {
-  int my_rank;
   FILE* f;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
   f = stdout;
-  if (my_rank == OUTPUT_ROOT_PROC) {
+  if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
     if (filename != NULL) {
       f = fopen(filename, "a");
     }
@@ -168,7 +164,6 @@ void nrep_pred_print_results_header(const char* filename) {
 int main(int argc, char* argv[]) {
 
 #ifndef ENABLE_WINDOWSYNC
-  int my_rank, procs;
   long i, jindex, current_index;
   double* tstart_sec;
   double* tend_sec;
@@ -193,9 +188,9 @@ int main(int argc, char* argv[]) {
   /* start up MPI
    * */
   MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &procs);
 
+  // parse command line options to launch inter-communicators
+  icmb_parse_intercommunication_options(argc, argv);
 
   start_time = time(NULL);
 
@@ -229,7 +224,7 @@ int main(int argc, char* argv[]) {
   // generate list of jobs ((mpifunc, count) tuples) with nrep=0 for each of them
   generate_job_list(&opts, 0, &jlist);
 
-  init_collective_basic_info(opts, procs, &coll_basic_info);
+  init_collective_basic_info(opts, 0, &coll_basic_info);
 
   // execute the benchmark jobs
   for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
@@ -278,7 +273,7 @@ int main(int argc, char* argv[]) {
 
       // verify the prediction stopping conditions and broadcast them to all processes
       stop_meas = check_prediction_ready(maxRuntimes_sec, current_index, pred_params.threshold, OUTPUT_ROOT_PROC);
-      MPI_Bcast(&stop_meas, 1, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+      MPI_Bcast(&stop_meas, 1, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
       if (stop_meas == NREP_PRED_OK) {
         break;
       }
@@ -286,7 +281,7 @@ int main(int argc, char* argv[]) {
     }
 
     // estimate needed nreps based on the measured run-times in maxRuntimes_sec
-    if (my_rank == OUTPUT_ROOT_PROC) {  // data is only on the root process
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {  // data is only on the root process
       array_summary_t summ;
 
       ret = compute_array_summary(maxRuntimes_sec, current_index, &summ);

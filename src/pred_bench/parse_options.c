@@ -1,10 +1,12 @@
 /*  ReproMPI Benchmark
  *
  *  Copyright 2015 Alexandra Carpen-Amarie, Sascha Hunold
- Research Group for Parallel Computing
- Faculty of Informatics
- Vienna University of Technology, Austria
-
+    Research Group for Parallel Computing
+    Faculty of Informatics
+    Vienna University of Technology, Austria
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
  <license>
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -36,6 +38,8 @@
 #include "reprompi_bench/option_parser/option_parser_helpers.h"
 //#include "reprompi_bench/option_parser/option_parser_constants.h"
 #include "parse_options.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 static const double DEFAULT_THRES = 0.02;
 static const int DEFAULT_WIN = 10;
@@ -93,17 +97,15 @@ static void init_parameters(nrep_pred_params_t* opts_p) {
 
 
 void reprompib_print_prediction_help(void) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("\nUSAGE: mpibenchmarkPredNreps [options]\n");
         printf("options:\n");
     }
 
     reprompib_print_common_help();
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("\nSpecific options for estimating the number of repetitions:\n");
         printf("%-40s %-40s\n %50s%s\n %50s%s\n %50s%s\n",
                 "--rep-prediction min=<min>,max=<max>,step=<step>",
@@ -334,6 +336,11 @@ void reprompib_parse_options(int argc, char** argv, nrep_pred_params_t* opts_p) 
     }
   }
 
+  if (printhelp) {
+    MPI_Finalize();
+    exit(0);
+  }
+
   if (opts_p->n_rep_max <= 0) {
     reprompib_print_error_and_exit("Max nreps value is null or not correctly specified");
   }
@@ -353,11 +360,6 @@ void reprompib_parse_options(int argc, char** argv, nrep_pred_params_t* opts_p) 
     if (i >= opts_p->n_methods && opts_p->info[i].method_win >= 0) {
       reprompib_print_error_and_exit("Prediction method window list contains too many values");
     }
-  }
-
-  if (printhelp) {
-    MPI_Finalize();
-    exit(0);
   }
 
   optind = 1;	// reset optind to enable option re-parsing

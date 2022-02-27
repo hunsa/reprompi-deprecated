@@ -1,3 +1,16 @@
+Version 1.1.1
+  - added process skew benchmark
+  - added high resolution clocks for Armv8 ISA
+  - added cmake configuration for Fugaku
+  - corrected indexing for chunked output
+
+Version 1.1.0
+  - added support for inter-communicators
+
+Version 1.0.2
+  - upgraded python scripts to Python 3
+  - made precompiler checks portable
+
 Version 1.0.1
   - changed output format for NREP prediction to print median and mean run-times
   - fixed Alltoall bug
@@ -60,6 +73,8 @@ Version 0.9.2
  
 
 Version 0.9.1
-
 - fixed mockup MPI functions
 - removed outlier filtering from cov_median
+
+Version 0.6.1
+- removed name clash with min/max

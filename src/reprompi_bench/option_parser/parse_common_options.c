@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,6 +39,8 @@
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/misc.h"
 #include "parse_common_options.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 static const int LEN_MPICALLS_BATCH = 10;
 static const int LEN_MSIZES_BATCH = 10;
@@ -319,9 +323,6 @@ static void parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_
     int index;
     int rank;
     char *endptr;
-    int nprocs, my_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     save_str = (char*) malloc(STRING_SIZE * sizeof(char));
     s = save_str;
@@ -337,13 +338,27 @@ static void parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_
       if (errno != 0 || endptr == ranks_tok)  {
         reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
       }
-      if (rank < 0 || rank >= nprocs) {
-        reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
-      } else {
-
-        if (index >= 2) { // cannot have more than two pingpong ranks
+      if (index == 0)
+      {
+          if (rank < 0 || rank >= icmb_initiator_size())
+          {
+              reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
+          }
+      }
+      else if (index == 1)
+      {
+          if (rank < 0 || rank >= icmb_responder_size())
+          {
+              reprompib_print_error_and_exit("Invalid rank specified for the ping-pong operation");
+          }
+      }
+      else if (index >= 2)
+      {
+          // cannot have more than two pingpong ranks
           reprompib_print_error_and_exit("Cannot have more than two ping-pong ranks");
-        }
+      }
+      else
+      {
         opts_p->pingpong_ranks[index++] = rank;
         ranks_tok = strtok_r(NULL, ",", &save_str);
       }
@@ -362,9 +377,6 @@ static void parse_pingpong_ranks(char* optarg, reprompib_common_options_t* opts_
 
 void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc, char **argv) {
     int c;
-    int nprocs, my_rank;
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     init_parameters(opts_p);
 
@@ -423,7 +435,7 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
     }
 
     // check for errors
-    if (opts_p->root_proc < 0 || opts_p->root_proc > nprocs - 1) {
+    if (opts_p->root_proc < 0 || opts_p->root_proc >= icmb_initiator_size()) {
       reprompib_print_error_and_exit("Invalid root process (should be >= 0 and smaller than the total number of processes)");
     }
 
@@ -438,7 +450,7 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
 
     if (opts_p->output_file != NULL) {
         long output_file_error = 0;
-        if (my_rank == OUTPUT_ROOT_PROC) {
+        if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
             FILE *f;
             f = fopen(opts_p->output_file, "w");
             if (f != NULL) {
@@ -449,7 +461,7 @@ void reprompib_parse_common_options(reprompib_common_options_t* opts_p, int argc
             }
         }
 
-        MPI_Bcast(&output_file_error, 1, MPI_LONG, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+        MPI_Bcast(&output_file_error, 1, MPI_LONG, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
         if (output_file_error != 0) {
             opts_p->output_file = NULL;
             reprompib_print_error_and_exit("Cannot open output file");

@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     if options.input_dir == None:
         input_dir = os.path.abspath(base_path)
-        print  "Warning: Experiment directory not specified. Using current directory %s\n" %  base_path
+        print("Warning: Experiment directory not specified. Using current directory %s\n" %  base_path)
     else:
         input_dir = os.path.abspath(options.input_dir)
         
@@ -55,13 +55,11 @@ if __name__ == "__main__":
         sys.exit("Output directory not specified or does not exist.\n")
         
     if not (os.path.exists(options.output_dir) and os.path.isdir(options.output_dir)):
-        print "Creating output directory: %s" % (options.output_dir)
+        print("Creating output directory: %s" % (options.output_dir))
         os.makedirs(options.output_dir)
         
     cmake_helper_files_dir = os.path.join(lib_path, "gen_code_config_files")
     codegen = BenchmarkCodeGen(input_dir, options.output_dir, sources_file, cmake_helper_files_dir)
     codegen.generate_benchmarking_code()
     
-    print "Done.\nGenerated code can be found here: %s" % options.output_dir
-    
-        
+    print("Done.\nGenerated code can be found here: %s" % options.output_dir)

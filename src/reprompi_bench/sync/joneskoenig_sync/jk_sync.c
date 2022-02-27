@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +37,8 @@
 #include "jk_parse_options.h"
 #include "jk_sync.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 const int WARMUP_ROUNDS = 5;
 
 static double start_sync = 0; /* current window start timestamp (global time) */
@@ -52,14 +56,11 @@ double slope, intercept;
 
 void estimate_rtt(int master_rank, int other_rank, const int n_pingpongs,
         double *rtt) {
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
     MPI_Status stat;
     int i;
     double tmp;
     double *rtts = NULL;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == master_rank) {
         double tstart, tremote;
@@ -67,16 +68,16 @@ void estimate_rtt(int master_rank, int other_rank, const int n_pingpongs,
         /* warm up */
         for (i = 0; i < WARMUP_ROUNDS; i++) {
             tmp = get_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(), &stat);
         }
 
         rtts = (double*) malloc(n_pingpongs * sizeof(double));
 
         for (i = 0; i < n_pingpongs; i++) {
             tstart = get_time();
-            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD,
+            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(),
                     &stat);
             rtts[i] = get_time() - tstart;
         }
@@ -86,17 +87,17 @@ void estimate_rtt(int master_rank, int other_rank, const int n_pingpongs,
 
         /* warm up */
         for (i = 0; i < WARMUP_ROUNDS; i++) {
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD,
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(),
                     &stat);
             tmp = get_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
 
         for (i = 0; i < n_pingpongs; i++) {
-            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD,
+            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(),
                     &stat);
             tlocal = get_time();
-            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
     }
 
@@ -137,29 +138,27 @@ void estimate_rtt(int master_rank, int other_rank, const int n_pingpongs,
 }
 
 void warmup(int root_rank) {
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     MPI_Status status;
     int i, p;
     double tmp;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (root_rank == my_rank) {
         for (i = 0; i < WARMUP_ROUNDS; i++) {
             for (p = 0; p < np; p++) {
                 if (p != root_rank) {
-                    MPI_Send(&tmp, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD);
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD,
+                    MPI_Send(&tmp, 1, MPI_DOUBLE, p, 0, icmb_global_communicator());
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, p, 0, icmb_global_communicator(),
                             &status);
                 }
             }
         }
     } else {
         for (i = 0; i < WARMUP_ROUNDS; i++) {
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, root_rank, 0, MPI_COMM_WORLD,
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, root_rank, 0, icmb_global_communicator(),
                     &status);
-            MPI_Send(&tmp, 1, MPI_DOUBLE, root_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, root_rank, 0, icmb_global_communicator());
         }
     }
 
@@ -168,16 +167,14 @@ void warmup(int root_rank) {
 void learn_clock(const int root_rank, double *intercept, double *slope,
         const long n_fitpoints, const long n_exchanges, const double my_rtt) {
     int i, j, p;
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     MPI_Status status;
 
     //  struct timespec ts;
     //
     //  ts.tv_sec  = 0;
     //  ts.tv_nsec = wait_nsec;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     //  printf("rtt of %d : %.20f\n", my_rank, my_rtt);
 
@@ -193,10 +190,10 @@ void learn_clock(const int root_rank, double *intercept, double *slope,
             for (p = 0; p < np; p++) {
                 if (p != root_rank) {
                     for (i = 0; i < n_exchanges; i++) {
-                        MPI_Recv(&tremote, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD,
+                        MPI_Recv(&tremote, 1, MPI_DOUBLE, p, 0, icmb_global_communicator(),
                                 &status);
                         tlocal = get_time();
-                        MPI_Ssend(&tlocal, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD);
+                        MPI_Ssend(&tlocal, 1, MPI_DOUBLE, p, 0, icmb_global_communicator());
                     }
                 }
             }
@@ -223,9 +220,9 @@ void learn_clock(const int root_rank, double *intercept, double *slope,
 
             for (i = 0; i < n_exchanges; i++) {
                 dummy = get_time();
-                MPI_Ssend(&dummy, 1, MPI_DOUBLE, root_rank, 0, MPI_COMM_WORLD);
+                MPI_Ssend(&dummy, 1, MPI_DOUBLE, root_rank, 0, icmb_global_communicator());
                 MPI_Recv(&master_time, 1, MPI_DOUBLE, root_rank, 0,
-                        MPI_COMM_WORLD, &status);
+                        icmb_global_communicator(), &status);
                 local_time[i] = get_time();
                 time_var[i] = local_time[i] - master_time - my_rtt / 2.0;
                 time_var2[i] = time_var[i];
@@ -293,10 +290,7 @@ void jk_sync_clocks(void) {
     int master_rank;
     double *rtts_s;
     int n_pingpongs = 1000;
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int np = icmb_global_size();
 
     master_rank = 0;
 
@@ -312,27 +306,25 @@ void jk_sync_clocks(void) {
     }
 
     MPI_Scatter(rtts_s, 1, MPI_DOUBLE, &my_rtt, 1, MPI_DOUBLE, master_rank,
-            MPI_COMM_WORLD);
+            icmb_global_communicator());
     free(rtts_s);
 
     learn_clock(master_rank, &intercept, &slope, parameters.n_fitpoints,
             parameters.n_exchanges, my_rtt);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 }
 
 
 void jk_init_synchronization(void) {
-    int my_rank;
+    int my_rank = icmb_global_rank();
     int master_rank = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     repetition_counter = 0;
     if (my_rank == master_rank) {
         start_sync = get_time() + parameters.wait_time_sec;
     }
-    MPI_Bcast(&start_sync, 1, MPI_DOUBLE, master_rank, MPI_COMM_WORLD);
+    MPI_Bcast(&start_sync, 1, MPI_DOUBLE, master_rank, icmb_global_communicator());
 }
 
 
@@ -384,4 +376,3 @@ void jk_print_sync_parameters(FILE* f) {
     fprintf(f, "#@exchanges=%d\n", parameters.n_exchanges);
     fprintf(f, "#@wait_time_s=%.10f\n", parameters.wait_time_sec);
 }
-

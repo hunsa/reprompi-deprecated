@@ -1,9 +1,16 @@
+build/
+bin/
+src/version.h
+*anjuta*
+*kdev4*
+*.pyc
 *.Rhistory
 *.aux
 *.bbl
 *.out
 *.log
 *.DS_Store
+*.backup
 *~
 *.blg
 *CMakeFiles*

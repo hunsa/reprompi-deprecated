@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
 </license>
  */
 
+// allow strdup with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -31,6 +36,8 @@
 #include "reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.h"
 #include "buf_manager/mem_allocation.h"
 #include "collectives.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 const collective_ops_t collective_calls[] = {
         [MPI_ALLGATHER] = {
@@ -113,11 +120,6 @@ const collective_ops_t collective_calls[] = {
                 &initialize_data_GL_Allreduce_as_ReduceBcast,
                 &cleanup_data_GL_Allreduce_as_ReduceBcast
         },
-//        [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHER] = {
-//                &execute_GL_Allreduce_as_ReducescatterAllgather,
-//                &initialize_data_GL_Allreduce_as_ReducescatterAllgather,
-//                &cleanup_data_GL_Allreduce_as_ReducescatterAllgather
-//        },
         [GL_ALLREDUCE_AS_REDUCESCATTERALLGATHERV] = {
                 &execute_GL_Allreduce_as_ReducescatterAllgatherv,
                 &initialize_data_GL_Allreduce_as_ReducescatterAllgatherv,
@@ -148,11 +150,6 @@ const collective_ops_t collective_calls[] = {
                 &initialize_data_GL_Reduce_as_Allreduce,
                 &cleanup_data_GL_Reduce_as_Allreduce
         },
-//        [GL_REDUCE_AS_REDUCESCATTERGATHER] = {
-//                &execute_GL_Reduce_as_ReducescatterGather,
-//                &initialize_data_GL_Reduce_as_ReducescatterGather,
-//                &cleanup_data_GL_Reduce_as_ReducescatterGather
-//        },
         [GL_REDUCE_AS_REDUCESCATTERGATHERV] = {
                 &execute_GL_Reduce_as_ReducescatterGatherv,
                 &initialize_data_GL_Reduce_as_ReducescatterGatherv,
@@ -316,15 +313,18 @@ void initialize_data_default(const basic_collective_params_t info, const long co
 
     params->scount = count;
     params->rcount = count;
+    params->tscount = count;
+    params->trcount = count;
 
     assert (params->scount < INT_MAX);
     assert (params->rcount < INT_MAX);
+    assert (params->tscount < INT_MAX);
+    assert (params->trcount < INT_MAX);
 
     params->sbuf = (char*)reprompi_calloc(params->scount, params->datatype_extent);
     params->rbuf = (char*)reprompi_calloc(params->rcount, params->datatype_extent);
     memset(params->sbuf, 0, params->scount * params->datatype_extent);
     memset(params->rbuf, 0, params->rcount * params->datatype_extent);
-
 }
 
 
@@ -346,8 +346,18 @@ void initialize_common_data(const basic_collective_params_t info,
 
     params->op = info.op;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &params->rank);
-    params->nprocs = info.nprocs;
+    params->is_intercommunicator = icmb_is_intercommunicator();
+    params->is_initiator = icmb_is_initiator();
+    params->is_responder = icmb_is_responder();
+    params->communicator = icmb_benchmark_communicator();
+    params->initiator_size = icmb_initiator_size();
+    params->local_size = icmb_local_size();
+    params->remote_size = icmb_remote_size();
+    params->responder_size = icmb_responder_size();
+    params->larger_size = icmb_larger_size();
+    params->combined_size = icmb_combined_size();
+
+    params->rank = icmb_benchmark_rank();
 
     params->root = info.root;
 
@@ -357,28 +367,61 @@ void initialize_common_data(const basic_collective_params_t info,
     params->sbuf = NULL;
     params->rbuf = NULL;
     params->tmp_buf = NULL;
+    params->scounts_array = NULL;
     params->counts_array = NULL;
     params->displ_array = NULL;
+
+    // some communicator and root trickery
+    // to allow GL mockups to simulate bidirectional all-to-alls
+    // with unidirectional all-to-ones or one-to-alls
+    params->partial_communicator = icmb_partial_communicator();
+    params->troot_i2r = 0;
+    params->troot_r2i = 0;
+    if (params->is_intercommunicator)
+    {
+        if (params->is_initiator)
+        {
+            if (0 == params->rank)
+            {
+                params->troot_i2r = MPI_ROOT;
+            }
+            else{
+                params->troot_i2r = MPI_PROC_NULL;
+            }
+        }
+        else {
+            if (0 == params->rank)
+            {
+                params->troot_r2i = MPI_ROOT;
+            }
+            else{
+                params->troot_r2i = MPI_PROC_NULL;
+            }
+        }
+    }
 }
 
 
+/*
+ * procs argument is not used with inter-communicators because it is ambiguous
+ *
+ * instead, the implementation must either use the number of processes in the
+ * local group or the number of processes in the remote group, depending on
+ * context
+ */
 void init_collective_basic_info(reprompib_common_options_t opts, int procs, basic_collective_params_t* coll_basic_info) {
     // initialize common collective calls information
     coll_basic_info->datatype = opts.datatype;
-    coll_basic_info->nprocs = procs;
     coll_basic_info->op = opts.operation;
     coll_basic_info->root = 0;
 
     coll_basic_info->pingpong_ranks[0] = opts.pingpong_ranks[0];
     coll_basic_info->pingpong_ranks[1] = opts.pingpong_ranks[1];
 
-    if (opts.root_proc >= 0 && opts.root_proc < procs) {
+    if (opts.root_proc >= 0 && opts.root_proc < icmb_initiator_size()) {
         coll_basic_info->root = opts.root_proc;
     }
 
+    // adjust root for inter-communicator collectives
+    coll_basic_info->root = icmb_collective_root(coll_basic_info->root);
 }
-
-
-
-
-

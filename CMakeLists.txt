@@ -1,18 +1,19 @@
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6...3.20.5)
+
+set(CMAKE_C_STANDARD 11)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake_modules/")
    
+set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake"
+    CACHE STRING "Configure project to use a specific platform file")
+include(${INCLUDE_PLATFORM_CONFIG_FILE})
+
 project(reprompi)
 
 set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
-
-
-set(INCLUDE_PLATFORM_CONFIG_FILE "${CMAKE_SOURCE_DIR}/platform_files/default.cmake" 
-    CACHE STRING "Configure project to use a specific platform file")
-include(${INCLUDE_PLATFORM_CONFIG_FILE})
 
 find_package(GSL REQUIRED)
 if (GSL_INCLUDE_DIR)
@@ -34,12 +35,15 @@ option(RDTSC_CALIBRATION "Calibrate the frequency of RTDSC [default: off (uses F
 
 option(ENABLE_RDTSC "Use RDTSC for time measurements [default: MPI_Wtime()]" off)
 option(ENABLE_RDTSCP "Use RDTSCP for time measurements [default: MPI_Wtime()]" off)
+option(ENABLE_CNTPCT "Use CNTPCT_EL0 for time measurements [default: MPI_Wtime()]" off)
+option(ENABLE_CNTVCT "Use CNTVCT_EL0 for time measurements [default: MPI_Wtime()]" off)
 option(ENABLE_DOUBLE_BARRIER "Call barrier twice for synchronization [default: disabled]" off)
 set(FREQUENCY_MHZ 2300 CACHE STRING "CPU Frequency (needed for RDTSCP-based time measurements)")
 
 option(COMPILE_PRED_BENCHMARK "Enable the NREP prediction benchmarks [default: enabled]" on)
 option(COMPILE_BENCH_LIBRARY "Compile ReproMPI library [default: disabled]" off)
 option(COMPILE_BENCH_TESTS "Enable benchmark testing [default: disabled]" off)
+option(COMPILE_PROCESS_SKEW "Enable process skew benchmark [default: disabled]" off)
 
 option(COMPILE_SANITY_CHECK_TESTS "Enable sanity check tests" off)
 option(COMPILE_SANITY_CHECK_CLOCK "Enable clock sanity checks" on)
@@ -83,6 +87,13 @@ if(FREQUENCY_MHZ)
     SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DFREQUENCY_MHZ=${FREQUENCY_MHZ}")
 endif()
 
+if(ENABLE_CNTPCT)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_CNTPCT")
+endif()
+
+if(ENABLE_CNTVCT)
+    SET(MY_COMPILE_FLAGS "${MY_COMPILE_FLAGS} -DENABLE_CNTVCT")
+endif()
 
 ###############################################
 ############ Set synchronization flags ########
@@ -174,6 +185,14 @@ ${SRC_DIR}/reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.c
 ${HCA_FILES}
 )
 
+set(INTERCOMM_SOURCE_FILES
+${SRC_DIR}/contrib/intercommunication/attributes.c
+${SRC_DIR}/contrib/intercommunication/error_output.c
+${SRC_DIR}/contrib/intercommunication/excluded_collectives.c
+${SRC_DIR}/contrib/intercommunication/launchers.c
+${SRC_DIR}/contrib/intercommunication/options_parser.c
+${SRC_DIR}/contrib/intercommunication/utilities.c
+)
 
 
 # generate commit version
@@ -215,6 +234,8 @@ ${SRC_DIR}/reprompi_bench/option_parser/parse_extra_key_value_options.c
 ${SRC_DIR}/reprompi_bench/option_parser/parse_options.c
 # collective functions
 ${COLL_OPS_SRC_FILES}
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 
 
@@ -263,10 +284,12 @@ if (COMPILE_BENCH_LIBRARY)
     ADD_SUBDIRECTORY(${SRC_DIR}/reprompi_bench/benchmark_lib)
 endif()
 
-
+if (COMPILE_PROCESS_SKEW)
+    ADD_SUBDIRECTORY(${SRC_DIR}/contrib/process_skew)
+endif()
 
 set(CPACK_PACKAGE_VERSION_MAJOR "1")
-set(CPACK_PACKAGE_VERSION_MINOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
 set(CPACK_PACKAGE_VERSION_PATCH "1")
 set(CPACK_SOURCE_GENERATOR "TBZ2")
 

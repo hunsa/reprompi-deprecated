@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -29,6 +31,8 @@
 #include <time.h>
 #include <limits.h>
 #include <errno.h>
+
+#include "contrib/intercommunication/intercommunication.h"
 
 #include "misc.h"
 
@@ -91,17 +95,6 @@ int reprompib_str_to_long(const char *str, long* result) {
 }
 
 
-
-
 void reprompib_print_error_and_exit(const char* error_str) {
-  int my_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-  if (my_rank == OUTPUT_ROOT_PROC) {
-    fprintf(stderr, "\nERROR: %s\n\n", error_str);
-  }
-  MPI_Finalize();
-  exit(1);
+    icmb_error_and_exit(error_str, 1);
 }
-
-

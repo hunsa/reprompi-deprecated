@@ -2,7 +2,7 @@ import sys
 import os
 import re
 import errno
-from __builtin__ import len
+from builtins import len
 from bench_functions_gen import *
 
 RUNTIME_COMPUTATION_METHODS = ["all", "reduce"]
@@ -81,7 +81,7 @@ class CodeParser:
 
     def parse_file(self):
         line_no = 1
-        keywords = self.code_generators.keys()
+        keywords = list(self.code_generators.keys())
         self.annotations[self.input_file] = []
         with open(self.input_file) as f:
             for line in f:
@@ -100,7 +100,7 @@ class CodeParser:
 
 
     def process_data(self):
-        for file_name, annotation_list in self.annotations.items():
+        for file_name, annotation_list in list(self.annotations.items()):
 
             self.ts_arrays[file_name] = []
             self.strings_array[file_name] = []
@@ -108,20 +108,20 @@ class CodeParser:
             for annotation in annotation_list:
                 if annotation['keyword'] == "initialize_timestamps":
                     data = annotation['data']
-                    for key in data.keys():
+                    for key in list(data.keys()):
                         if data[key] == "": # found key corresponding to the timer's name
                             self.ts_arrays[file_name].append(key)
 
 
                 if annotation['keyword'] == "set":
                     data = annotation['data']
-                    for key in data.keys():
+                    for key in list(data.keys()):
                         self.strings_array[file_name].append(key)
 
 
 
         self.output_config_list = {}
-        for file_name, annotation_list in self.annotations.items():
+        for file_name, annotation_list in list(self.annotations.items()):
             for annotation in annotation_list:
                 if annotation['keyword'] == "print_runtime_array":
 
@@ -130,7 +130,7 @@ class CodeParser:
                     output_config["string_list"] = {}
                     output_config["int_list"] = {}
 
-                    for key in data.keys():
+                    for key in list(data.keys()):
                         if key == "start_time":
                             output_config["start_time"] = data["start_time"]
                         elif key == "end_time":
@@ -178,7 +178,7 @@ class CodeParser:
                         output_config["op"] = ""
 
 
-                    if not self.output_config_list.has_key(file_name):
+                    if file_name not in self.output_config_list:
                         self.output_config_list[file_name] = {}
 
                     self.output_config_list[file_name][annotation["line_no"]] = [ output_config ]
@@ -228,7 +228,7 @@ class CodeParser:
                                                                "measure_timestamp"
                                                                ]:
                             ts_name = ""
-                            for key in current_annotation["data"].keys():
+                            for key in list(current_annotation["data"].keys()):
                                 if current_annotation["data"][key] == "": # found key corresponding to the timer's name
                                     ts_name = key
                                     break

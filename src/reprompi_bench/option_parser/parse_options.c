@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,6 +36,8 @@
 #include "option_parser_helpers.h"
 #include "parse_options.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 
@@ -61,7 +65,7 @@ enum reprompi_common_getopt_ids {
 };
 
 static const struct option reprompi_default_long_options[] = {
-        {"verbose", optional_argument, 0, REPROMPI_ARGS_VERBOSE},
+        {"verbose", no_argument, 0, REPROMPI_ARGS_VERBOSE},
         { "nrep", required_argument, 0, REPROMPI_ARGS_NREPS },
         {"summary", optional_argument, 0, REPROMPI_ARGS_SUMMARY},
 
@@ -170,17 +174,15 @@ void reprompib_parse_options(reprompib_options_t* opts_p, int argc, char** argv)
 
 
 void reprompib_print_benchmark_help(void) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("\nUSAGE: mpibenchmark [options]\n");
         printf("options:\n");
     }
 
     reprompib_print_common_help();
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("\nSpecific options for the benchmark execution:\n");
         printf("%-40s %-40s\n", "--nrep=<nrep>",
                 "set number of experiment repetitions");

@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,20 +35,20 @@
 #include "pred_helpers.h"
 #include "cov_mean.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 double compute_cov_mean(long nreps, double* runtimes_sec,
         pred_method_info_t prediction_info) {
-    int my_rank, i,j;
+    int i,j;
     double* mean_list = NULL;
     int nmeans;
     long current_nreps;
     double* tmp_runtimes;
     double cov_mean = COEF_ERROR_VALUE;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         double mean_of_means = 0, q1,q3, sd;
         long start_index, end_index;
         double* runtimes;

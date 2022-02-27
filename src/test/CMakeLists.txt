@@ -6,6 +6,8 @@ add_executable(testbench
 testbench.c
 ${SRC_DIR}/reprompi_bench/sync/benchmark_barrier_sync/bbarrier_sync.c
 ${COLL_OPS_SRC_FILES}
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 TARGET_LINK_LIBRARIES(testbench ${COMMON_LIBRARIES} )
 
@@ -14,6 +16,8 @@ add_executable(test_dict
 test_global_dict.c
 ${SRC_DIR}/reprompi_bench/misc.c
 ${SRC_DIR}/reprompi_bench/utils/keyvalue_store.c
+# intercommunication
+${INTERCOMM_SOURCE_FILES}
 )
 TARGET_LINK_LIBRARIES(testbench ${COMMON_LIBRARIES} )
 

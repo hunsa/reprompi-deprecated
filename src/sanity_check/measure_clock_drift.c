@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +23,9 @@
 </license>
  */
 
+// allow nanosleep with c99
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,20 +41,19 @@
 #include <gsl/gsl_fit.h>
 #include <gsl/gsl_sort.h>
 
+#include "contrib/intercommunication/intercommunication.h"
+
 const int RTT_WARMUP_ROUNDS = 5;
 static const int OUTPUT_ROOT_PROC = 0;
 
 void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
         double *rtt, sync_time_t my_get_time) {
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
     MPI_Status stat;
     int i;
     double tmp;
     double *rtts = NULL;
     double mean;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == master_rank) {
         double tstart, tremote;
@@ -57,16 +61,16 @@ void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
         /* warm up */
         for (i = 0; i < RTT_WARMUP_ROUNDS; i++) {
             tmp = my_get_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(), &stat);
         }
 
         rtts = (double*) malloc(n_pingpongs * sizeof(double));
 
         for (i = 0; i < n_pingpongs; i++) {
             tstart = my_get_time();
-            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD,
+            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(),
                     &stat);
             rtts[i] = my_get_time() - tstart;
         }
@@ -76,17 +80,17 @@ void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
 
         /* warm up */
         for (i = 0; i < RTT_WARMUP_ROUNDS; i++) {
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD,
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(),
                     &stat);
             tmp = my_get_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
 
         for (i = 0; i < n_pingpongs; i++) {
-            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD,
+            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(),
                     &stat);
             tlocal = my_get_time();
-            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
     }
 
@@ -118,9 +122,9 @@ void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
         free(rtts);
         free(rtts2);
 
-        MPI_Send(&mean, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
+        MPI_Send(&mean, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
     } else {
-        MPI_Recv(&mean, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD, &stat);
+        MPI_Recv(&mean, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(), &stat);
     }
 
     *rtt = mean;
@@ -128,14 +132,10 @@ void estimate_all_rtts(int master_rank, int other_rank, const int n_pingpongs,
 
 void print_initial_settings(int argc, char* argv[], reprompib_st_opts_t opts,
         print_sync_info_t print_sync_info) {
-    int my_rank, np;
     FILE * f;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
-
     f = stdout;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         int i;
 
         fprintf(f, "#Command-line arguments: ");
@@ -189,6 +189,9 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     master_rank = 0;
 
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
+
     ret = parse_test_options(&opts, argc, argv);
     validate_test_options_or_abort(ret, &opts);
 
@@ -197,8 +200,8 @@ int main(int argc, char* argv[]) {
     sync_f.init_sync_module(sync_opts, opts.n_rep);
 
     n_wait_steps = opts.steps + 1;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    my_rank = icmb_global_rank();
+    nprocs = icmb_global_size();
 
     // compute RTTs
     n_pingpongs = 1000;
@@ -230,7 +233,7 @@ int main(int argc, char* argv[]) {
     sync_f.init_sync();
     runtime_s = get_time() - runtime_s;
 
-    if (my_rank == master_rank) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf ("#@sync_duration=%14.9f\n", runtime_s);
     }
 
@@ -241,9 +244,9 @@ int main(int argc, char* argv[]) {
                 for (i = 0; i < opts.n_rep; i++) {
                     if (p != master_rank) {
                         MPI_Send(&time_msg[0], 2, MPI_DOUBLE, p, 0,
-                                MPI_COMM_WORLD);
+                                icmb_global_communicator());
                         MPI_Recv(&time_msg[0], 2, MPI_DOUBLE, p, 0,
-                                MPI_COMM_WORLD, &stat);
+                                icmb_global_communicator(), &stat);
 
                         //all_local_times[p*nrep+i]  = time_msg[0];
                         all_local_times[step * nprocs * opts.n_rep
@@ -265,7 +268,7 @@ int main(int argc, char* argv[]) {
         } else {
             for (i = 0; i < opts.n_rep; i++) {
                 MPI_Recv(&time_msg[0], 2, MPI_DOUBLE, master_rank, 0,
-                        MPI_COMM_WORLD, &stat);
+                        icmb_global_communicator(), &stat);
 
                 local_time = sync_f.get_time();
                 global_time = sync_f.get_normalized_time(local_time);
@@ -273,7 +276,7 @@ int main(int argc, char* argv[]) {
                 time_msg[1] = global_time;
 
                 MPI_Send(&time_msg[0], 2, MPI_DOUBLE, master_rank, 0,
-                        MPI_COMM_WORLD);
+                        icmb_global_communicator());
 
             }
 

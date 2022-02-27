@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,13 +28,13 @@
 #include <stdlib.h>
 #include <mpi.h>
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 
 void reprompib_print_common_help(void) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         printf("%-40s %-40s\n", "-h", "print this help");
         printf("%-40s %-40s\n", "-v",
                 "increase verbosity level (print times measured for each process)");
@@ -89,6 +91,8 @@ void reprompib_print_common_help(void) {
         printf("%-40s %-40s\n", "--exchanges=<nexc>",
                 "number of exchanges (default: 10)\n");
 
+        // display help for intercommunication options
+        icmb_print_intercommunication_help();
     }
 }
 

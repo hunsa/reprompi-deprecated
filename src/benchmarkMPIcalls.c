@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -41,18 +43,16 @@
 #include "collective_ops/collectives.h"
 #include "reprompi_bench/utils/keyvalue_store.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 static const int HASHTABLE_SIZE=100;
 
 void print_initial_settings(const reprompib_options_t* opts, const reprompib_common_options_t* common_opts, print_sync_info_t print_sync_info, const reprompib_dictionary_t* dict) {
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     print_common_settings(common_opts, print_sync_info, dict);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         FILE* f;
 
         f = stdout;
@@ -73,10 +73,8 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
         sync_errorcodes_t get_errorcodes, sync_normtime_t get_global_time,
         const reprompib_options_t* opts, const reprompib_common_options_t* common_opts) {
     FILE* f = stdout;
-    int my_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (common_opts->output_file != NULL) {
             f = fopen(common_opts->output_file, "a");
         }
@@ -98,7 +96,7 @@ void reprompib_print_bench_output(job_t job, double* tstart_sec, double* tend_se
                 opts->verbose);
     }
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         if (common_opts->output_file != NULL) {
             fflush(f);
             fclose(f);
@@ -113,7 +111,7 @@ void reprompib_parse_bench_options(int argc, char** argv) {
     opterr = 0;
 
     const struct option bench_long_options[] = {
-        { "help", required_argument, 0, 'h' },
+        { "help", no_argument, 0, 'h' },
         { 0, 0, 0, 0 }
     };
 
@@ -131,6 +129,7 @@ void reprompib_parse_bench_options(int argc, char** argv) {
         switch (c) {
         case 'h': /* list of summary options */
             reprompib_print_benchmark_help();
+            icmb_exit(0);
             break;
         case '?':
             break;
@@ -144,7 +143,6 @@ void reprompib_parse_bench_options(int argc, char** argv) {
 
 
 int main(int argc, char* argv[]) {
-    int my_rank, procs;
     long i, jindex;
     double* tstart_sec;
     double* tend_sec;
@@ -162,8 +160,9 @@ int main(int argc, char* argv[]) {
      *
      * */
     MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &procs);
+
+    // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
 
     // initialize time measurement functions
     init_timer();
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
     generate_job_list(&common_opts, opts.n_rep, &jlist);
 
 
-    init_collective_basic_info(common_opts, procs, &coll_basic_info);
+    init_collective_basic_info(common_opts, 0, &coll_basic_info);
     // execute the benchmark jobs
     for (jindex = 0; jindex < jlist.n_jobs; jindex++) {
         job_t job;

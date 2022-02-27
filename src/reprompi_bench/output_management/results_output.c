@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +37,8 @@
 #include "runtimes_computation.h"
 #include "results_output.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 static const int OUTPUT_ROOT_PROC = 0;
 static const int OUTPUT_NITERATIONS_CHUNK = 3000; // approx. 1 MB per process
 
@@ -50,11 +54,8 @@ static const output_msize_t OUTPUT_MSIZE_TYPE = OUTPUT_COUNT;
 #endif
 
 void print_results_header(const reprompib_options_t* opts, const char* output_file_path, int verbose) {
-    int my_rank;
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         FILE * f;
         char msize_str[16];
 
@@ -126,13 +127,11 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 
     double* maxRuntimes_sec;
     int i;
-    int my_rank;
     long current_start_index;
     size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
     int* sync_errorcodes = NULL;
 #endif
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
       // print msize in bytes
@@ -143,7 +142,7 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 
 
     maxRuntimes_sec = NULL;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         maxRuntimes_sec = (double*) malloc(job.n_rep * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
@@ -165,7 +164,7 @@ void print_runtimes(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
             maxRuntimes_sec);
 #endif
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
 
         for (i = 0; i < job.n_rep; i++) {
 
@@ -198,16 +197,12 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
     double* local_end_sec = NULL;
     double* global_start_sec = NULL;
     double* global_end_sec = NULL;
-    int my_rank, np;
     int chunk_id, nchunks;
     int current_rep_id, chunk_nrep = 0;
     size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
     int* errorcodes = NULL;
 #endif
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
       // print msize in bytes
@@ -236,10 +231,10 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
             }
 
 #ifdef ENABLE_WINDOWSYNC
-            if (my_rank == OUTPUT_ROOT_PROC)
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC))
             {
-              errorcodes = (int*)malloc(chunk_nrep * np * sizeof(int));
-              for (i = 0; i < chunk_nrep * np; i++) {
+              errorcodes = (int*)malloc(chunk_nrep * icmb_global_size() * sizeof(int));
+              for (i = 0; i < chunk_nrep * icmb_global_size(); i++) {
                 errorcodes[i] = 0;
               }
             }
@@ -247,44 +242,45 @@ void print_measurement_results(FILE* f, job_t job, double* tstart_sec, double* t
             {
                 int* local_errorcodes = get_errorcodes();
 
-                MPI_Gather(local_errorcodes, chunk_nrep, MPI_INT,
-                        errorcodes, chunk_nrep, MPI_INT, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+                MPI_Gather(local_errorcodes + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_INT,
+                        errorcodes, chunk_nrep, MPI_INT, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
             }
 #endif
 
 #endif
 
-            if (my_rank == OUTPUT_ROOT_PROC) {
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
                 local_start_sec = (double*) malloc(
-                        chunk_nrep * np * sizeof(double));
+                        chunk_nrep * icmb_global_size() * sizeof(double));
                 local_end_sec = (double*) malloc(
-                        chunk_nrep * np * sizeof(double));
+                        chunk_nrep * icmb_global_size() * sizeof(double));
                 global_start_sec = (double*) malloc(
-                        chunk_nrep * np * sizeof(double));
+                        chunk_nrep * icmb_global_size() * sizeof(double));
                 global_end_sec = (double*) malloc(
-                        chunk_nrep * np * sizeof(double));
+                        chunk_nrep * icmb_global_size() * sizeof(double));
             }
 
             // gather measurement results
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, local_start_sec,
-                    chunk_nrep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, local_start_sec,
+                    chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, local_end_sec, chunk_nrep,
-                    MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_Gather(tend_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, local_end_sec, chunk_nrep,
+                    MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
             for (i = 0; i < chunk_nrep; i++) {
-                tstart_sec[i] = get_global_time(tstart_sec[i]);
-                tend_sec[i] = get_global_time(tend_sec[i]);
+                current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
+                tstart_sec[current_rep_id] = get_global_time(tstart_sec[current_rep_id]);
+                tend_sec[current_rep_id] = get_global_time(tend_sec[current_rep_id]);
             }
-            MPI_Gather(tstart_sec, chunk_nrep, MPI_DOUBLE, global_start_sec,
-                    chunk_nrep, MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_Gather(tstart_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, global_start_sec,
+                    chunk_nrep, MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-            MPI_Gather(tend_sec, chunk_nrep, MPI_DOUBLE, global_end_sec, chunk_nrep,
-                    MPI_DOUBLE, OUTPUT_ROOT_PROC, MPI_COMM_WORLD);
+            MPI_Gather(tend_sec + (chunk_id * OUTPUT_NITERATIONS_CHUNK), chunk_nrep, MPI_DOUBLE, global_end_sec, chunk_nrep,
+                    MPI_DOUBLE, icmb_lookup_global_rank(OUTPUT_ROOT_PROC), icmb_global_communicator());
 
-            if (my_rank == OUTPUT_ROOT_PROC) {
+            if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
 
-                for (proc_id = 0; proc_id < np; proc_id++) {
+                for (proc_id = 0; proc_id < icmb_global_size(); proc_id++) {
                     for (i = 0; i < chunk_nrep; i++) {
                         current_rep_id = chunk_id * OUTPUT_NITERATIONS_CHUNK + i;
 #ifdef ENABLE_WINDOWSYNC
@@ -326,15 +322,12 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         const int print_summary_methods) {
 
     double* maxRuntimes_sec;
-    int my_rank;
     long current_start_index;
     size_t msize_value;
 #ifdef ENABLE_WINDOWSYNC
     int i;
     int* sync_errorcodes = NULL;
 #endif
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     if (OUTPUT_MSIZE_TYPE == OUTPUT_MSIZE_BYTES) {
       // print msize in bytes
@@ -345,7 +338,7 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 
 
     maxRuntimes_sec = NULL;
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         maxRuntimes_sec = (double*) malloc(job.n_rep * sizeof(double));
 
 #ifdef ENABLE_WINDOWSYNC
@@ -368,7 +361,7 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
 #endif
 
 
-    if (my_rank == OUTPUT_ROOT_PROC) {
+    if (icmb_has_initiator_rank(OUTPUT_ROOT_PROC)) {
         long nreps = 0;
 
         // remove measurements with out-of-window errors
@@ -425,9 +418,3 @@ void print_summary(FILE* f, job_t job, double* tstart_sec, double* tend_sec,
         free(maxRuntimes_sec);
     }
 }
-
-
-
-
-
-

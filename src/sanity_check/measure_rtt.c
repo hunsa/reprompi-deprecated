@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -31,6 +33,8 @@
 #include "reprompi_bench/misc.h"
 #include "reprompi_bench/sync/time_measurement.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 const int WARMUP_ROUNDS = 10;
 
 int main(int argc, char* argv[]) {
@@ -42,16 +46,22 @@ int main(int argc, char* argv[]) {
     /* start up MPI */
     MPI_Init(&argc, &argv);
 
+     // parse command line options to launch inter-communicators
+    icmb_parse_intercommunication_options(argc, argv);
+
     if (argc < 3) {
-        printf("USAGE: mpirun -np 4 ./src/sanity_check/measure_rtt n_repetitions root_proc\n");
+        if (icmb_has_initiator_rank(0))
+        {
+            printf("USAGE: mpirun -np 4 ./src/sanity_check/measure_rtt n_repetitions root_proc\n");
+        }
         exit(1);
     }
 
     int nrep = atol(argv[1]);
     int root = atoi(argv[2]);
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    my_rank = icmb_global_rank();
+    nprocs = icmb_global_size();
 
     if (my_rank == root)
     {
@@ -70,15 +80,15 @@ int main(int argc, char* argv[]) {
                     double tmp;
 
                     tmp = get_time();
-                    MPI_Send(&tmp, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD);
-                    MPI_Recv(&tmp, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &stat);
+                    MPI_Send(&tmp, 1, MPI_DOUBLE, p, 0, icmb_global_communicator());
+                    MPI_Recv(&tmp, 1, MPI_DOUBLE, p, 0, icmb_global_communicator(), &stat);
                 }
             }
         }
 
         rtt_list = (double*)malloc(nrep * sizeof(double));
 
-        //MPI_Barrier(MPI_COMM_WORLD);
+        //MPI_Barrier(icmb_global_communicator());
         for (p = 0; p < nprocs; p++)
         {
             if (p!=root) {
@@ -86,8 +96,8 @@ int main(int argc, char* argv[]) {
                 {
                     t_start = get_time();
 
-                    MPI_Send(&t_start, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD);
-                    MPI_Recv(&t_remote, 1, MPI_DOUBLE, p, 0, MPI_COMM_WORLD, &stat);
+                    MPI_Send(&t_start, 1, MPI_DOUBLE, p, 0, icmb_global_communicator());
+                    MPI_Recv(&t_remote, 1, MPI_DOUBLE, p, 0, icmb_global_communicator(), &stat);
 
                     rtt_list[i] = get_time() - t_start;
                 }
@@ -108,16 +118,16 @@ int main(int argc, char* argv[]) {
         for (i = 0; i < WARMUP_ROUNDS; i++)
         {
             double tmp;
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, root, 0, MPI_COMM_WORLD, &stat);
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, root, 0, icmb_global_communicator(), &stat);
             tmp = get_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, root, 0, MPI_COMM_WORLD);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, root, 0, icmb_global_communicator());
         }
 
-        //MPI_Barrier(MPI_COMM_WORLD);
+        //MPI_Barrier(icmb_global_communicator());
         for (i = 0; i < nrep; i++)
         {
-            MPI_Recv(&t_start, 1, MPI_DOUBLE, root, 0, MPI_COMM_WORLD, &stat);
-            MPI_Send(&t_start, 1, MPI_DOUBLE, root, 0, MPI_COMM_WORLD);
+            MPI_Recv(&t_start, 1, MPI_DOUBLE, root, 0, icmb_global_communicator(), &stat);
+            MPI_Send(&t_start, 1, MPI_DOUBLE, root, 0, icmb_global_communicator());
         }
     }
 

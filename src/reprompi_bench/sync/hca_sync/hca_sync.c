@@ -4,7 +4,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -37,6 +39,8 @@
 #include "reprompi_bench/sync/sync_info.h"
 #include "hca_parse_options.h"
 #include "hca_sync.h"
+
+#include "contrib/intercommunication/intercommunication.h"
 
 const int HCA_WARMUP_ROUNDS = 5;
 
@@ -96,10 +100,8 @@ static double ping_pong_skampi(int p1, int p2)
     int pp_tag = 43;
     double offset = 0;
 
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
 
     ping_pong_min_time = (double*)malloc(np * sizeof(double));
     for( i = 0; i < np; i++) ping_pong_min_time[i] = -1.0;
@@ -111,10 +113,10 @@ static double ping_pong_skampi(int p1, int p2)
         other_global_id = p2;
 
         s_last = hca_get_adjusted_time();
-        MPI_Send(&s_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
-        MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Send(&s_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
+        MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator(), &status);
         s_now = hca_get_adjusted_time();
-        MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+        MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
 
 
         td_min = t_last - s_now;
@@ -124,10 +126,10 @@ static double ping_pong_skampi(int p1, int p2)
     } else {
         other_global_id = p1;
 
-        MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(), &status);
         t_last = hca_get_adjusted_time();
-        MPI_Send(&t_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD);
-        MPI_Recv(&s_now, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Send(&t_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator());
+        MPI_Recv(&s_now, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(), &status);
         t_now = hca_get_adjusted_time();
 
 
@@ -142,7 +144,7 @@ static double ping_pong_skampi(int p1, int p2)
         i = 1;
         while( 1 ) {
 
-            MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD, &status);
+            MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator(), &status);
             if( t_last < 0.0 ) break;
 
             s_last = s_now;
@@ -154,22 +156,22 @@ static double ping_pong_skampi(int p1, int p2)
             if( ping_pong_min_time[other_global_id] >= 0.0  &&
                     i >= Minimum_ping_pongs1 &&
                     s_now - s_last < ping_pong_min_time[other_global_id]*1.10 ) {
-                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
                 break;
             }
             i++;
             if( i == Number_ping_pongs1 ) {
-                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
                 break;
             }
-            MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+            MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
 
         }
     } else {
         i = 1;
         while( 1 ) {
-            MPI_Send(&t_now, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD);
-            MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD, &status);
+            MPI_Send(&t_now, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator());
+            MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(), &status);
             t_last = t_now;
             t_now = hca_get_adjusted_time();
 
@@ -181,7 +183,7 @@ static double ping_pong_skampi(int p1, int p2)
             if( ping_pong_min_time[other_global_id] >= 0.0 &&
                     i >= Minimum_ping_pongs1 &&
                     t_now - t_last < ping_pong_min_time[other_global_id]*1.10 ) {
-                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD);
+                MPI_Send(&invalid_time, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator());
                 break;
             }
             i++;
@@ -204,9 +206,7 @@ static double ping_pong_skampi(int p1, int p2)
 
 
 void compute_and_set_intercept(lm_t* lm, int client, int p_ref) {
-    int my_rank;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    int my_rank = icmb_global_rank();
 
     if (my_rank == p_ref) {
         //compute intercept with SKaMPI ping-pong
@@ -225,11 +225,9 @@ void compute_and_set_intercept(lm_t* lm, int client, int p_ref) {
 void compute_and_set_all_intercepts(lm_t* lm)
 {
     int i;
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     int master_rank = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank != master_rank) {
         compute_and_set_intercept(lm, my_rank, master_rank);
@@ -247,15 +245,13 @@ void compute_and_set_all_intercepts(lm_t* lm)
 
 
 void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double *rtt) {
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     MPI_Status stat;
     int i;
     double tmp;
     double *rtts = NULL;
     double mean;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == master_rank) {
         double tstart, tremote;
@@ -263,16 +259,16 @@ void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double 
         /* warm up */
         for (i = 0; i < HCA_WARMUP_ROUNDS; i++) {
             tmp = hca_get_adjusted_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(), &stat);
         }
 
         rtts  = (double*) malloc(n_pingpongs * sizeof(double));
 
         for (i = 0; i < n_pingpongs; i++) {
             tstart = hca_get_adjusted_time();
-            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
-            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Send(&tstart, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
+            MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(), &stat);
             rtts[i] = hca_get_adjusted_time() - tstart;
         }
 
@@ -281,15 +277,15 @@ void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double 
 
         /* warm up */
         for (i = 0; i < HCA_WARMUP_ROUNDS; i++) {
-            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Recv(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(), &stat);
             tmp = hca_get_adjusted_time();
-            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tmp, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
 
         for (i = 0; i < n_pingpongs; i++) {
-            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD, &stat);
+            MPI_Recv(&troot, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(), &stat);
             tlocal = hca_get_adjusted_time();
-            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD);
+            MPI_Send(&tlocal, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator());
         }
     }
 
@@ -320,9 +316,9 @@ void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double 
         free(rtts);
         free(rtts2);
 
-        MPI_Send(&mean, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
+        MPI_Send(&mean, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
     } else {
-        MPI_Recv(&mean, 1, MPI_DOUBLE, master_rank, 0, MPI_COMM_WORLD, &stat);
+        MPI_Recv(&mean, 1, MPI_DOUBLE, master_rank, 0, icmb_global_communicator(), &stat);
     }
 
     *rtt = mean;
@@ -332,15 +328,13 @@ void compute_rtt(int master_rank, int other_rank, const int n_pingpongs, double 
 lm_t hca_learn_model(const int root_rank, const int other_rank,
         const reprompi_hca_params_t params, const double my_rtt) {
     int i, j;
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     MPI_Status status;
     lm_t lm;
 
     lm.intercept = 0;
     lm.slope = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == root_rank) {
 
@@ -349,9 +343,9 @@ lm_t hca_learn_model(const int root_rank, const int other_rank,
         for (j = 0; j < params.n_fitpoints; j++) {
 
             for (i = 0; i < params.n_exchanges; i++) {
-                MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD, &status);
+                MPI_Recv(&tremote, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator(), &status);
                 tlocal = hca_get_adjusted_time();
-                MPI_Ssend(&tlocal, 1, MPI_DOUBLE, other_rank, 0, MPI_COMM_WORLD);
+                MPI_Ssend(&tlocal, 1, MPI_DOUBLE, other_rank, 0, icmb_global_communicator());
             }
         }
     } else {
@@ -376,8 +370,8 @@ lm_t hca_learn_model(const int root_rank, const int other_rank,
 
             for (i = 0; i < params.n_exchanges; i++) {
                 dummy = hca_get_adjusted_time();
-                MPI_Ssend(&dummy, 1, MPI_DOUBLE, root_rank, 0, MPI_COMM_WORLD);
-                MPI_Recv(&master_time, 1, MPI_DOUBLE, root_rank, 0, MPI_COMM_WORLD,
+                MPI_Ssend(&dummy, 1, MPI_DOUBLE, root_rank, 0, icmb_global_communicator());
+                MPI_Recv(&master_time, 1, MPI_DOUBLE, root_rank, 0, icmb_global_communicator(),
                         &status);
                 local_time[i] = hca_get_adjusted_time();
                 time_var[i] = local_time[i] - master_time - my_rtt / 2.0;
@@ -462,7 +456,8 @@ void hca_init_synchronization_module(const reprompib_sync_options_t parsed_opts,
 
 void hca_synchronize_clocks(void)
 {
-    int my_rank, nprocs;
+    int my_rank = icmb_global_rank();
+    int nprocs = icmb_global_size();
     int i, j, p;
 
     int master_rank = 0;
@@ -486,9 +481,6 @@ void hca_synchronize_clocks(void)
     MPI_Group orig_group, step_two_group;
     MPI_Comm step_two_comm;
 
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
     rtts_s = (double*)calloc(nprocs, sizeof(double));
 
@@ -532,7 +524,7 @@ void hca_synchronize_clocks(void)
                 nb_lm_to_comm = my_pow_2(i);
 
                 if( nb_lm_to_comm > 0 ) {
-                    MPI_Recv(&tmp_linear_models[0], nb_lm_to_comm, mpi_lm_t, other_rank, 0, MPI_COMM_WORLD, &stat);
+                    MPI_Recv(&tmp_linear_models[0], nb_lm_to_comm, mpi_lm_t, other_rank, 0, icmb_global_communicator(), &stat);
 
                     linear_models[other_rank] = tmp_linear_models[0];
                     for(j=1; j<nb_lm_to_comm; j++) {
@@ -558,15 +550,15 @@ void hca_synchronize_clocks(void)
                 nb_lm_to_comm = my_pow_2(i);
 
                 if( nb_lm_to_comm > 0 ) {
-                    MPI_Send(&linear_models[my_rank], nb_lm_to_comm, mpi_lm_t, other_rank, 0, MPI_COMM_WORLD);
+                    MPI_Send(&linear_models[my_rank], nb_lm_to_comm, mpi_lm_t, other_rank, 0, icmb_global_communicator());
                 }
             }
         }
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(icmb_global_communicator());
     }
 
 
-    MPI_Comm_group(MPI_COMM_WORLD, &orig_group);
+    MPI_Comm_group(icmb_global_communicator(), &orig_group);
     step_two_nb_ranks = nprocs - max_power_two + 1;
     step_two_group_ranks = (int*) calloc(step_two_nb_ranks, sizeof(int));
 
@@ -580,7 +572,7 @@ void hca_synchronize_clocks(void)
     MPI_Group_incl(orig_group, step_two_nb_ranks, step_two_group_ranks,
             &step_two_group);
 
-    MPI_Comm_create(MPI_COMM_WORLD, step_two_group, &step_two_comm);
+    MPI_Comm_create(icmb_global_communicator(), step_two_group, &step_two_comm);
 
     // now step 2
     // synchronize processes with ranks > 2^max_power_two
@@ -635,12 +627,12 @@ void hca_synchronize_clocks(void)
         }
     }
 
-    MPI_Scatter(linear_models, 1, mpi_lm_t, &lm, 1, mpi_lm_t, master_rank, MPI_COMM_WORLD);
+    MPI_Scatter(linear_models, 1, mpi_lm_t, &lm, 1, mpi_lm_t, master_rank, icmb_global_communicator());
 
 #ifndef ENABLE_LOGP_SYNC
     compute_and_set_all_intercepts(&lm);
 #endif
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 
     free(linear_models);
     free(tmp_linear_models);
@@ -655,16 +647,14 @@ void hca_synchronize_clocks(void)
 
 
 void hca_init_synchronization(void) {
-    int my_rank;
+    int my_rank = icmb_global_rank();
     int master_rank = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
 
     repetition_counter = 0;
     if( my_rank == master_rank ) {
         start_sync = hca_get_adjusted_time() + parameters.wait_time_sec;
     }
-    MPI_Bcast(&start_sync, 1, MPI_DOUBLE, master_rank, MPI_COMM_WORLD);
+    MPI_Bcast(&start_sync, 1, MPI_DOUBLE, master_rank, icmb_global_communicator());
 
 }
 
@@ -727,5 +717,3 @@ void hca_print_sync_parameters(FILE* f)
     fprintf(f, "#@hcasynctype=linear\n");
 #endif
 }
-
-

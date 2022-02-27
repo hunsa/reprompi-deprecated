@@ -9,7 +9,9 @@
     Research Group for Parallel Computing
     Faculty of Informatics
     Vienna University of Technology, Austria
-
+ *
+ * Copyright (c) 2021 Stefan Christians
+ *
 <license>
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -42,6 +44,8 @@
 #include "sk_parse_options.h"
 #include "sk_sync.h"
 
+#include "contrib/intercommunication/intercommunication.h"
+
 double *tds; /* tds[i] is the time difference between the
  current node and global node i */
 
@@ -70,9 +74,7 @@ enum {
 
 void sk_init_synchronization_module(const reprompib_sync_options_t opts_p, const long nrep) {
     int i;
-    int np;
-
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int np = icmb_global_size();
 
     parameters.wait_time_sec = opts_p.wait_time_sec;
     parameters.window_size_sec = opts_p.window_size_sec;
@@ -98,11 +100,9 @@ void print_global_time_differences() {
     char *names = NULL;
     int *pids = NULL;
 
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     int root_proc = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == root_proc) {
         all_tds = (double*) skampi_malloc(np * np * sizeof(double));
@@ -115,10 +115,10 @@ void print_global_time_differences() {
     pid = getpid();
 
     MPI_Gather(tds, np, MPI_DOUBLE, all_tds, np,
-            MPI_DOUBLE, 0, MPI_COMM_WORLD);
+            MPI_DOUBLE, 0, icmb_global_communicator());
     MPI_Gather(my_name, MPI_MAX_PROCESSOR_NAME, MPI_CHAR, names,
-            MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, MPI_COMM_WORLD);
-    MPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_MAX_PROCESSOR_NAME, MPI_CHAR, 0, icmb_global_communicator());
+    MPI_Gather(&pid, 1, MPI_INT, pids, 1, MPI_INT, 0, icmb_global_communicator());
 
     if (my_rank == root_proc) {
         for (i = 0; i < np; i++)
@@ -160,10 +160,10 @@ static void ping_pong(int p1, int p2, int my_rank, int np) {
         other_global_id = p2;
 
         s_last = get_time();
-        MPI_Send(&s_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
-        MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Send(&s_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
+        MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator(), &status);
         s_now = get_time();
-        MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+        MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
 
         td_min = t_last - s_now;
         td_max = t_last - s_last;
@@ -171,10 +171,10 @@ static void ping_pong(int p1, int p2, int my_rank, int np) {
     } else {
         other_global_id = p1;
 
-        MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(), &status);
         t_last = get_time();
-        MPI_Send(&t_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD);
-        MPI_Recv(&s_now, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD, &status);
+        MPI_Send(&t_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator());
+        MPI_Recv(&s_now, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(), &status);
         t_now = get_time();
 
         td_min = s_last - t_last;
@@ -187,7 +187,7 @@ static void ping_pong(int p1, int p2, int my_rank, int np) {
         i = 1;
         while (1) {
 
-            MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD,
+            MPI_Recv(&t_last, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator(),
                     &status);
             if (t_last < 0.0) {
                 break;
@@ -204,23 +204,23 @@ static void ping_pong(int p1, int p2, int my_rank, int np) {
                     && s_now - s_last
                     < ping_pong_min_time[other_global_id] * 1.10) {
                 MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag,
-                        MPI_COMM_WORLD);
+                        icmb_global_communicator());
                 break;
             }
             i++;
             if (i == Number_ping_pongs) {
                 MPI_Send(&invalid_time, 1, MPI_DOUBLE, p2, pp_tag,
-                        MPI_COMM_WORLD);
+                        icmb_global_communicator());
                 break;
             }
-            MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, MPI_COMM_WORLD);
+            MPI_Send(&s_now, 1, MPI_DOUBLE, p2, pp_tag, icmb_global_communicator());
 
         }
     } else {
         i = 1;
         while (1) {
-            MPI_Send(&t_now, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD);
-            MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, MPI_COMM_WORLD,
+            MPI_Send(&t_now, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator());
+            MPI_Recv(&s_last, 1, MPI_DOUBLE, p1, pp_tag, icmb_global_communicator(),
                     &status);
             t_last = t_now;
             t_now = get_time();
@@ -237,7 +237,7 @@ static void ping_pong(int p1, int p2, int my_rank, int np) {
                     && t_now - t_last
                     < ping_pong_min_time[other_global_id] * 1.10) {
                 MPI_Send(&invalid_time, 1, MPI_DOUBLE, p1, pp_tag,
-                        MPI_COMM_WORLD);
+                        icmb_global_communicator());
                 break;
             }
             i++;
@@ -264,7 +264,7 @@ void determine_time_differences(int my_rank, int np) {
 
     //  measure ping-pong time between processes 0 and i
     for (i = 1; i < np; i++) {
-        MPI_Barrier(MPI_COMM_WORLD);
+        MPI_Barrier(icmb_global_communicator());
         if (my_rank == 0 || my_rank == i)
             ping_pong(0, i, my_rank, np);
     }
@@ -278,7 +278,7 @@ void determine_time_differences(int my_rank, int np) {
 
     assert(np - 1 >= 0);
     MPI_Bcast(&(tmp_tds[1]), np - 1, MPI_DOUBLE, 0,
-            MPI_COMM_WORLD);
+            icmb_global_communicator());
 
     // update local time differences
     if (my_rank != 0) {
@@ -287,7 +287,7 @@ void determine_time_differences(int my_rank, int np) {
         }
     }
     free(tmp_tds);
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(icmb_global_communicator());
 
 }
 
@@ -311,26 +311,21 @@ inline double should_wait_till(int counter, double interval, double offset) {
 }
 
 void sk_sync_clocks(void) {
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
 
     determine_time_differences(my_rank, np);
 }
 
 void sk_init_synchronization(void) {
-    int my_rank, np;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
+    int my_rank = icmb_global_rank();
 
     repetition_counter = 0;
     if (my_rank == 0) {
         start_batch = get_time() + parameters.wait_time_sec;
     }
 
-    MPI_Bcast(&start_batch, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&start_batch, 1, MPI_DOUBLE, 0, icmb_global_communicator());
 
 }
 
@@ -359,11 +354,9 @@ void sk_stop_synchronization(void) {
 void print_sync_results(void) {
     int* sync_res = NULL;
     int i, j;
-    int my_rank, np;
+    int my_rank = icmb_global_rank();
+    int np = icmb_global_size();
     int root_proc = 0;
-
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &np);
 
     if (my_rank == root_proc) {
         sync_res = (int*) malloc(
@@ -371,7 +364,7 @@ void print_sync_results(void) {
     }
 
     MPI_Gather(invalid, parameters.n_rep, MPI_INT, sync_res, parameters.n_rep,
-            MPI_INT, 0, MPI_COMM_WORLD);
+            MPI_INT, 0, icmb_global_communicator());
 
     if (my_rank == root_proc) {
         for (i = 0; i < np; i++) {
@@ -428,35 +421,19 @@ void* skampi_malloc(int size) {
 }
 
 void error_with_abort(int errorcode, char *fmt, ...) {
+    if(icmb_has_initiator_rank(0))
+    {
     va_list args;
-
-    /* we try to send a message to stderr whether we officialy can do I/O
-     (i_can_do_io) or not */
-    /*  if( i_can_do_io ) {*/
     va_start(args, fmt);
     fprintf(stderr, "error code %d: ", errorcode);
     vfprintf(stderr, fmt, args);
     va_end(args);
     fprintf(stderr, "\n");
     fflush(stderr);
-    /* } */
+    }
     mpi_abort(errorcode);
 }
 
 void mpi_abort(int errorcode) {
-    /* we try to send a message to stderr whether we officialy can do I/O
-     (i_can_do_io) or not */
-    /*  if( i_can_do_io ) {*/
-    fprintf(stderr, "\n");
-    fflush(stderr);
-    /* } */
-    MPI_Abort(MPI_COMM_WORLD, errorcode);
+    icmb_exit(errorcode);
 }
-
-
-
-
-
-
-
-
